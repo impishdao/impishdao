@@ -1,0 +1,42 @@
+body {
+  background-color: #040404 !important;
+}
+
+div#root {
+  color: #f0f0f0;
+  font-family: 'Work Sans', sans-serif;
+}
+
+button.connect {
+}
+
+button.address {
+  background-color: #040404;
+  color: #f0f0f0;
+  max-width: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-block;
+}
+
+input.ethinput {
+  background-color: #434343;
+  color: #f0f0f0;
+}
+
+h1 {
+  font-size: 4rem !important;
+}
+
+div.card {
+  background-color: #040404;
+  color: #f0f0f0;
+  border: 1px solid #ddd
+}
+
+div.withBackground {
+  background-image: url("bg.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  height: 800px;
+}
