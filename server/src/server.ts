@@ -1,6 +1,7 @@
 /* eslint-disable node/no-unpublished-import */
 import express from "express";
 import fs from "fs";
+import got from "got";
 
 import lineReader from "line-reader";
 import { BigNumber, ethers } from "ethers";
@@ -92,6 +93,31 @@ function processEventLogsStartup() {
 }
 processEventLogsStartup();
 
+// Prices
+let lastETHPrice: number = 0;
+let lastETHPriceCacheExpiry = 0;
+async function getLastETHPrice(): Promise<number> {
+  if (lastETHPrice > 0 && lastETHPriceCacheExpiry < Date.now()) {
+    return lastETHPrice;
+  }
+
+  // Get the price from Binance
+  try {
+    const response = await got(
+      "https://api.binance.com/api/v3/avgPrice?symbol=ETHUSDC"
+    );
+    const data = JSON.parse(response.body);
+    lastETHPrice = data.price || 0;
+    lastETHPriceCacheExpiry = Date.now() + 3600 * 1000; // ONE HOUR
+
+    console.log(`Set eth price to ${lastETHPrice}`);
+  } catch (error) {
+    console.log("Error getting prices!");
+    console.log(error.response.body);
+  }
+}
+getLastETHPrice();
+
 const nftPriceCache = new Map<number, BigNumber>();
 let nftPriceCacheExpiry = Date.now();
 
@@ -146,6 +172,7 @@ app.get("/api", async (req, res) => {
     daoBalance,
     withdrawalAmount,
     nftsWithPrice,
+    lastETHPrice,
   };
 
   res.send(sendJson);
