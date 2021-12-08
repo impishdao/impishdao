@@ -632,25 +632,25 @@ export class Dapp extends React.Component<DappProps, DappState> {
   }
 
   readDAOandNFTData = async () => {
-    // fetch("/api").then(r => r.json()).then(data => {
-    //   const areWeWinning = data.areWeWinning;
-    //   const contractState = data.contractState;
-    //   const isRoundFinished = data.isRoundFinished;
-    //   const daoBalance = BigNumber.from(data.daoBalance);
-    //   const totalTokenSupply = BigNumber.from(data.totalTokenSupply);
+    fetch("/api").then(r => r.json()).then(data => {
+      const areWeWinning = data.areWeWinning;
+      const contractState = data.contractState;
+      const isRoundFinished = data.isRoundFinished;
+      const daoBalance = BigNumber.from(data.daoBalance);
+      const totalTokenSupply = BigNumber.from(data.totalTokenSupply);
 
-    //   const mintPrice = BigNumber.from(data.mintPrice);
-    //   const lastMintTime = BigNumber.from(data.lastMintTime);
-    //   const withdrawalAmount = BigNumber.from(data.withdrawalAmount);
+      const mintPrice = BigNumber.from(data.mintPrice);
+      const lastMintTime = BigNumber.from(data.lastMintTime);
+      const withdrawalAmount = BigNumber.from(data.withdrawalAmount);
       
-    //   const nftsWithPrice = Array.from(data.nftsWithPrice).map(n => {
-    //     const nftData: any = n; 
-    //     return new NFTForSale(BigNumber.from(nftData.tokenId), BigNumber.from(nftData.price));
-    //   });
+      const nftsWithPrice = Array.from(data.nftsWithPrice).map(n => {
+        const nftData: any = n; 
+        return new NFTForSale(BigNumber.from(nftData.tokenId), BigNumber.from(nftData.price));
+      });
 
-    //   this.setState({areWeWinning, contractState, daoBalance, isRoundFinished, 
-    //       mintPrice, withdrawalAmount, lastMintTime, totalTokenSupply, nftsWithPrice});
-    // });
+      this.setState({areWeWinning, contractState, daoBalance, isRoundFinished, 
+          mintPrice, withdrawalAmount, lastMintTime, totalTokenSupply, nftsWithPrice});
+    });
   };
 
   readUserData = async () => {
@@ -709,8 +709,23 @@ export class Dapp extends React.Component<DappProps, DappState> {
                 <Navbar.Brand href="#home">ImpishDAO</Navbar.Brand>
                 <Nav className="me-auto">
                   <Nav.Link href="#home">Home</Nav.Link>
+                  <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
                   <Nav.Link href="#whitepaper">FAQ</Nav.Link>
                 </Nav>
+                {!this.state.selectedAddress && 
+                    <Button className="connect"
+                    variant="warning"
+                    onClick={() => this._connectWallet()}
+                  >
+                    Connect Wallet
+                  </Button>
+                }
+                {this.state.selectedAddress && (
+                  <>
+                    <div style={{marginRight: '10px'}}>Wallet: {format4Decimals(this.state.tokenBalance)} IMPISH</div>
+                    <Button className="address" variant="warning">{this.state.selectedAddress}</Button>
+                  </>
+                )}
               </Container>
             </Navbar>
             
@@ -723,10 +738,18 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <a id="home"></a>
             <div className="withBackground" style={{textAlign: 'center', marginTop: '-50px', paddingTop: '100px'}}>
-              <h1 style={{marginTop: '200px'}}>ImpishDAO will launch soon!</h1>
-              <div className="mb-5" style={{marginTop: "-20px"}}>
-                <a href="#whitepaper" className="mb-5" style={{color: "#ffc106"}}>What is ImpishDAO?</a>
-              </div>
+              {renderScreen === 4 && (
+                <BeenOutbid {...this.state} depositIntoDAO={this.depositIntoDAO} connectWallet={() => this._connectWallet()} />
+              )}
+              {renderScreen === 3 && (
+                <WeAreWinning {...this.state} depositIntoDAO={this.depositIntoDAO} connectWallet={() => this._connectWallet()} />
+              )}
+              {renderScreen === 2 && (
+                <WeWon {...this.state} depositIntoDAO={this.depositIntoDAO} connectWallet={() => this._connectWallet()} />
+              )}
+              {renderScreen === 1 && (
+                <Redeem {...this.state} redeemTokens={this.redeemTokens} />
+              )}
             </div>
 
             {this.state.nftsWithPrice.length > 0 && (
@@ -763,6 +786,23 @@ export class Dapp extends React.Component<DappProps, DappState> {
               </Row>
               </>
             )}
+
+            <div style={{border: 'solid 1px #fff', margin: 20, padding: 20}}>
+              {this.state.selectedAddress && (
+                <>
+                  <Stack direction="horizontal" gap={3}>
+                    <Button onClick={this.AdminDepositExternal}>Mint NFT Directly</Button>
+                    <Button onClick={this.readDAOandNFTData}>Refresh DAO Data</Button>
+                    <Button onClick={() => {
+                        this.readDAOandNFTData();
+                        this.readUserData();
+                        timeNow += (30 * 24 * 3600 * 1000);
+                      }
+                    }>Advance Time</Button>
+                  </Stack>
+                </>
+              )}              
+            </div>
 
             <a id="whitepaper"></a>
             <Row className="mb-5" style={{textAlign: 'center', backgroundColor: '#222', padding: '20px'}}>
