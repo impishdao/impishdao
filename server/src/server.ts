@@ -8,6 +8,7 @@ import { BigNumber, ethers } from "ethers";
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
 import contractAddresses from "./contracts/contract-addresses.json";
+import path from "path";
 
 const app = express();
 
@@ -179,5 +180,8 @@ app.get("/api", async (req, res) => {
 
   res.send(sendJson);
 });
+
+// Serve static files
+app.use("/", express.static(path.join(__dirname)));
 
 app.listen(3001, () => console.log("Example app listening on port 3001!"));
