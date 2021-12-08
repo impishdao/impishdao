@@ -29,6 +29,7 @@ describe("ImpishDAO Mint Tests", function () {
 
     const provider = waffle.provider;
     const [wallet] = provider.getWallets();
+    const [signer] = await ethers.getSigners();
 
     expect(await impdao.balanceOf(wallet.address)).to.equal(0);
 
@@ -50,11 +51,11 @@ describe("ImpishDAO Mint Tests", function () {
       "Wrong contract balance"
     ).to.equal(0);
 
-    const TEN_ETH = ethers.utils.parseEther("10");
-    expect(await impdao.getMaxEthThatCanBeDeposit()).to.eq(TEN_ETH);
+    const HUNDRED_ETH = ethers.utils.parseEther("100");
+    expect(await impdao.getMaxEthThatCanBeDeposit()).to.eq(HUNDRED_ETH);
 
     // Deposit just enough to hit the limit
-    await impdao.deposit({ value: TEN_ETH });
+    await impdao.deposit({ value: HUNDRED_ETH });
 
     expect(await impdao.getMaxEthThatCanBeDeposit(), "wrong full").to.eq(
       BigNumber.from(0)
@@ -64,6 +65,15 @@ describe("ImpishDAO Mint Tests", function () {
     await expect(impdao.deposit({ value: 1 })).to.be.revertedWith(
       "Too much ETH"
     );
+
+    // But simply transfering money to the contract should be OK.
+    const ONE_ETH = ethers.utils.parseEther("1");
+    await expect(
+      await signer.sendTransaction({
+        to: impdao.address,
+        value: ONE_ETH,
+      })
+    ).to.changeEtherBalance(impdao, ONE_ETH);
   });
 
   it("Should not mint tokens when paused", async function () {
@@ -119,7 +129,7 @@ describe("ImpishDAO Mint Tests", function () {
 
     // Contract should also have the NFT for sale
     expect((await impdao.forSale(nftID)).startPrice).to.equal(
-      mintPrice.mul(MINT_RATIO).mul(150).div(100)
+      mintPrice.mul(MINT_RATIO).mul(1000).div(100)
     );
 
     // This is amount - sent to contract to mint the NFT
@@ -403,7 +413,7 @@ describe("ImpishDAO Mint Tests", function () {
 
     // Contract should also have the NFT for sale
     expect((await impdao.forSale(nftID)).startPrice).to.equal(
-      mintPrice.mul(MINT_RATIO).mul(150).div(100)
+      mintPrice.mul(MINT_RATIO).mul(1000).div(100)
     );
 
     // NFT owner is the DAO to start with
@@ -416,7 +426,7 @@ describe("ImpishDAO Mint Tests", function () {
     await expect(impdao.buyNFT(nftID)).to.be.revertedWith("Not enough IMPISH");
 
     // Get more tokens
-    await impdao.deposit({ value: mintPrice });
+    await impdao.deposit({ value: mintPrice.mul(10) });
 
     // Now, buy the NFT
     const buyNFTPrice = await impdao.buyNFTPrice(nftID);
@@ -475,8 +485,8 @@ describe("ImpishDAO Mint Tests", function () {
 
     const MINT_RATIO = await impdao.MINT_RATIO();
 
-    // Contract should also have the NFT for sale
-    const startPrice = mintPrice.mul(MINT_RATIO).mul(150).div(100);
+    // Contract should also have the NFT for sale, starting at 10x
+    const startPrice = mintPrice.mul(MINT_RATIO).mul(1000).div(100);
     expect((await impdao.forSale(nftID)).startPrice).to.equal(startPrice);
 
     let expectedRatio = 4; // Start at 1/4th
@@ -504,7 +514,7 @@ describe("ImpishDAO Mint Tests", function () {
 
     let actualPrice = await impdao.buyNFTPrice(nftID);
     expect(actualPrice.sub(minPrice), "min price").to.be.lte(
-      ethers.utils.parseEther("0.0001") // Within 0.0001 DAO Tokens
+      ethers.utils.parseEther("0.0001") // Within 0.0001 IMPISH tokens
     );
 
     // Advance it beyond 30 days

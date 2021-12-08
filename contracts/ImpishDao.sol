@@ -94,8 +94,8 @@ contract ImpishDAO is ERC20, ERC20Burnable, Ownable, IERC721Receiver, Reentrancy
     // 10 times the next mint price
     function getMaxEth() public view returns(uint256) {
         uint256 maxETH = rwNFT.getMintPrice() * 10;
-        if (maxETH < 10 ether) {
-            maxETH = 10 ether;
+        if (maxETH < 100 ether) {
+            maxETH = 100 ether;
         }
 
         return maxETH;
@@ -153,8 +153,9 @@ contract ImpishDAO is ERC20, ERC20Burnable, Ownable, IERC721Receiver, Reentrancy
         rwNFT.mint{value: mintPrice}();
 
         // And put it up for sale (assuming the mint succeeds). 
+        // Starting price is 10x the mint price, and decreases to 0.0001 ETH over one month (Dutch Auction)
         // Remember to multiply by MINT_RATIO, because price is in IMPISH
-        uint256 forSalePrice =  mintPrice * MINT_RATIO * 150 / 100;
+        uint256 forSalePrice =  mintPrice * MINT_RATIO * 1000 / 100;
         forSale[mintedNFTTokenId] = NFTForSale(block.timestamp, forSalePrice);
         
         // Emit event
