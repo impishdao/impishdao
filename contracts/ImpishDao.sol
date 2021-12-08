@@ -155,7 +155,7 @@ contract ImpishDAO is ERC20, ERC20Burnable, Ownable, IERC721Receiver, Reentrancy
         // And put it up for sale (assuming the mint succeeds). 
         // Starting price is 10x the mint price, and decreases to 0.0001 ETH over one month (Dutch Auction)
         // Remember to multiply by MINT_RATIO, because price is in IMPISH
-        uint256 forSalePrice =  mintPrice * MINT_RATIO * 1000 / 100;
+        uint256 forSalePrice =  mintPrice * MINT_RATIO * 10;
         forSale[mintedNFTTokenId] = NFTForSale(block.timestamp, forSalePrice);
         
         // Emit event
