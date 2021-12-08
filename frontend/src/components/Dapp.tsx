@@ -169,7 +169,7 @@ const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, lastETHPrice, depos
                     </Button>
                   </Stack>
                   <div className="mb-3">
-                    You will recieve {tokensRecieved} IMPISH Tokens
+                    You will receive {tokensRecieved} IMPISH Tokens
                   </div>
               </Row>
             </div>
@@ -274,7 +274,7 @@ const WeAreWinning = ({
                     </Button>
                   </Stack>
                   <div className="mb-3">
-                    You will recieve {tokensRecieved} IMPISH Tokens
+                    You will receive {tokensRecieved} IMPISH Tokens
                   </div>
               </Row>
             </div>

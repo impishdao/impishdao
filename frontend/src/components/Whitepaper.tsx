@@ -20,7 +20,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                     All the funds used to mint the NFTs are held in the RandomWalkNFT contract. If no one mints a new NFT for 30 days, the last minter is awarded
                     50% of the money in the pool, which is currently ETH {format4Decimals(withdrawalAmount)}
                     <br/><br/>
-                    The goal of this project is to win that prize money and distribute it to evenly to all the contributers to ImpishDAO.
+                    The goal of this project is to win that prize money and distribute it to evenly to all the contributors to ImpishDAO.
                     <br/><br/>
                     Note that ImpishDAO is not affiliated in any way, and is independent from the RandomWalkNFT project.
                 </div>
@@ -40,7 +40,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                     If the ImpishDAO wins the prize, you can redeem your IMPISH tokens for the prize money.
                     <br/><br/>
                     The prize money is distributed in proportion of your IMPISH token holdings. So, if you contributed to ImpishDAO and the ImpishDAO got outbid at first, but it 
-                    raised more money and eventually won the prize, you will still recieve your portion of the prize, in proportion to your IMPISH token holdings.
+                    raised more money and eventually won the prize, you will still receive your portion of the prize, in proportion to your IMPISH token holdings.
                 </div>
 
                 <div className="mb-3">
@@ -54,7 +54,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
 
                 <div className="mb-3">
                     <span style={{fontWeight: 'bold', color: '#ffd454'}}>What happens if ImpishDAO loses or can't raise enough funds in time?</span><br/>
-                    If ImpishDAO looses the prize, you will most likely not get back anything. If there are any funds remaining in the contract, you'll be able to 
+                    If ImpishDAO loses the prize, you will most likely not get back anything. If there are any funds remaining in the contract, you'll be able to 
                     claim them in proportion to your IMPISH tokens, but the amount of ETH you'll get back will most likely be far lower than you contributed.
                 </div>
 
