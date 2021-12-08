@@ -319,7 +319,7 @@ const Redeem = ({selectedAddress, tokenBalance, daoBalance, contractState, total
   let ethRedeemable = BigNumber.from(0);
   if (tokenBalance !== undefined && totalTokenSupply !== undefined &&
       daoBalance !== undefined && daoBalance.gt(0)) {
-    ethRedeemable = tokenBalance.mul(totalTokenSupply).div(daoBalance);
+    ethRedeemable = tokenBalance.mul(daoBalance).div(totalTokenSupply);
   } 
 
   return (
@@ -327,20 +327,23 @@ const Redeem = ({selectedAddress, tokenBalance, daoBalance, contractState, total
       <h1>ImpishDAO has {title}!</h1>
       {selectedAddress && (
         <>
-          <div> You can now redeem your tokens for ETH </div>
+          <h3 className="mt-2"> You can now redeem your tokens for ETH </h3>
           <Row className="justify-content-md-center mt-4">
               <Col xs lg="4">
               <div className="mb-3">
                   You have <br/>
-                  {ethers.utils.formatEther(tokenBalance)} IMPISH Tokens
-                  <br/>
+                  <h4>{ethers.utils.formatEther(tokenBalance)} IMPISH Tokens</h4>
+              </div>
+              <div className="mb-3">
                   which can be redeemed for 
                   <br/>
-                  ETH {ethers.utils.formatEther(ethRedeemable)}
+                  <h4>ETH {format4Decimals(ethRedeemable)}</h4>
                 </div>
               </Col>
           </Row>
-          <Button variant="warning" onClick={() => redeemTokens()}>Redeem</Button>
+          {tokenBalance.gt(0) && 
+            <Button variant="warning" onClick={() => redeemTokens()}>Redeem</Button>
+          }
         </>
       )}
       
@@ -685,6 +688,15 @@ export class Dapp extends React.Component<DappProps, DappState> {
     }
   };
 
+  AdminWithdraw = async() => {
+    if (this._provider) {
+      (await this._rwnft?.connect(this._provider.getSigner(0)).withdraw()).wait().then(() => {
+        this.readDAOandNFTData();
+        this.readUserData();
+      });
+    }
+  }
+
   render() {
       console.log(this.state);
 
@@ -802,6 +814,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                 <>
                   <Stack direction="horizontal" gap={3}>
                     <Button onClick={this.AdminDepositExternal}>Mint NFT Directly</Button>
+                    <Button onClick={this.AdminWithdraw}>Withdraw() Directly</Button>
                     <Button onClick={this.readDAOandNFTData}>Refresh DAO Data</Button>
                     <Button onClick={() => {
                         this.readDAOandNFTData();
