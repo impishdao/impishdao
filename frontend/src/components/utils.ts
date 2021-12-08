@@ -17,3 +17,11 @@ export function secondsToDhms(seconds: number) {
   export function format4Decimals(n: BigNumber): string {
     return parseFloat(ethers.utils.formatEther(n)).toFixed(4);
   }
+
+  export function formatUSD(bal: BigNumber, lastETHPrice?: number) {
+    if (lastETHPrice === undefined || !lastETHPrice) {
+      return "($ -)";
+    }
+
+    return "($ " + (parseFloat(ethers.utils.formatEther(bal)) * lastETHPrice).toFixed(2) + ")";
+  }

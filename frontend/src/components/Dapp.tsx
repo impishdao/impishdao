@@ -14,7 +14,7 @@ import React, { useEffect, useState } from "react";
 import { Web3Provider } from "@ethersproject/providers";
 import { Container, Nav, Navbar, Button, Alert, InputGroup, FormControl, Row, Col, Stack, Card, Modal } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
-import { format4Decimals, secondsToDhms } from "./utils";
+import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -54,7 +54,7 @@ class NFTForSale {
 type DappProps = {};
 class DappState {
     networkError?: string;
-    
+    lastETHPrice?: number;
 
     // DAO State
     areWeWinning: boolean;
@@ -95,7 +95,7 @@ type BeenOutbidProps = DappState & {
   depositIntoDAO: (amount: BigNumber) => Promise<void>;
   connectWallet: () => void;
 };
-const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, depositIntoDAO, connectWallet}: BeenOutbidProps) => {
+const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, lastETHPrice, depositIntoDAO, connectWallet}: BeenOutbidProps) => {
   let neededInEth = BigNumber.from(0);
 
   if (mintPrice !== undefined && daoBalance !== undefined) {
@@ -129,7 +129,8 @@ const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, depositIntoDAO, con
       {neededInEth.gt(0) && (
         <>
           <div>Additional ETH needed for ImpishDAO to win:</div>
-          <h1 className="mb-2">ETH {format4Decimals(neededInEth)}</h1>
+          <h1>ETH {format4Decimals(neededInEth)}</h1>
+          <div className="usdFaded mb-2">{formatUSD(neededInEth, lastETHPrice)}</div>
           <div className="mb-2">Contribute to ImpishDAO to get back to winning!</div>
         </>
       )}
@@ -179,7 +180,11 @@ const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, depositIntoDAO, con
   )
 };
 
-const WeAreWinning = ({withdrawalAmount, tokenBalance, totalTokenSupply, daoBalance, selectedAddress, lastMintTime, depositIntoDAO, connectWallet}: BeenOutbidProps) => {
+const WeAreWinning = ({
+    withdrawalAmount, tokenBalance, totalTokenSupply, daoBalance, 
+    selectedAddress, lastMintTime, lastETHPrice, depositIntoDAO, 
+    connectWallet}
+  : BeenOutbidProps) => {
   let timeRemainingInitial = 0;
   if (lastMintTime !== undefined) {
     timeRemainingInitial =  (lastMintTime.toNumber() + 30 * 24 * 3600) - (timeNow / 1000);
@@ -229,10 +234,12 @@ const WeAreWinning = ({withdrawalAmount, tokenBalance, totalTokenSupply, daoBala
       </div>
       <div>ImpishDAO will win</div>
       <h1>ETH {format4Decimals(withdrawalAmount.add(daoBalance))}</h1>
+      <div className="usdFaded">{formatUSD(withdrawalAmount.add(daoBalance), lastETHPrice)}</div>
       <div className="mb-2">
         {myShareOfWinnings && <span>
           Your potential share <br/>
           <h4>ETH {format4Decimals(myShareOfWinnings)}</h4>
+          <div className="usdFadedSmall">{formatUSD(myShareOfWinnings, lastETHPrice)}</div>
         </span>
         }
       </div>
@@ -642,6 +649,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
       const mintPrice = BigNumber.from(data.mintPrice);
       const lastMintTime = BigNumber.from(data.lastMintTime);
       const withdrawalAmount = BigNumber.from(data.withdrawalAmount);
+
+      const lastETHPrice = data.lastETHPrice;
       
       const nftsWithPrice = Array.from(data.nftsWithPrice).map(n => {
         const nftData: any = n; 
@@ -649,7 +658,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
       });
 
       this.setState({areWeWinning, contractState, daoBalance, isRoundFinished, 
-          mintPrice, withdrawalAmount, lastMintTime, totalTokenSupply, nftsWithPrice});
+          mintPrice, withdrawalAmount, lastMintTime, totalTokenSupply,
+          lastETHPrice, nftsWithPrice});
     });
   };
 

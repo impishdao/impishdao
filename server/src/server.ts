@@ -107,7 +107,7 @@ async function getLastETHPrice(): Promise<number> {
       "https://api.binance.com/api/v3/avgPrice?symbol=ETHUSDC"
     );
     const data = JSON.parse(response.body);
-    lastETHPrice = data.price || 0;
+    lastETHPrice = parseFloat(data.price) || 0;
     lastETHPriceCacheExpiry = Date.now() + 3600 * 1000; // ONE HOUR
 
     console.log(`Set eth price to ${lastETHPrice}`);
@@ -116,6 +116,8 @@ async function getLastETHPrice(): Promise<number> {
     console.log(error.response.body);
   }
 }
+
+// At startup, fetch the ETH Price.
 getLastETHPrice();
 
 const nftPriceCache = new Map<number, BigNumber>();

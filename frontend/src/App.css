@@ -40,3 +40,15 @@ div.withBackground {
   background-position: center center;
   height: 800px;
 }
+
+div.usdFaded {
+  margin-top: -20px;
+  color: #666;
+  font-size: +1.5em;
+}
+
+
+div.usdFadedSmall {
+  margin-top: -10px;
+  color: #666;
+}
