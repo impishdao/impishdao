@@ -321,9 +321,9 @@ const Redeem = ({selectedAddress, tokenBalance, daoBalance, contractState, total
   return (
     <>
       <h1>ImpishDAO has {title}!</h1>
+      <h3 className="mt-2"> You can now redeem your tokens for ETH </h3>
       {selectedAddress && (
         <>
-          <h3 className="mt-2"> You can now redeem your tokens for ETH </h3>
           <Row className="justify-content-md-center mt-4">
               <Col xs lg="4">
               <div className="mb-3">
