@@ -64,7 +64,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                     next RandomWalkNFT. If the contract currently has more than this amount, it temporarily won't let you mint any more IMPISH tokens, until it spends the
                     funds to buy the next RandomWalkNFT. 
                     <br/><br/>
-                    Of course, you can still buy the IMPISH tokens on <a href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>Uniswap</a> at anytime. 
+                    Of course, you can still buy the IMPISH tokens on <a style={{color: 'white'}} href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>Uniswap</a> at anytime. 
                 </div>
 
                 <div className="mb-3">
@@ -78,7 +78,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
 
                 <div className="mb-3">
                     <span style={{fontWeight: 'bold', color: '#ffd454'}}>Where are the contracts deployed?</span><br/>
-                    The ImpishDAO + Token contract is at <a href="https://arbiscan.io/address/0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>0x36f6d831210109719d15abaee45b327e9b43d6c6</a>. 
+                    The ImpishDAO + Token contract is at <a style={{color: 'white'}} href="https://arbiscan.io/address/0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>0x36f6d831210109719d15abaee45b327e9b43d6c6</a>. 
                 </div>
 
                 <div className="mb-3">
