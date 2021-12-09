@@ -77,6 +77,11 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                 </div>
 
                 <div className="mb-3">
+                    <span style={{fontWeight: 'bold', color: '#ffd454'}}>Where are the contracts deployed?</span><br/>
+                    The ImpishDAO + Token contract is at <a href="https://arbiscan.io/address/0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>0x36f6d831210109719d15abaee45b327e9b43d6c6</a>. 
+                </div>
+
+                <div className="mb-3">
                     <span style={{fontWeight: 'bold', color: '#ffd454'}}>What happens if there are bugs in the smartcontract?</span><br/>
                     If there are any catastrophic bugs in the smart contract, the developers can "pause" the smartcontract. This will make the smartcontract
                     stop accepting new deposits, and allow users to redeem any funds remaining in the smartcontract in proportion of their IMPISH token holdings. 

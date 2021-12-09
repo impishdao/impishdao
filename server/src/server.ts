@@ -8,11 +8,13 @@ import { BigNumber, ethers } from "ethers";
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
 import contractAddresses from "./contracts/contract-addresses.json";
+import ImpishDAOConfig from "./impishdao-config.json";
 import path from "path";
 
 const app = express();
 
-const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
+const ARBITRUM_RPC =
+  ImpishDAOConfig.RPCEndPoint || "https://arb1.arbitrum.io/rpc";
 
 const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
 

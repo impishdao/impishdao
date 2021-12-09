@@ -10,6 +10,7 @@ import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import RandomWalkNFTArtifact from "../contracts/rwnft.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
 import contractAddresses from "../contracts/contract-addresses.json";
+import ImpishDAOConfig from "../impishdao-config.json";
 import React, { useEffect, useState } from "react";
 import { Web3Provider } from "@ethersproject/providers";
 import { Container, Nav, Navbar, Button, Alert, InputGroup, FormControl, Row, Col, Stack, Card, Modal } from "react-bootstrap";
@@ -19,13 +20,9 @@ import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
 
-// This is the Hardhat Network id, you might change it in the hardhat.config.js
-// Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
-// to use when deploying to other networks.
-const HARDHAT_NETWORK_ID = '31337';
 const ARBITRUM_NETWORK_ID = '42161';
 
-const WANTED_NETWORK_ID = ARBITRUM_NETWORK_ID;
+const WANTED_NETWORK_ID = ImpishDAOConfig.NetworkID || ARBITRUM_NETWORK_ID;
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -391,20 +388,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
         this.state = new DappState();
     }
-
-  // This method checks if Metamask selected network is Localhost:8545 
-  _checkNetwork() {
-    if (window.ethereum.networkVersion === HARDHAT_NETWORK_ID) {
-      this._dismissNetworkError();
-      return true;
-    }
-
-    this.setState({ 
-      networkError: 'Please connect Metamask to the Arbitrum network'
-    });
-
-    return false;
-  }
 
   _initialize(userAddress: string) {
     // This method initializes the dapp

@@ -1,0 +1,4 @@
+{
+    "RPCEndPoint": "http://localhost:8545",
+    "NetworkID": "31337"
+}
