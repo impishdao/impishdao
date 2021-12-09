@@ -12,9 +12,9 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
             <Col md={6}>
                 <div className="mb-3">
                     <span style={{fontWeight: 'bold', color: '#ffd454'}}>What is ImpishDAO?</span><br/>
-                    ImpishDAO is a DAO that is attempting to win the RandomWalkNFT prize.
+                    ImpishDAO is a DAO that is attempting to win the <a style={{color: 'white'}} target="_blank"  rel='noreferrer' href="https://www.randomwalknft.com/">RandomWalkNFT</a> prize.
                     <br/><br/>
-                    RandomWalkNFT is a generative art project on Arbitrum with a twist. As RandomWalkNFTs are minted, the price to mint the next one
+                    <a style={{color: 'white'}} target="_blank"  rel='noreferrer' href="https://www.randomwalknft.com/">RandomWalkNFT</a> is a generative art project on Arbitrum with a twist. As RandomWalkNFTs are minted, the price to mint the next one
                     goes up every time, so each NFT is more expensive to mint than the previous one. 
                     <br/><br/>
                     All the funds used to mint the NFTs are held in the RandomWalkNFT contract. If no one mints a new NFT for 30 days, the last minter is awarded
