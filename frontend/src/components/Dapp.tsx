@@ -350,6 +350,14 @@ const Redeem = ({selectedAddress, tokenBalance, daoBalance, contractState, total
   );
 }
 
+const Loading = () => {
+  return (
+    <>
+      <h1>ImpishDAO is loading ...</h1>
+    </>
+  );
+}
+
 type ModalDialogProps = {
   title: string;
   message: JSX.Element;
@@ -563,7 +571,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
         <div>
           You don't have enough IMPISH tokens to buy this NFT!
           <br/>
-          Buy IMPISH tokens by contributing to ImpishDAO or from <a href="https://app.uniswap.org" target="_blank"  rel='noreferrer'>Uniswap</a>
+          Buy IMPISH tokens by contributing to ImpishDAO or from <a href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>Uniswap</a>
         </div>);
       } 
     }
@@ -697,21 +705,23 @@ export class Dapp extends React.Component<DappProps, DappState> {
   }
 
   render() {
-      console.log(this.state);
-
       // Determine what to render on the main page
       let renderScreen = 0;
-      if (this.state.isRoundFinished || this.state.contractState !== 1) {
-        renderScreen = 1; // Redeem page, since the round is finished or contract is not playable
-      } else {
-        let now = BigNumber.from(timeNow).div(1000);
-        if (this.state.lastMintTime && now.sub(this.state.lastMintTime).toNumber() > 3600 * 24 * 30) { // 1 month
-          renderScreen = 2; // We are about to win!
+
+      // If state has loaded
+      if (this.state.contractState !== undefined) {
+        if (this.state.isRoundFinished || this.state.contractState !== 1) {
+          renderScreen = 1; // Redeem page, since the round is finished or contract is not playable
         } else {
-          if (this.state.areWeWinning) {
-            renderScreen = 3; // We are winning, but not yet won!
+          let now = BigNumber.from(timeNow).div(1000);
+          if (this.state.lastMintTime && now.sub(this.state.lastMintTime).toNumber() > 3600 * 24 * 30) { // 1 month
+            renderScreen = 2; // We are about to win!
           } else {
-            renderScreen = 4; // We are loosing, but not yet lost!
+            if (this.state.areWeWinning) {
+              renderScreen = 3; // We are winning, but not yet won!
+            } else {
+              renderScreen = 4; // We are loosing, but not yet lost!
+            }
           }
         }
       }
@@ -771,6 +781,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
               {renderScreen === 1 && (
                 <Redeem {...this.state} redeemTokens={this.redeemTokens} />
               )}
+              {renderScreen === 0 && (
+                <Loading />
+              )}
             </div>
 
             {this.state.nftsWithPrice.length > 0 && (
@@ -808,7 +821,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
               </>
             )}
 
-            <div style={{border: 'solid 1px #fff', margin: 20, padding: 20}}>
+            {/* <div style={{border: 'solid 1px #fff', margin: 20, padding: 20}}>
               {this.state.selectedAddress && (
                 <>
                   <Stack direction="horizontal" gap={3}>
@@ -824,7 +837,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   </Stack>
                 </>
               )}              
-            </div>
+            </div> */}
 
             <a id="whitepaper"></a>
             <Row className="mb-5" style={{textAlign: 'center', backgroundColor: '#222', padding: '20px'}}>

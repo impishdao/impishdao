@@ -64,7 +64,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                     next RandomWalkNFT. If the contract currently has more than this amount, it temporarily won't let you mint any more IMPISH tokens, until it spends the
                     funds to buy the next RandomWalkNFT. 
                     <br/><br/>
-                    Of course, you can still buy the IMPISH tokens on Uniswap at anytime. 
+                    Of course, you can still buy the IMPISH tokens on <a href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6" target="_blank"  rel='noreferrer'>Uniswap</a> at anytime. 
                 </div>
 
                 <div className="mb-3">
