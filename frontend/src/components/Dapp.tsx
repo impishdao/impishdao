@@ -23,10 +23,9 @@ declare const window: any;
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
 const HARDHAT_NETWORK_ID = '31337';
+const ARBITRUM_NETWORK_ID = '42161';
 
-// PreFlight Check
-// TODO
-const WANTED_NETWORK_ID = HARDHAT_NETWORK_ID;
+const WANTED_NETWORK_ID = ARBITRUM_NETWORK_ID;
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;

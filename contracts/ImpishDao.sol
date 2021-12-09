@@ -31,8 +31,6 @@ contract ImpishDAO is ERC20, ERC20Burnable, Ownable, IERC721Receiver, Reentrancy
     // The minimum price that the NFT will be sold
     // Note that even though it says 1 ether, it is actual 1 IMPISH tokens, 
     // since IMPISH also has 18 decimals
-    // PreFlight Check
-    // TODO
     uint256 public constant NFT_MIN_PRICE = 1 * 1 ether;
 
     // The price of secondary sales by the DAO decays over this time linearly. 
@@ -90,7 +88,7 @@ contract ImpishDAO is ERC20, ERC20Burnable, Ownable, IERC721Receiver, Reentrancy
     }
 
     // For safety, the contract limits how much ETH it holds. It is higher of
-    // 10 ether or
+    // 100 ether or
     // 10 times the next mint price
     function getMaxEth() public view returns(uint256) {
         uint256 maxETH = rwNFT.getMintPrice() * 10;
@@ -124,16 +122,15 @@ contract ImpishDAO is ERC20, ERC20Burnable, Ownable, IERC721Receiver, Reentrancy
         uint256 elapsedTime = block.timestamp - startTime;
         
         if (elapsedTime >= ONE_MONTH || startPrice < NFT_MIN_PRICE) {
-            // The minimum price of NFT sales is 50 IMPISH tokens, don't let the price fall
-            // below that. 
+            // Don't let price fall below the minimum price of NFT sales.
             return NFT_MIN_PRICE;
         } else {
             // Linearly decays over a month
-            return NFT_MIN_PRICE + (( (ONE_MONTH - elapsedTime) * (startPrice - NFT_MIN_PRICE) )/ ONE_MONTH );
+            return NFT_MIN_PRICE + (( (ONE_MONTH - elapsedTime) * (startPrice - NFT_MIN_PRICE) ) / ONE_MONTH );
         }
     }
 
-    // Obtain the next Random Walk NFT. Internal, so needs to be called from deposi()
+    // Obtain the next Random Walk NFT. Internal, so needs to be called from deposit()
     function _mintNextRwNFT() internal whenPlaying {
         // Make sure that we're still paying the correct round
         require(rwNFT.numWithdrawals() == RWNFT_ROUND, "Not Playable");

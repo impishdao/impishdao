@@ -12,7 +12,10 @@ import path from "path";
 
 const app = express();
 
-const provider = new ethers.providers.JsonRpcProvider();
+const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
+
+const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+
 // When, we initialize the contract using the provider and the token's
 // artifacts.
 const _impdao = new ethers.Contract(
