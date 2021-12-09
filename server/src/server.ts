@@ -131,17 +131,27 @@ let nftPriceCacheExpiry = Date.now();
 
 app.get("/api", async (req, res) => {
   // impdao methods
-  const areWeWinning = await _impdao?.areWeWinning();
-  const contractState = await _impdao?.contractState();
-  const daoBalance = await provider.getBalance(_impdao.address);
-  const totalTokenSupply = await _impdao?.totalSupply();
+  const [areWeWinning, contractState, daoBalance, totalTokenSupply] =
+    await Promise.all([
+      _impdao?.areWeWinning(),
+      _impdao?.contractState(),
+      provider.getBalance(_impdao.address),
+      _impdao?.totalSupply(),
+    ]);
 
   // RandomwalkNFT methods
-  const isRoundFinished =
-    (await _impdao?.RWNFT_ROUND()) === (await _rwnft?.numWithdrawals());
-  const mintPrice = await _rwnft?.getMintPrice();
-  const lastMintTime = await _rwnft?.lastMintTime();
-  const withdrawalAmount = await _rwnft?.withdrawalAmount();
+  const [roundNum, numWithdrawals, mintPrice, lastMintTime, withdrawalAmount] =
+    await Promise.all([
+      _impdao?.RWNFT_ROUND(),
+      _rwnft?.numWithdrawals(),
+      _rwnft?.getMintPrice(),
+      _rwnft?.lastMintTime(),
+      _rwnft?.withdrawalAmount(),
+    ]);
+
+  const isRoundFinished = !BigNumber.from(roundNum).eq(
+    BigNumber.from(numWithdrawals)
+  );
 
   // See if the NFT price cache is valid. Expire every hour
   if (nftPriceCacheExpiry < Date.now()) {

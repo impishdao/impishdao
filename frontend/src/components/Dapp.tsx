@@ -691,6 +691,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
       // Determine what to render on the main page
       let renderScreen = 0;
 
+      console.log(this.state);
+
       // If state has loaded
       if (this.state.contractState !== undefined) {
         if (this.state.isRoundFinished || this.state.contractState !== 1) {
