@@ -18,10 +18,15 @@ export function secondsToDhms(seconds: number) {
     return parseFloat(ethers.utils.formatEther(n)).toFixed(4);
   }
 
-  export function formatUSD(bal: BigNumber, lastETHPrice?: number) {
-    if (lastETHPrice === undefined || !lastETHPrice) {
-      return "($ -)";
-    }
-
-    return "($ " + (parseFloat(ethers.utils.formatEther(bal)) * lastETHPrice).toFixed(2) + ")";
+export function formatUSD(bal: BigNumber, lastETHPrice?: number) {
+  if (lastETHPrice === undefined || !lastETHPrice) {
+    return "($ -)";
   }
+
+  return "($ " + (parseFloat(ethers.utils.formatEther(bal)) * lastETHPrice).toFixed(2) + ")";
+}
+
+export function pad(num: string, size: number): string {
+  var s = "000000000" + num;
+  return s.substr(s.length-size);
+}

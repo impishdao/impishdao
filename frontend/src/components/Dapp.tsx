@@ -15,7 +15,8 @@ import React, { useEffect, useState } from "react";
 import { Web3Provider } from "@ethersproject/providers";
 import { Container, Nav, Navbar, Button, Alert, InputGroup, FormControl, Row, Col, Stack, Card, Modal } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
-import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
+import { format4Decimals, formatUSD, pad, secondsToDhms } from "./utils";
+import NFTCard from "./NFTcard";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -28,11 +29,6 @@ const WANTED_NETWORK_ID = ImpishDAOConfig.NetworkID || ARBITRUM_NETWORK_ID;
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 
 let timeNow = Date.now();
-
-function pad(num: string, size: number): string {
-  var s = "000000000" + num;
-  return s.substr(s.length-size);
-}
 
 class NFTForSale {
   tokenId: BigNumber;
@@ -780,24 +776,13 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
               <Row className="justify-content-md-center">
                 {this.state.nftsWithPrice.map((nft) => {
-
-                const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${pad(nft.tokenId.toString(), 6)}_black_thumb.jpg`;
-                const price = parseFloat(ethers.utils.formatEther(nft.price)).toFixed(4);
-
+               
                 return (
                   <Col xl={3} className="mb-3" key={nft.tokenId.toString()} >
-                    <Card style={{width: '320px', padding: '10px', borderRadius: '5px'}} key={nft.tokenId.toString()}>
-                      <Card.Img variant="top" src={imgurl} style={{maxWidth: '300px'}} />
-                      <Card.Body>
-                        <Card.Title> #{pad(nft.tokenId.toString(), 6)}</Card.Title>
-                        <Card.Text>
-                          Price: {price} IMPISH
-                        </Card.Text>
-                        {this.state.selectedAddress && 
-                          <Button variant="primary" onClick={() => this.buyNFTFromDAO(nft.tokenId)}>Buy Now</Button>
-                        }
-                      </Card.Body>
-                    </Card>
+                    <NFTCard selectedAddress={this.state.selectedAddress} 
+                      nftPrice={nft.price} 
+                      buyNFTFromDAO={this.buyNFTFromDAO} 
+                      tokenId={nft.tokenId} />
                   </Col>
                 );
                 })
