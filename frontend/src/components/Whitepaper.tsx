@@ -8,6 +8,10 @@ type WhitepaperProps = {
 }
 export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
     return (
+        <>
+        <Row className="mb-5" style={{textAlign: 'center', backgroundColor: '#222', padding: '20px'}}>
+            <h1>FAQ</h1>
+        </Row>
         <Row className="justify-content-md-center">
             <Col md={6}>
                 <div className="mb-3">
@@ -91,5 +95,6 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                 </div>
             </Col>
         </Row>
+        </>
     )
 };

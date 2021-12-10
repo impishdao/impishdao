@@ -13,7 +13,7 @@ import contractAddresses from "../contracts/contract-addresses.json";
 import ImpishDAOConfig from "../impishdao-config.json";
 import React, { useEffect, useState } from "react";
 import { Web3Provider } from "@ethersproject/providers";
-import { Container, Nav, Navbar, Button, Alert, InputGroup, FormControl, Row, Col, Stack, Card, Modal } from "react-bootstrap";
+import { Container, Nav, Navbar, Button, Alert, InputGroup, FormControl, Row, Col, Stack, Card, Modal, Table } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
 import { format4Decimals, formatUSD, pad, secondsToDhms } from "./utils";
 import NFTCard from "./NFTcard";
@@ -86,6 +86,7 @@ class DappState {
 type BeenOutbidProps = DappState & {
   depositIntoDAO: (amount: BigNumber) => Promise<void>;
   connectWallet: () => void;
+  myShareOfWinnings?: BigNumber;
 };
 const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, lastETHPrice, depositIntoDAO, connectWallet}: BeenOutbidProps) => {
   let neededInEth = BigNumber.from(0);
@@ -175,7 +176,7 @@ const BeenOutbid = ({mintPrice, daoBalance, selectedAddress, lastETHPrice, depos
 const WeAreWinning = ({
     withdrawalAmount, tokenBalance, totalTokenSupply, daoBalance, 
     selectedAddress, lastMintTime, lastETHPrice, depositIntoDAO, 
-    connectWallet}
+    myShareOfWinnings, connectWallet}
   : BeenOutbidProps) => {
   let timeRemainingInitial = 0;
   if (lastMintTime !== undefined) {
@@ -212,12 +213,7 @@ const WeAreWinning = ({
   if (withdrawalAmount === undefined || daoBalance === undefined || totalTokenSupply === undefined) {
     return <></>;
   }
-
-  let myShareOfWinnings;
-  if (selectedAddress) {
-    myShareOfWinnings = tokenBalance.mul(withdrawalAmount.add(daoBalance)).div(totalTokenSupply);
-  }
-
+ 
   return (
     <>
       <h1>ImpishDAO is Winning!</h1>
@@ -707,6 +703,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
         }
       }
 
+      let myShareOfWinnings = BigNumber.from(0);
+      if (this.state.selectedAddress && this.state.tokenBalance && this.state.withdrawalAmount && this.state.daoBalance && this.state.totalTokenSupply) {
+        myShareOfWinnings = this.state.tokenBalance.mul(this.state.withdrawalAmount.add(this.state.daoBalance)).div(this.state.totalTokenSupply);
+      }
+    
+
       return (
           <Container fluid>
             <ModalDialog 
@@ -722,6 +724,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                 <Nav className="me-auto">
                   <Nav.Link href="#home">Home</Nav.Link>
                   <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
+                  <Nav.Link href="#stats">Stats</Nav.Link>
                   <Nav.Link href="#whitepaper">FAQ</Nav.Link>
                 </Nav>
                 {!this.state.selectedAddress && 
@@ -785,8 +788,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                       tokenId={nft.tokenId} />
                   </Col>
                 );
-                })
-                }
+                })}
               </Row>
               </>
             )}
@@ -809,10 +811,50 @@ export class Dapp extends React.Component<DappProps, DappState> {
               )}              
             </div> */}
 
-            <a id="whitepaper"></a>
-            <Row className="mb-5" style={{textAlign: 'center', backgroundColor: '#222', padding: '20px'}}>
-                <h1>FAQ</h1>
+            <a id="stats"></a>
+            <Row className="mb-5 mt-5" style={{textAlign: 'center', backgroundColor: '#222', padding: '20px'}}>
+                <h1>ImpishDAO Stats</h1>
             </Row>
+            <Row className="justify-content-md-center mb-4">
+              <Col md={3}>
+                <Table style={{color: 'white'}}>
+                  <tbody>
+                    <tr>
+                      <td>DAO Balance</td>
+                      <td>ETH {format4Decimals(this.state.daoBalance)}</td>
+                    </tr>
+                    <tr>
+                      <td>RandomWalkNFT Prize</td>
+                      <td>ETH {format4Decimals(this.state.withdrawalAmount)}</td>
+                    </tr>
+                    <tr>
+                      <td>Total IMPISH Supply</td>
+                      <td>IMPISH {format4Decimals(this.state.totalTokenSupply)}</td>
+                    </tr>
+                  </tbody>
+                </Table>
+              </Col>
+
+              {this.state.selectedAddress && (
+                <Col md={3}>
+                  <Table style={{color: 'white'}}>
+                    <tbody>
+                      <tr>
+                        <td>Your IMPISH Balance</td>
+                        <td>IMPISH {format4Decimals(this.state.tokenBalance)}</td>
+                      </tr>
+                      <tr>
+                        <td>Your share if ImpishDAO wins</td>
+                        <td>ETH {format4Decimals(myShareOfWinnings)}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Col>
+              )}
+            </Row>
+
+
+            <a id="whitepaper"></a>
             <Whitepaper withdrawalAmount={this.state.withdrawalAmount || BigNumber.from(0)}/>
             
           </Container>
