@@ -85,6 +85,11 @@ function processEventLogsStartup() {
         // eslint-disable-next-line max-len
         `New Event. ID: ${tokenID.toString()} startTime: ${timestamp} startPrice: ${price.toString()} forSale: ${forSale}`
       );
+
+      if (!fs.existsSync("data")) {
+        fs.mkdirSync("data");
+      }
+
       fs.appendFile(
         "data/nft_sale_logs.json",
         JSON.stringify({ tokenID, price, forSale, timestamp }) + "\n",

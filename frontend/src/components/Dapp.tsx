@@ -704,10 +704,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
       }
 
       let myShareOfWinnings = BigNumber.from(0);
-      if (this.state.selectedAddress && this.state.tokenBalance && this.state.withdrawalAmount && this.state.daoBalance && this.state.totalTokenSupply) {
+      if (this.state.selectedAddress && this.state.tokenBalance && 
+          this.state.withdrawalAmount && this.state.daoBalance && this.state.totalTokenSupply && 
+          this.state.totalTokenSupply.gt(0)) {
         myShareOfWinnings = this.state.tokenBalance.mul(this.state.withdrawalAmount.add(this.state.daoBalance)).div(this.state.totalTokenSupply);
       }
-    
 
       return (
           <Container fluid>
@@ -778,17 +779,18 @@ export class Dapp extends React.Component<DappProps, DappState> {
               </Row>
 
               <Row className="justify-content-md-center">
-                {this.state.nftsWithPrice.map((nft) => {
-               
-                return (
-                  <Col xl={3} className="mb-3" key={nft.tokenId.toString()} >
-                    <NFTCard selectedAddress={this.state.selectedAddress} 
-                      nftPrice={nft.price} 
-                      buyNFTFromDAO={this.buyNFTFromDAO} 
-                      tokenId={nft.tokenId} />
-                  </Col>
-                );
-                })}
+                <Row style={{maxWidth: '1600px'}}>
+                  {this.state.nftsWithPrice.map((nft) => {
+                    return (
+                      <Col xl={3} className="mb-3" key={nft.tokenId.toString()} >
+                        <NFTCard selectedAddress={this.state.selectedAddress} 
+                          nftPrice={nft.price} 
+                          buyNFTFromDAO={this.buyNFTFromDAO} 
+                          tokenId={nft.tokenId} />
+                      </Col>
+                    );
+                  })}
+                </Row>
               </Row>
               </>
             )}
@@ -826,6 +828,10 @@ export class Dapp extends React.Component<DappProps, DappState> {
                     <tr>
                       <td>RandomWalkNFT Prize</td>
                       <td>ETH {format4Decimals(this.state.withdrawalAmount)}</td>
+                    </tr>
+                    <tr>
+                      <td>Next RandomWalkNFT Price</td>
+                      <td>ETH {format4Decimals(this.state.mintPrice)}</td>
                     </tr>
                     <tr>
                       <td>Total IMPISH Supply</td>
