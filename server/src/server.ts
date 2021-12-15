@@ -135,18 +135,24 @@ const nftPriceCache = new Map<number, BigNumber>();
 let nftPriceCacheExpiry = Date.now();
 
 app.get("/api", async (req, res) => {
-  // impdao methods
-  const [areWeWinning, contractState, daoBalance, totalTokenSupply] =
-    await Promise.all([
-      _impdao?.areWeWinning(),
-      _impdao?.contractState(),
-      provider.getBalance(_impdao.address),
-      _impdao?.totalSupply(),
-    ]);
+  try {
+    // impdao methods
+    const [areWeWinning, contractState, daoBalance, totalTokenSupply] =
+      await Promise.all([
+        _impdao?.areWeWinning(),
+        _impdao?.contractState(),
+        provider.getBalance(_impdao.address),
+        _impdao?.totalSupply(),
+      ]);
 
-  // RandomwalkNFT methods
-  const [roundNum, numWithdrawals, mintPrice, lastMintTime, withdrawalAmount] =
-    await Promise.all([
+    // RandomwalkNFT methods
+    const [
+      roundNum,
+      numWithdrawals,
+      mintPrice,
+      lastMintTime,
+      withdrawalAmount,
+    ] = await Promise.all([
       _impdao?.RWNFT_ROUND(),
       _rwnft?.numWithdrawals(),
       _rwnft?.getMintPrice(),
@@ -154,51 +160,56 @@ app.get("/api", async (req, res) => {
       _rwnft?.withdrawalAmount(),
     ]);
 
-  const isRoundFinished = !BigNumber.from(roundNum).eq(
-    BigNumber.from(numWithdrawals)
-  );
+    const isRoundFinished = !BigNumber.from(roundNum).eq(
+      BigNumber.from(numWithdrawals)
+    );
 
-  // See if the NFT price cache is valid. Expire every hour
-  if (nftPriceCacheExpiry < Date.now()) {
-    nftPriceCache.clear();
-    // eslint-disable-next-line prettier/prettier
-    nftPriceCacheExpiry = Date.now() + (1 * 3600 * 1000); // 1hour
-  }
+    // See if the NFT price cache is valid. Expire every hour
+    if (nftPriceCacheExpiry < Date.now()) {
+      nftPriceCache.clear();
+      // eslint-disable-next-line prettier/prettier
+      nftPriceCacheExpiry = Date.now() + (1 * 3600 * 1000); // 1hour
+    }
 
-  const nftsWithPrice = (
-    await Promise.all(
-      Array.from(nftsAvailable).map(async (tokenId) => {
-        try {
-          let price = nftPriceCache.get(tokenId);
-          if (!price) {
-            price = await _impdao.buyNFTPrice(tokenId);
-            nftPriceCache.set(tokenId, price);
+    const nftsWithPrice = (
+      await Promise.all(
+        Array.from(nftsAvailable).map(async (tokenId) => {
+          try {
+            let price = nftPriceCache.get(tokenId);
+            if (!price) {
+              price = await _impdao.buyNFTPrice(tokenId);
+              nftPriceCache.set(tokenId, price);
+            }
+
+            return { tokenId, price };
+          } catch (e) {
+            console.log(`Error ${e}`);
+            return {};
           }
+        })
+      )
+    ).filter((n) => n.tokenId !== undefined);
 
-          return { tokenId, price };
-        } catch (e) {
-          console.log(`Error ${e}`);
-          return {};
-        }
-      })
-    )
-  ).filter((n) => n.tokenId !== undefined);
+    const sendJson = {
+      blockNumber: await provider.getBlockNumber(),
+      totalTokenSupply,
+      areWeWinning,
+      contractState,
+      isRoundFinished,
+      mintPrice,
+      lastMintTime,
+      daoBalance,
+      withdrawalAmount,
+      nftsWithPrice,
+      lastETHPrice,
+    };
 
-  const sendJson = {
-    blockNumber: await provider.getBlockNumber(),
-    totalTokenSupply,
-    areWeWinning,
-    contractState,
-    isRoundFinished,
-    mintPrice,
-    lastMintTime,
-    daoBalance,
-    withdrawalAmount,
-    nftsWithPrice,
-    lastETHPrice,
-  };
-
-  res.send(sendJson);
+    res.send(sendJson);
+  } catch (err) {
+    console.log(err);
+    console.log("Sending empty API response");
+    res.send({});
+  }
 });
 
 // Serve static files
