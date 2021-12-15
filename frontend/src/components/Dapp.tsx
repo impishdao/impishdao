@@ -249,71 +249,59 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
     return (
       <BrowserRouter>
-      <Container fluid>
-        <ModalDialog
-          message={this.state.modalMessage || <></>}
-          title={this.state.modalTitle || ""}
-          show={this.state.modalShowing}
-          close={() => this.setState({ modalShowing: false })}
-        />
+        <Container fluid>
+          <ModalDialog
+            message={this.state.modalMessage || <></>}
+            title={this.state.modalTitle || ""}
+            show={this.state.modalShowing}
+            close={() => this.setState({ modalShowing: false })}
+          />
 
-        <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
-          <Container>
-            <Navbar.Brand href="#home">ImpishDAO</Navbar.Brand>
-            <Nav className="me-auto">
-              <LinkContainer to="/"><Nav.Link>Home</Nav.Link></LinkContainer>
-              <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
-              <Nav.Link href="#stats">Stats</Nav.Link>
-              <Nav.Link href="#whitepaper">FAQ</Nav.Link>
-              <LinkContainer to="/spirals"><Nav.Link>Spirals</Nav.Link></LinkContainer>
-            </Nav>
-            {!this.state.selectedAddress && (
-              <Button className="connect" variant="warning" onClick={() => this._connectWallet()}>
-                Connect Wallet
-              </Button>
-            )}
-            {this.state.selectedAddress && (
-              <>
-                <div style={{ marginRight: "10px" }}>Wallet: {format4Decimals(this.state.tokenBalance)} IMPISH</div>
-                <Button className="address" variant="warning">
-                  {this.state.selectedAddress}
-                </Button>
-              </>
-            )}
-          </Container>
-        </Navbar>
+          <div className="mt-5" />
+          {this.state.networkError && (
+            <Alert
+              style={{ maxWidth: "50%", marginLeft: "25%" }}
+              variant="danger"
+              onClose={() => this._dismissNetworkError()}
+              dismissible
+            >
+              {this.state.networkError}
+            </Alert>
+          )}
 
-        <div className="mt-5" />
-        {this.state.networkError && (
-          <Alert
-            style={{ maxWidth: "50%", marginLeft: "25%" }}
-            variant="danger"
-            onClose={() => this._dismissNetworkError()}
-            dismissible
-          >
-            {this.state.networkError}
-          </Alert>
-        )}
-
-        
           <Routes>
-            <Route path="/" element={
-              <ImpishDAO
-                {...this.state}
-                connectWallet={() => this._connectWallet()}
-                readDappState={() => this.readDappState()}
-                readUserData={() => this.readUserData()}
-                showModal={this.showModal}
-                provider={this.provider}
-                impdao={this.impdao}
-                rwnft={this.rwnft}
-              />} />
-            <Route path="/spirals" element={<ImpishSpiral />} />
+            <Route
+              path="/"
+              element={
+                <ImpishDAO
+                  {...this.state}
+                  connectWallet={() => this._connectWallet()}
+                  readDappState={() => this.readDappState()}
+                  readUserData={() => this.readUserData()}
+                  showModal={this.showModal}
+                  provider={this.provider}
+                  impdao={this.impdao}
+                  rwnft={this.rwnft}
+                />
+              }
+            />
+            <Route
+              path="/spirals"
+              element={
+                <ImpishSpiral
+                  {...this.state}
+                  connectWallet={() => this._connectWallet()}
+                  readDappState={() => this.readDappState()}
+                  readUserData={() => this.readUserData()}
+                  showModal={this.showModal}
+                  provider={this.provider}
+                  impdao={this.impdao}
+                  rwnft={this.rwnft}
+                />
+              }
+            />
           </Routes>
-
-        
-      </Container>
-
+        </Container>
       </BrowserRouter>
     );
   }

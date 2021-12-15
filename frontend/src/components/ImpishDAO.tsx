@@ -3,13 +3,13 @@
 import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 
 import { Web3Provider } from "@ethersproject/providers";
-
-import { Button, InputGroup, FormControl, Row, Col, Stack, Table } from "react-bootstrap";
+import { Button, InputGroup, FormControl, Row, Col, Stack, Table, Navbar, Container, Nav } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
 import { format4Decimals, formatUSD, pad, secondsToDhms } from "./utils";
 import NFTCard from "./NFTcard";
 import React, { useEffect, useState } from "react";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { LinkContainer } from "react-router-bootstrap";
 
 let timeNow = Date.now();
 
@@ -89,10 +89,14 @@ const BeenOutbid = ({
       <Row className="justify-content-md-center mt-4">
         {!selectedAddress && (
           <div>
-            <Button className="connect" variant="warning" onClick={() => {
-              console.log("connect in been outbid");
-              connectWallet();
-              }}>
+            <Button
+              className="connect"
+              variant="warning"
+              onClick={() => {
+                console.log("connect in been outbid");
+                connectWallet();
+              }}
+            >
               Connect Wallet
             </Button>
           </div>
@@ -382,7 +386,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         props.showModal("Error Contributing to ImpishDAO!", <div>{msg}</div>);
       }
     }
-  };
+  }
 
   const redeemTokens = async () => {
     // Wait for this Tx to be mined, then refresh all data.
@@ -476,9 +480,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
       }
     }
   }
-  console.log(`Renderscreen = ${renderScreen}`);
   
-
   let myShareOfWinnings = BigNumber.from(0);
   if (
     props.selectedAddress &&
@@ -495,6 +497,37 @@ export function ImpishDAO(props: ImpishDAOProps) {
 
   return (
     <>
+      <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
+        <Container>
+          <Navbar.Brand href="#home">ImpishDAO</Navbar.Brand>
+          <Nav className="me-auto">
+            <LinkContainer to="/">
+              <Nav.Link>Home</Nav.Link>
+            </LinkContainer>
+            <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
+            <Nav.Link href="#stats">Stats</Nav.Link>
+            <Nav.Link href="#whitepaper">FAQ</Nav.Link>
+            <div className="vr" style={{marginLeft: '10px', marginRight: '10px'}}></div>
+            <LinkContainer to="/spirals">
+              <Nav.Link>Spirals</Nav.Link>
+            </LinkContainer>
+          </Nav>
+          {!props.selectedAddress && (
+            <Button className="connect" variant="warning" onClick={props.connectWallet}>
+              Connect Wallet
+            </Button>
+          )}
+          {props.selectedAddress && (
+            <>
+              <div style={{ marginRight: "10px" }}>Wallet: {format4Decimals(props.tokenBalance)} IMPISH</div>
+              <Button className="address" variant="warning">
+                {props.selectedAddress}
+              </Button>
+            </>
+          )}
+        </Container>
+      </Navbar>
+
       <a id="home"></a>
       <div className="withBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         {renderScreen === 4 && (
@@ -503,9 +536,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         {renderScreen === 3 && (
           <WeAreWinning {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
         )}
-        {renderScreen === 2 && (
-          <WeWon {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
-        )}
+        {renderScreen === 2 && <WeWon {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />}
         {renderScreen === 1 && <Redeem {...props} redeemTokens={redeemTokens} />}
         {renderScreen === 0 && <Loading />}
       </div>
