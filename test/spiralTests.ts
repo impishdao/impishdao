@@ -38,8 +38,8 @@ describe("ImpishSpiral", function () {
 
     expect(await impishSpiral.started()).to.equal(false);
 
-    // First mint is 0.0001 ETH + 6%
-    expect(await impishSpiral.getMintPrice()).to.equal(ethers.utils.parseEther("0.0001006"));
+    // First mint is 0.005 ETH + 0.5%
+    expect(await impishSpiral.getMintPrice()).to.equal(ethers.utils.parseEther("0.005025"));
 
     await rwnft.mint({ value: await rwnft.getMintPrice() });
     await expect(impishSpiral.mintSpiralWithRWNFT(0)).to.be.revertedWith("NotYetStarted");

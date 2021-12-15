@@ -31,8 +31,8 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     // When the last token was minted
     uint256 public lastMintTime;
 
-    // Next mint price. Starts at 0.0001 ETH
-    uint256 public price = 0.0001 ether;
+    // Next mint price. Starts at 0.005 ETH
+    uint256 public price = 0.005 ether;
 
     // No mints after this much time will result in the end of the mints
     uint256 constant public MINT_EXPIRY_TIME = 3 * 24 * 3600; // 3 days
@@ -75,9 +75,9 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         started = true;
     }
 
-    // Mint price increases 0.6% with every mint
+    // Mint price increases 0.5% with every mint
     function getMintPrice() public view returns (uint256) {
-        return (price * 1006) / 1000;
+        return (price * 1005) / 1000;
     }
 
     function _mintSpiral(bytes32 seed) internal {
