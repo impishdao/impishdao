@@ -50,7 +50,7 @@ export default function Whitepaper({withdrawalAmount}: WhitepaperProps) {
                 <div className="mb-3">
                     <span style={{fontWeight: 'bold', color: '#ffd454'}}>What happens to the RandomWalkNFTs purchased by ImpishDAO?</span><br/>
                     The RandomWalkNFTs that the ImpishDAO purchases are held in the contract and are available for purchase using IMPISH tokens. The price for these 
-                    starts off at 150% of the mint price, and linearly decreases to a minimum price over the period of 1 month. 
+                    starts off at 10x of the mint price, and linearly decreases to 1 IMPISH over the period of 1 month. 
                     <br/><br/>
                     The IMPISH tokens used to purchase the NFTs are burned, decreasing the supply of IMPISH tokens (and therefore increasing the 
                     remaining holder's proportion of the prize)
