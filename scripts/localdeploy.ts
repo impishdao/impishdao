@@ -29,6 +29,9 @@ async function main() {
   const impishspiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
   await impishspiral.deployed();
 
+  // Mint a new NFT to reset the last mint time
+  await rwnft.mint({ value: await rwnft.getMintPrice() });
+
   console.log("RandomWalkNFT deployed to:", rwnft.address);
   console.log("ImpishDAO deployed to:", impdao.address);
   console.log("ImpishSpiral deployed to:", impishspiral.address);

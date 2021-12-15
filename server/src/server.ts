@@ -13,33 +13,19 @@ import path from "path";
 
 const app = express();
 
-const ARBITRUM_RPC =
-  ImpishDAOConfig.RPCEndPoint || "https://arb1.arbitrum.io/rpc";
+const ARBITRUM_RPC = ImpishDAOConfig.RPCEndPoint || "https://arb1.arbitrum.io/rpc";
 
 const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
 
 // When, we initialize the contract using the provider and the token's
 // artifacts.
-const _impdao = new ethers.Contract(
-  contractAddresses.ImpishDAO,
-  ImpishDAOArtifact.abi,
-  provider
-);
+const _impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, provider);
 
-const _rwnft = new ethers.Contract(
-  contractAddresses.RandomWalkNFT,
-  RandomWalkNFTArtifact.abi,
-  provider
-);
+const _rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, provider);
 
 const nftsAvailable = new Set<number>();
 
-const processEvent = (
-  tokenID: number,
-  price: BigNumber,
-  forSale: boolean,
-  timestamp: number
-) => {
+const processEvent = (tokenID: number, price: BigNumber, forSale: boolean, timestamp: number) => {
   // If this is for sale, add it to the list of available NFTs
   if (forSale) {
     // Make sure to not add duplicates
@@ -63,23 +49,13 @@ function processEventLogsStartup() {
   // Read previous Logs
   lineReader.eachLine("data/nft_sale_logs.json", (line) => {
     const { tokenID, price, forSale, timestamp } = JSON.parse(line);
-    processEvent(
-      BigNumber.from(tokenID).toNumber(),
-      BigNumber.from(price),
-      forSale,
-      timestamp
-    );
+    processEvent(BigNumber.from(tokenID).toNumber(), BigNumber.from(price), forSale, timestamp);
   });
 
   // And then setup the event listener for the NFT sale events
   _impdao.on(
     _impdao.filters.NFTForSaleTx(),
-    async (
-      tokenID: BigNumber,
-      price: BigNumber,
-      forSale: boolean,
-      event: any
-    ) => {
+    async (tokenID: BigNumber, price: BigNumber, forSale: boolean, event: any) => {
       const timestamp = (await event.getBlock()).timestamp;
       console.log(
         // eslint-disable-next-line max-len
@@ -114,9 +90,7 @@ async function getLastETHPrice(): Promise<number> {
 
   // Get the price from Binance
   try {
-    const response = await got(
-      "https://api.binance.com/api/v3/avgPrice?symbol=ETHUSDC"
-    );
+    const response = await got("https://api.binance.com/api/v3/avgPrice?symbol=ETHUSDC");
     const data = JSON.parse(response.body);
     lastETHPrice = parseFloat(data.price) || 0;
     lastETHPriceCacheExpiry = Date.now() + 3600 * 1000; // ONE HOUR
@@ -137,22 +111,15 @@ let nftPriceCacheExpiry = Date.now();
 app.get("/api", async (req, res) => {
   try {
     // impdao methods
-    const [areWeWinning, contractState, daoBalance, totalTokenSupply] =
-      await Promise.all([
-        _impdao?.areWeWinning(),
-        _impdao?.contractState(),
-        provider.getBalance(_impdao.address),
-        _impdao?.totalSupply(),
-      ]);
+    const [areWeWinning, contractState, daoBalance, totalTokenSupply] = await Promise.all([
+      _impdao?.areWeWinning(),
+      _impdao?.contractState(),
+      provider.getBalance(_impdao.address),
+      _impdao?.totalSupply(),
+    ]);
 
     // RandomwalkNFT methods
-    const [
-      roundNum,
-      numWithdrawals,
-      mintPrice,
-      lastMintTime,
-      withdrawalAmount,
-    ] = await Promise.all([
+    const [roundNum, numWithdrawals, mintPrice, lastMintTime, withdrawalAmount] = await Promise.all([
       _impdao?.RWNFT_ROUND(),
       _rwnft?.numWithdrawals(),
       _rwnft?.getMintPrice(),
@@ -160,9 +127,7 @@ app.get("/api", async (req, res) => {
       _rwnft?.withdrawalAmount(),
     ]);
 
-    const isRoundFinished = !BigNumber.from(roundNum).eq(
-      BigNumber.from(numWithdrawals)
-    );
+    const isRoundFinished = !BigNumber.from(roundNum).eq(BigNumber.from(numWithdrawals));
 
     // See if the NFT price cache is valid. Expire every hour
     if (nftPriceCacheExpiry < Date.now()) {
@@ -201,7 +166,6 @@ app.get("/api", async (req, res) => {
       daoBalance,
       withdrawalAmount,
       nftsWithPrice,
-      lastETHPrice,
     };
 
     res.send(sendJson);
@@ -210,6 +174,10 @@ app.get("/api", async (req, res) => {
     console.log("Sending empty API response");
     res.send({});
   }
+});
+
+app.get("/lastethprice", async (req, res) => {
+  res.send({ lastETHPrice });
 });
 
 // Serve static files

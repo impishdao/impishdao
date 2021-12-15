@@ -1,5 +1,5 @@
-import './App.css';
-import { Dapp } from './components/Dapp';
+import "./App.css";
+import { Dapp } from "./components/Dapp";
 
 function App() {
   return (

@@ -4,7 +4,7 @@ body {
 
 div#root {
   color: #f0f0f0;
-  font-family: 'Work Sans', sans-serif;
+  font-family: "Work Sans", sans-serif;
 }
 
 button.connect {
@@ -31,7 +31,7 @@ h1 {
 div.card {
   background-color: #040404;
   color: #f0f0f0;
-  border: 1px solid #ddd
+  border: 1px solid #ddd;
 }
 
 div.withBackground {
@@ -46,7 +46,6 @@ div.usdFaded {
   color: #666;
   font-size: +1.5em;
 }
-
 
 div.usdFadedSmall {
   margin-top: -10px;

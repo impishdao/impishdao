@@ -10,6 +10,7 @@
     "build-ts": "tsc",
     "start": "npm run serve",
     "serve": "node dist/server.js",
+    "watch": "concurrently \"npm run watch-node\" \"npm run watch-ts\"",
     "watch-node": "nodemon dist/server.js --ignore data/",
     "watch-ts": "tsc -w"
   },
@@ -24,6 +25,7 @@
     "typescript": "^4.5.2"
   },
   "dependencies": {
+    "concurrently": "^6.4.0",
     "ethers": "^5.5.2",
     "express": "^4.17.1",
     "got": "^11.8.3",
