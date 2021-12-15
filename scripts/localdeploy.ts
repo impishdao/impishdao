@@ -5,6 +5,7 @@
 // Runtime Environment's members available in the global scope.
 import { Contract } from "@ethersproject/contracts";
 import { artifacts, ethers } from "hardhat";
+import path from "path";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -17,6 +18,7 @@ async function main() {
   // We get the contract to deploy
   const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
   const RandomWalkNFT = await ethers.getContractFactory("RandomWalkNFT");
+  const ImpishSpiral = await ethers.getContractFactory("ImpishSpiral");
 
   const rwnft = await RandomWalkNFT.deploy();
   await rwnft.deployed();
@@ -24,17 +26,21 @@ async function main() {
   const impdao = await ImpishDAO.deploy(rwnft.address);
   await impdao.deployed();
 
+  const impishspiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
+  await impishspiral.deployed();
+
   console.log("RandomWalkNFT deployed to:", rwnft.address);
-  console.log("DAO deployed to:", impdao.address);
+  console.log("ImpishDAO deployed to:", impdao.address);
+  console.log("ImpishSpiral deployed to:", impishspiral.address);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(rwnft, impdao);
+  saveFrontendFiles(rwnft, impdao, impishspiral);
 }
 
-function saveFrontendFiles(rwnft: Contract, impdao: Contract) {
+function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract) {
   const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-  const serverDir = __dirname + "/../server/src/contracts";
+  const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
+  const serverDir = path.join(__dirname, "/../server/src/contracts");
 
   if (!fs.existsSync(contractsDir)) {
     fs.mkdirSync(contractsDir);
@@ -47,39 +53,27 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract) {
   fs.writeFileSync(
     contractsDir + "/contract-addresses.json",
     JSON.stringify(
-      { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address },
+      { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral },
       undefined,
       2
     )
   );
   fs.writeFileSync(
     serverDir + "/contract-addresses.json",
-    JSON.stringify(
-      { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address },
-      undefined,
-      2
-    )
+    JSON.stringify({ RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address }, undefined, 2)
   );
 
   const rwnftArtifact = artifacts.readArtifactSync("RandomWalkNFT");
-  fs.writeFileSync(
-    contractsDir + "/rwnft.json",
-    JSON.stringify(rwnftArtifact, null, 2)
-  );
-  fs.writeFileSync(
-    serverDir + "/rwnft.json",
-    JSON.stringify(rwnftArtifact, null, 2)
-  );
+  fs.writeFileSync(contractsDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));
 
   const wrwArtifact = artifacts.readArtifactSync("ImpishDAO");
-  fs.writeFileSync(
-    contractsDir + "/impdao.json",
-    JSON.stringify(wrwArtifact, null, 2)
-  );
-  fs.writeFileSync(
-    serverDir + "/impdao.json",
-    JSON.stringify(wrwArtifact, null, 2)
-  );
+  fs.writeFileSync(contractsDir + "/impdao.json", JSON.stringify(wrwArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/impdao.json", JSON.stringify(wrwArtifact, null, 2));
+
+  const impSpiralArtifact = artifacts.readArtifactSync("ImpishSpiral");
+  fs.writeFileSync(contractsDir + "/impishspiral.json", JSON.stringify(impSpiralArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/impishspiral.json", JSON.stringify(impSpiralArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
@@ -5,6 +6,7 @@
 // Runtime Environment's members available in the global scope.
 import { Contract } from "@ethersproject/contracts";
 import { artifacts, ethers } from "hardhat";
+import path from "path";
 
 async function main() {
   const [signer] = await ethers.getSigners();
@@ -28,8 +30,8 @@ async function main() {
 
 function saveFrontendFiles(rwnft: string, impdao: Contract) {
   const fs = require("fs");
-  const contractsDir = __dirname + "/../frontend/src/contracts";
-  const serverDir = __dirname + "/../server/src/contracts";
+  const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
+  const serverDir = path.join(__dirname, "/../server/src/contracts");
 
   if (!fs.existsSync(contractsDir)) {
     fs.mkdirSync(contractsDir);
@@ -41,40 +43,20 @@ function saveFrontendFiles(rwnft: string, impdao: Contract) {
 
   fs.writeFileSync(
     contractsDir + "/contract-addresses.json",
-    JSON.stringify(
-      { RandomWalkNFT: rwnft, ImpishDAO: impdao.address },
-      undefined,
-      2
-    )
+    JSON.stringify({ RandomWalkNFT: rwnft, ImpishDAO: impdao.address }, undefined, 2)
   );
   fs.writeFileSync(
     serverDir + "/contract-addresses.json",
-    JSON.stringify(
-      { RandomWalkNFT: rwnft, ImpishDAO: impdao.address },
-      undefined,
-      2
-    )
+    JSON.stringify({ RandomWalkNFT: rwnft, ImpishDAO: impdao.address }, undefined, 2)
   );
 
   const rwnftArtifact = artifacts.readArtifactSync("RandomWalkNFT");
-  fs.writeFileSync(
-    contractsDir + "/rwnft.json",
-    JSON.stringify(rwnftArtifact, null, 2)
-  );
-  fs.writeFileSync(
-    serverDir + "/rwnft.json",
-    JSON.stringify(rwnftArtifact, null, 2)
-  );
+  fs.writeFileSync(contractsDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));
 
   const wrwArtifact = artifacts.readArtifactSync("ImpishDAO");
-  fs.writeFileSync(
-    contractsDir + "/impdao.json",
-    JSON.stringify(wrwArtifact, null, 2)
-  );
-  fs.writeFileSync(
-    serverDir + "/impdao.json",
-    JSON.stringify(wrwArtifact, null, 2)
-  );
+  fs.writeFileSync(contractsDir + "/impdao.json", JSON.stringify(wrwArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/impdao.json", JSON.stringify(wrwArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
