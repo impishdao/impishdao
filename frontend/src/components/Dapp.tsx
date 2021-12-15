@@ -17,6 +17,9 @@ import { format4Decimals } from "./utils";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
 import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ImpishSpiral } from "./ImpishSpiral";
+import { LinkContainer } from "react-router-bootstrap";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -245,6 +248,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     console.log(this.state);
 
     return (
+      <BrowserRouter>
       <Container fluid>
         <ModalDialog
           message={this.state.modalMessage || <></>}
@@ -257,10 +261,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
           <Container>
             <Navbar.Brand href="#home">ImpishDAO</Navbar.Brand>
             <Nav className="me-auto">
-              <Nav.Link href="#home">Home</Nav.Link>
+              <LinkContainer to="/"><Nav.Link>Home</Nav.Link></LinkContainer>
               <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
               <Nav.Link href="#stats">Stats</Nav.Link>
               <Nav.Link href="#whitepaper">FAQ</Nav.Link>
+              <LinkContainer to="/spirals"><Nav.Link>Spirals</Nav.Link></LinkContainer>
             </Nav>
             {!this.state.selectedAddress && (
               <Button className="connect" variant="warning" onClick={() => this._connectWallet()}>
@@ -290,17 +295,26 @@ export class Dapp extends React.Component<DappProps, DappState> {
           </Alert>
         )}
 
-        <ImpishDAO
-          {...this.state}
-          connectWallet={() => this._connectWallet()}
-          readDappState={() => this.readDappState()}
-          readUserData={() => this.readUserData()}
-          showModal={this.showModal}
-          provider={this.provider}
-          impdao={this.impdao}
-          rwnft={this.rwnft}
-        />
+        
+          <Routes>
+            <Route path="/" element={
+              <ImpishDAO
+                {...this.state}
+                connectWallet={() => this._connectWallet()}
+                readDappState={() => this.readDappState()}
+                readUserData={() => this.readUserData()}
+                showModal={this.showModal}
+                provider={this.provider}
+                impdao={this.impdao}
+                rwnft={this.rwnft}
+              />} />
+            <Route path="/spirals" element={<ImpishSpiral />} />
+          </Routes>
+
+        
       </Container>
+
+      </BrowserRouter>
     );
   }
 }
