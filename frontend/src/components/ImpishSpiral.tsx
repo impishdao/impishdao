@@ -1,10 +1,10 @@
 import { Button, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { DappState } from "../AppState";
-import { format4Decimals } from "./utils";
+import { format4Decimals, secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { Contract } from "ethers";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setup_image } from "../spiralRenderer";
 
 type SpiralProps = DappState & {
@@ -22,6 +22,19 @@ type SpiralProps = DappState & {
 export function ImpishSpiral(props: SpiralProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
+
+  const mintStart = 1640113200;
+  const [timeRemaining, setTimeRemaining] = useState(mintStart - (Date.now() / 1000));
+
+  useEffect(() => {
+    const timerID = setInterval(() => {
+      setTimeRemaining(timeRemaining - 1);
+    }, 1000);
+
+    return function cleanup() {
+      clearInterval(timerID);
+    };
+  });
 
   useLayoutEffect(() => {
     setTimeout(() => {
@@ -70,6 +83,10 @@ export function ImpishSpiral(props: SpiralProps) {
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
         <canvas ref={canvasRef} width="400px" height="400px"></canvas>
+        <div className="mt-2" style={{ fontWeight: "bold", color: "#ffd454" }}>Minting Starts In</div>
+        <h3 className="mb-4" style={{ fontFamily: "monospace" }}>
+          {secondsToDhms(timeRemaining)}
+        </h3>
       </div>
 
       <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
