@@ -4,6 +4,8 @@ import { DappState } from "../AppState";
 import { format4Decimals } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { Contract } from "ethers";
+import { useLayoutEffect, useRef } from "react";
+import { setup_image } from "../spiralRenderer";
 
 type SpiralProps = DappState & {
   provider?: Web3Provider;
@@ -18,6 +20,17 @@ type SpiralProps = DappState & {
 };
 
 export function ImpishSpiral(props: SpiralProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useLayoutEffect(() => {
+    setTimeout(() => {
+      if (canvasRef.current && !canvasRef.current.getAttribute("spiralPresent")) {
+        canvasRef.current.setAttribute("spiralPresent", "true");
+        setup_image(canvasRef.current);
+      }
+    }, 100);
+  })
+
   return (
     <>
       <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
@@ -47,8 +60,10 @@ export function ImpishSpiral(props: SpiralProps) {
           )}
         </Container>
       </Navbar>
-      <div>
-        <h1>Impish Spiral</h1>
+
+      <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
+        <h1>Chapter 1: The Spirals</h1>
+        <canvas ref={canvasRef} style={{maxWidth: '400px'}}></canvas>
       </div>
     </>
   );

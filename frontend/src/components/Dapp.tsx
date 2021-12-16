@@ -12,14 +12,12 @@ import ImpishDAOArtifact from "../contracts/impdao.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
-import { Container, Nav, Navbar, Button, Alert, Modal } from "react-bootstrap";
-import { format4Decimals } from "./utils";
+import { Container, Button, Alert, Modal } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
 import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
-import { LinkContainer } from "react-router-bootstrap";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
