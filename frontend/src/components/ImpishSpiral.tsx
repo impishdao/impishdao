@@ -103,7 +103,7 @@ export function ImpishSpiral(props: SpiralProps) {
                   <li>10th place gets 1% of the prize ETH</li>
                 </ul>
               </li>
-              <li>You can chose to mint a Random spiral, or a "Companion Spiral" to your RandomWalkNFT</li>
+              <li>You can choose to mint a Random spiral, or a "Companion Spiral" to your RandomWalkNFT</li>
               <ul>
                 <li>
                   If you mint a Companion Spiral, 1/3rd of your mint price is returned back to you as IMPISH tokens!
@@ -116,7 +116,7 @@ export function ImpishSpiral(props: SpiralProps) {
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>What is a Companion Spiral?</span>
             <br />
-            If you own a RandomWalkNFT, you can chose to base your spiral on your RandomWalkNFT. Your spiral will share
+            If you own a RandomWalkNFT, you can choose  to base your spiral on your RandomWalkNFT. Your spiral will share
             the generative seed with your RandomWalkNFT, which means your spiral will look similar to your
             RandomWalkNFT. It will share the same random walk and the color pallette.
             <br />
@@ -147,7 +147,7 @@ export function ImpishSpiral(props: SpiralProps) {
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How are spirals generated?</span>
             <br />
-            The spirals are programtically generated from a random seed (or your companion RandomWalkNFT's seed). They
+            The spirals are programmatically  generated from a random seed (or your companion RandomWalkNFT's seed). They
             are a "Random Walk", but plotted with polar co-ordinates with a slight spiral bias.
             <br />
             You can click on a Spiral to see it animate! Go ahead and try it :)
@@ -155,7 +155,7 @@ export function ImpishSpiral(props: SpiralProps) {
 
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>
-              Why do the price of spirals increase every time one is minted?
+              Why does the price of spirals increase every time one is minted?
             </span>
             <br />
             The parameters of this game are chosen to make the game finishes quickly. Prices increase rapidly so that
