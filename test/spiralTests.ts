@@ -82,7 +82,9 @@ describe("ImpishSpiral", function () {
 
     // Mint 10 random NFTs
     for (let i = 0; i < 10; i++) {
-      await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+      await impishSpiral.mintSpiralRandom({
+        value: await impishSpiral.getMintPrice(),
+      });
       expect(await impishSpiral.ownerOf(i)).to.be.equal(wallet.address);
     }
 
@@ -181,5 +183,45 @@ describe("ImpishSpiral", function () {
 
     // Now should be empty
     await expect(impishSpiral.afterAllWinnings()).to.be.revertedWith("Empty");
+  });
+
+  it("Should allow setting of Spiral Lengths", async function () {
+    const { impishSpiral, rwnft } = await loadContracts();
+    const [signer, otherSigner] = await ethers.getSigners();
+
+    // Start the mints
+    await impishSpiral.startMints();
+
+    // Mint a Spiral
+    await impishSpiral.mintSpiralRandom({
+      value: await impishSpiral.getMintPrice(),
+    });
+
+    // Setting the spiralBitsContract/spiralLengths from a non-owner should fail
+    await expect(impishSpiral.connect(otherSigner).setSpiralBitsContract(rwnft.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(impishSpiral.connect(otherSigner).setSpiralLengths([], [])).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+
+    // Spiral length should be settable only by the owner
+    expect(await impishSpiral.spiralLengths(0)).to.be.equals(0);
+    await impishSpiral.setSpiralLengths([0], [1000000]);
+    expect(await impishSpiral.spiralLengths(0)).to.be.equals(1000000);
+
+    // Set the wallet as the calling contract
+    await impishSpiral.setSpiralBitsContract(signer.address);
+
+    // Now we can add and remove spiral bits
+    await impishSpiral.removeLengthFromSpiral(0, 1000);
+    expect(await impishSpiral.spiralLengths(0)).to.be.equals(1000000 - 1000);
+
+    await impishSpiral.addLengthToSpiral(0, 5000);
+    expect(await impishSpiral.spiralLengths(0)).to.be.equals(1000000 - 1000 + 5000);
+
+    // Can't remove or add too much
+    await expect(impishSpiral.removeLengthFromSpiral(0, 700000)).to.be.revertedWith("CantTrimAnyMore");
+    await expect(impishSpiral.addLengthToSpiral(0, 5000000)).to.be.revertedWith("CantAddAnyMore");
   });
 });

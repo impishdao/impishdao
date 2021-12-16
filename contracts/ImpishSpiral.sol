@@ -57,11 +57,19 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     // If the sale has started
     bool public started = false;
 
+    // Keep track of the total rewards available
     uint256 public totalReward = 0;
 
     // List of all winners that have claimed their prize
     // tokenId -> true if winnings have been claimed
     mapping(uint256 => bool) public winningsClaimed;
+
+    // The length of each path
+    // tokenID -> Length
+    mapping(uint256 => uint256) public spiralLengths;
+
+    // Address of the Spirals Episode 2 contract
+    address public spiralBitsContract = address(0);
 
     constructor(address _rwNFTaddress, address _impishDAOaddress) ERC721("ImpishSpiral", "SPIRAL") {
         _rwNFT = IRandomWalkNFT(_rwNFTaddress);
@@ -211,6 +219,40 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
             result[i] = tokenOfOwnerByIndex(_owner, i);
         }
         return result;
+    }
+
+    // Set the lengths for the spirals
+    function setSpiralLengths(uint256[] calldata tokenIDs, uint256[] calldata lengths) external onlyOwner {
+        require(tokenIDs.length == lengths.length, "BadCall");
+
+        // Set the lengths
+        for (uint i=0; i < tokenIDs.length; i++) {
+            spiralLengths[tokenIDs[i]] = lengths[i];
+        }
+    }
+
+    function setSpiralBitsContract(address _bitsContract) external onlyOwner {
+        spiralBitsContract = _bitsContract;
+    }
+
+    // Increase length of a spiral
+    function removeLengthFromSpiral(uint256 tokenId, uint256 trimLength) external {
+        require(msg.sender == spiralBitsContract, "YouCantCall");
+        require(spiralLengths[tokenId] > 0, "NoTokenID");
+        // Solidity 0.8.0 does the underflow check here automatically
+        require(spiralLengths[tokenId] - trimLength > 400000, "CantTrimAnyMore");
+
+        spiralLengths[tokenId] = spiralLengths[tokenId] - trimLength;
+    }
+
+    // Decrease length of a spiral
+    function addLengthToSpiral(uint256 tokenId, uint256 addLength) external {
+        require(msg.sender == spiralBitsContract, "YouCantCall");
+        require(spiralLengths[tokenId] > 0, "NoTokenID");
+        // Solidity 0.8.0 does the overflow check here automatically
+        require(spiralLengths[tokenId] + addLength < 5000000, "CantAddAnyMore");
+
+        spiralLengths[tokenId] = spiralLengths[tokenId] + addLength;
     }
 
     // The following functions are overrides required by Solidity.
