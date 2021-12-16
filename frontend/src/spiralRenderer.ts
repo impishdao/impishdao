@@ -315,67 +315,77 @@ function cart_ranges(path: number[][]) {
 }
 
 export function setup_image(canvas: HTMLCanvasElement, seed: string) {
-  const { cart_path, C } = get_steps(seed);
-
-  // const canvassize = Math.min(window.innerWidth, window.innerHeight);
-  // canvas.width = canvassize;
-  // canvas.height = canvassize;
-
+  const ctx = canvas.getContext("2d");
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth);
+  // Load the static image at start while we compute everything else.
+  const cachedImage = new Image();
+  cachedImage.onload = function() {
+    ctx?.drawImage(cachedImage, 0, 0);
+  };
+  cachedImage.src = `/${seed}.png`;
+  console.log("Drew static image");
   let rot = 0;
 
-  const clearCanvas = (ctx: CanvasRenderingContext2D) => {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    ctx.rect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "black";
-    ctx.fill();
-  }
+  setTimeout(() => {
+    const { cart_path, C } = get_steps(seed);
+    
+    const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth);
+    
 
-  const drawFirstImage = (rot: number) => {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("Couldn't get canvas context");
-      return;
+    const clearCanvas = (ctx: CanvasRenderingContext2D) => {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "black";
+      ctx.fill();
+      console.log("cleared canvas");
     }
 
-    if (rot === 0) {
-      clearCanvas(ctx);
-    }
+    const drawFirstImage = (rot: number) => {
+      console.log("Drawing first image");
+      if (!ctx) {
+        console.log("Couldn't get canvas context");
+        return;
+      }
 
-    draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
-  };
+      if (rot === 0) {
+        clearCanvas(ctx);
+      }
 
-  drawFirstImage(0);
 
-  let rotateTimerId: any;
-  const onClick = () => {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("Couldn't get canvas context");
-      return;
-    }
+      draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
+    };
 
-    if (rotateTimerId === undefined) {
-      rotateTimerId = setInterval(() => {
-        rot += (2 * Math.PI) / (canvasWidth * 4 * 10);
+  
+    drawFirstImage(0);
 
-        draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
-      }, 1000 / 24);
-    } else {
-      clearInterval(rotateTimerId);
-      rotateTimerId = undefined;
-      rot = 0;
+    let rotateTimerId: any;
+    const onClick = () => {
+      if (!ctx) {
+        console.log("Couldn't get canvas context");
+        return;
+      }
 
-      clearCanvas(ctx);
-      drawFirstImage(0.0001);
-    }
-  };
+      if (rotateTimerId === undefined) {
+        rotateTimerId = setInterval(() => {
+          rot += (2 * Math.PI) / (canvasWidth * 4 * 10);
 
-  // Remove any existing listener, and add a new one.
-  canvas.removeEventListener('click', onClick);
-  canvas.addEventListener("click", onClick);
+          draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
+        }, 1000 / 24);
+      } else {
+        clearInterval(rotateTimerId);
+        rotateTimerId = undefined;
+        rot = 0;
+
+        clearCanvas(ctx);
+        drawFirstImage(0.0001);
+      }
+    };
+
+      // Remove any existing listener, and add a new one.
+    canvas.removeEventListener('click', onClick);
+    canvas.addEventListener("click", onClick);
+  }, 1000);
 }
 
