@@ -232,6 +232,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     function setSpiralBitsContract(address _bitsContract) external onlyOwner {
+        require(spiralBitsContract == address(0), "AlreadySet");
         spiralBitsContract = _bitsContract;
     }
 

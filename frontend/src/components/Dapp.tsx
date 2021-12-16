@@ -12,7 +12,7 @@ import ImpishDAOArtifact from "../contracts/impdao.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
-import { Container, Button, Alert, Modal } from "react-bootstrap";
+import { Container, Button, Alert, Modal, Row, Col } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
 import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
@@ -299,6 +299,15 @@ export class Dapp extends React.Component<DappProps, DappState> {
               }
             />
           </Routes>
+
+
+          <Row className="mt-2" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px", height: '150px' }}>
+            <Col xs={{span: 2, offset: 8}} style={{marginTop: 30}}>
+              <a style={{ color: "white", textDecoration: 'none' }} target="_blank" rel="noreferrer" href="https://www.twitter.com/impishdao">
+                <img src="/twitterlogo.jpg" style={{width: '30px'}} alt="twitter"/> @impishdao
+              </a>
+            </Col>
+          </Row>
         </Container>
       </BrowserRouter>
     );

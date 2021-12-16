@@ -14,7 +14,7 @@ const fromHexString = (hexString: string) : Uint8Array => {
 
 // const toHexString = (bytes: Uint8Array) => bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
 
-const SCALE = 2;
+const SCALE = 4;
 
 function* random_generator(init_seed: string) {
   if (init_seed.startsWith("0x")) {
@@ -314,12 +314,12 @@ function cart_ranges(path: number[][]) {
   return { min_x, max_x, min_y, max_y };
 }
 
-export function setup_image(canvas: HTMLCanvasElement) {
-  const { cart_path, C } = get_steps("0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
+export function setup_image(canvas: HTMLCanvasElement, seed: string) {
+  const { cart_path, C } = get_steps(seed);
 
-  const canvassize = Math.min(window.innerWidth, window.innerHeight);
-  canvas.width = canvassize;
-  canvas.height = canvassize;
+  // const canvassize = Math.min(window.innerWidth, window.innerHeight);
+  // canvas.width = canvassize;
+  // canvas.height = canvassize;
 
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
