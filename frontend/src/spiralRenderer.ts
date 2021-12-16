@@ -357,7 +357,6 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
       draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
     };
 
-  
     drawFirstImage(0);
 
     let rotateTimerId: any;

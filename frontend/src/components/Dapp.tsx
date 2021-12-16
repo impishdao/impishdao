@@ -300,11 +300,18 @@ export class Dapp extends React.Component<DappProps, DappState> {
             />
           </Routes>
 
-
-          <Row className="mt-2" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px", height: '150px' }}>
-            <Col xs={{span: 2, offset: 8}} style={{marginTop: 30}}>
-              <a style={{ color: "white", textDecoration: 'none' }} target="_blank" rel="noreferrer" href="https://www.twitter.com/impishdao">
-                <img src="/twitterlogo.jpg" style={{width: '30px'}} alt="twitter"/> @impishdao
+          <Row
+            className="mt-2"
+            style={{ textAlign: "center", backgroundColor: "#222", padding: "20px", height: "150px" }}
+          >
+            <Col xs={{ span: 2, offset: 8 }} style={{ marginTop: 30 }}>
+              <a
+                style={{ color: "white", textDecoration: "none" }}
+                target="_blank"
+                rel="noreferrer"
+                href="https://www.twitter.com/impishdao"
+              >
+                <img src="/twitterlogo.jpg" style={{ width: "30px" }} alt="twitter" /> @impishdao
               </a>
             </Col>
           </Row>

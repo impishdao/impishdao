@@ -480,7 +480,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
       }
     }
   }
-  
+
   let myShareOfWinnings = BigNumber.from(0);
   if (
     props.selectedAddress &&
@@ -507,7 +507,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
             <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
             <Nav.Link href="#stats">Stats</Nav.Link>
             <Nav.Link href="#whitepaper">FAQ</Nav.Link>
-            <div className="vr" style={{marginLeft: '10px', marginRight: '10px'}}></div>
+            <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
             <LinkContainer to="/spirals">
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
