@@ -46,12 +46,12 @@ export function ImpishSpiral(props: SpiralProps) {
   useLayoutEffect(() => {
     if (canvasPreviewRef.current && !canvasPreviewRef.current.getAttribute("spiralPresent")) {
       canvasPreviewRef.current.setAttribute("spiralPresent", "true");
-      setup_image(canvasPreviewRef.current, "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
+      setup_image(canvasPreviewRef.current, "main", "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
     }
 
     if (canvasCompanionRef.current && !canvasCompanionRef.current.getAttribute("spiralPresent")) {
       canvasCompanionRef.current.setAttribute("spiralPresent", "true");
-      setup_image(canvasCompanionRef.current, "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
+      setup_image(canvasCompanionRef.current, "faq", "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
     }
   });
 
@@ -87,7 +87,7 @@ export function ImpishSpiral(props: SpiralProps) {
         }
 
         const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
-        setup_image(canvasPreviewRef.current, seed);
+        setup_image(canvasPreviewRef.current, "main", seed);
       }
     })();
   }, [props.rwnft, props.selectedAddress, selectedUserRW]);
@@ -97,7 +97,7 @@ export function ImpishSpiral(props: SpiralProps) {
       const r = new Uint8Array(32);
       window.crypto.getRandomValues(r);
 
-      setup_image(canvasPreviewRef.current, toHexString(r));
+      setup_image(canvasPreviewRef.current, "main", toHexString(r));
     }
   };
 

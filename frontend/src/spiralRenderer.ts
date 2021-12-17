@@ -300,10 +300,10 @@ function cart_ranges(path: number[][]) {
 }
 
 // Persist the rotate timer ID across setup_image calls.
-let rotateTimerId: any;
-let clickHandler: any;
+let rotateTimerIdMap = new Map<string, NodeJS.Timeout>();
+let clickHandlerMap = new Map<string, any>();
 
-export function setup_image(canvas: HTMLCanvasElement, seed: string) {
+export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string) {
   const ctx = canvas.getContext("2d");
 
   // Reset scale
@@ -311,15 +311,18 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
   ctx?.scale(1/SCALE, 1/SCALE);
 
   // Remove any existing timers
+  const rotateTimerId = rotateTimerIdMap.get(id);
   if (rotateTimerId) {
     clearInterval(rotateTimerId);
-    rotateTimerId = undefined;
+    rotateTimerIdMap.delete(id);
   }
 
   // Remove any existing listener
-  if (clickHandler) {
-    canvas.removeEventListener('click', clickHandler);
-    clickHandler = undefined;
+  const clkHdl = clickHandlerMap.get(id);
+  if (clkHdl) {
+    console.log("Removing click handler that is present");
+    canvas.removeEventListener('click', clkHdl);
+    clickHandlerMap.delete(id);
   }
 
   const clearCanvas = (ctx: CanvasRenderingContext2D) => {
@@ -370,28 +373,33 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
 
     drawFirstImage(0);
     
-    clickHandler = () => {
+    const clickHandler = () => {
+      console.log(`Clicked for id ${id}`);
       if (!ctx) {
         console.log("Couldn't get canvas context");
         return;
       }
 
+      const rotateTimerId = rotateTimerIdMap.get(id);
       if (rotateTimerId === undefined) {
-        rotateTimerId = setInterval(() => {
+        const rotateTimerId = setInterval(() => {
           rot += (2 * Math.PI) / (canvasWidth * 4 * 10);
 
           draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
         }, 1000 / 24);
+        rotateTimerIdMap.set(id, rotateTimerId);
       } else {
         clearInterval(rotateTimerId);
-        rotateTimerId = undefined;
-        rot = 0;
+        rotateTimerIdMap.delete(id);
 
+        rot = 0;
         drawFirstImage(0);
       }
     };
 
+    console.log("Adding click handler");
     canvas.addEventListener("click", clickHandler);
+    clickHandlerMap.set(id, clickHandler);
   }, 1000);
 }
 
