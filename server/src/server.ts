@@ -108,6 +108,35 @@ getLastETHPrice();
 const nftPriceCache = new Map<number, BigNumber>();
 let nftPriceCacheExpiry = Date.now();
 
+type RadomWalkNFTData = {
+  roundNum: BigNumber;
+  numWithdrawals: BigNumber;
+  mintPrice: BigNumber;
+  lastMintTime: BigNumber;
+  withdrawalAmount: BigNumber;
+};
+let rwNFTDataCache: RadomWalkNFTData;
+let lastRWNFTDataMintPrice = BigNumber.from(0);
+
+async function getRandomWalkNFTData(): Promise<RadomWalkNFTData> {
+  const mintPrice = await _rwnft?.getMintPrice();
+  if (rwNFTDataCache && mintPrice.eq(lastRWNFTDataMintPrice)) {
+    return rwNFTDataCache;
+  } else {
+    const [roundNum, numWithdrawals, lastMintTime, withdrawalAmount] = await Promise.all([
+      _impdao?.RWNFT_ROUND(),
+      _rwnft?.numWithdrawals(),
+      _rwnft?.lastMintTime(),
+      _rwnft?.withdrawalAmount(),
+    ]);
+
+    rwNFTDataCache = {roundNum, numWithdrawals, lastMintTime, mintPrice, withdrawalAmount};
+    lastRWNFTDataMintPrice = mintPrice;
+
+    return rwNFTDataCache;
+  }
+}
+
 app.get("/api", async (req, res) => {
   try {
     // impdao methods
@@ -119,21 +148,15 @@ app.get("/api", async (req, res) => {
     ]);
 
     // RandomwalkNFT methods
-    const [roundNum, numWithdrawals, mintPrice, lastMintTime, withdrawalAmount] = await Promise.all([
-      _impdao?.RWNFT_ROUND(),
-      _rwnft?.numWithdrawals(),
-      _rwnft?.getMintPrice(),
-      _rwnft?.lastMintTime(),
-      _rwnft?.withdrawalAmount(),
-    ]);
+    const rwNFTData = await getRandomWalkNFTData();
 
-    const isRoundFinished = !BigNumber.from(roundNum).eq(BigNumber.from(numWithdrawals));
+    const isRoundFinished = !BigNumber.from(rwNFTData.roundNum).eq(BigNumber.from(rwNFTData.numWithdrawals));
 
     // See if the NFT price cache is valid. Expire every hour
     if (nftPriceCacheExpiry < Date.now()) {
       nftPriceCache.clear();
       // eslint-disable-next-line prettier/prettier
-      nftPriceCacheExpiry = Date.now() + (1 * 3600 * 1000); // 1hour
+      nftPriceCacheExpiry = Date.now() + (6 * 3600 * 1000); // 6 hours
     }
 
     const nftsWithPrice = (
@@ -161,11 +184,9 @@ app.get("/api", async (req, res) => {
       areWeWinning,
       contractState,
       isRoundFinished,
-      mintPrice,
-      lastMintTime,
       daoBalance,
-      withdrawalAmount,
       nftsWithPrice,
+      ...rwNFTData
     };
 
     res.send(sendJson);

@@ -54,7 +54,7 @@ export function ImpishSpiral(props: SpiralProps) {
     <>
       <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
         <Container>
-          <Navbar.Brand href="#home">ImpishDAO</Navbar.Brand>
+          <Navbar.Brand href="/">ImpishDAO</Navbar.Brand>
           <Nav className="me-auto">
             <LinkContainer to="/">
               <Nav.Link>Home</Nav.Link>
