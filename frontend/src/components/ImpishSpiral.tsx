@@ -139,7 +139,7 @@ export function ImpishSpiral(props: SpiralProps) {
             <div style={{ padding: "20px", marginRight: "20px", textAlign: "center", minWidth: "800px" }}>
               {props.selectedAddress && (
                 <>
-                  <h4>Your RandomWalkNFTs</h4>
+                  {userRWNFTs.length > 0 ? <h4>Your RandomWalkNFTs</h4> : `You don't have any RandomWalkNFTs in your wallet`}
                   <div
                     style={{
                       display: "flex",
@@ -165,21 +165,23 @@ export function ImpishSpiral(props: SpiralProps) {
                 </>
               )}
 
-              {!props.selectedAddress && (
+              {(!props.selectedAddress || userRWNFTs.length === 0) && (
                 <div className="mt-4">
-                  <div style={{ marginTop: "100px" }}>
-                    Connect your Metamask wallet
-                    <br />
-                    to view your RandomWalkNFTs
-                  </div>
-                  <br />
-                  <Button className="connect" variant="warning" onClick={props.connectWallet}>
-                    Connect Wallet
-                  </Button>
-                  <br/>
-                  <div className="mt-3">OR</div>
+                  {!props.selectedAddress && (
+                    <>
+                      <div style={{ marginTop: "100px" }}>
+                        Connect your Metamask wallet
+                        <br />
+                        to view your RandomWalkNFTs
+                      </div>
+                      <br />
+                      <Button className="connect" variant="warning" onClick={props.connectWallet}>
+                        Connect Wallet
+                      </Button><br /><div className="mt-3">OR</div>
+                    </>
+                  )}
                   <Button className="connect mt-3" variant="info" onClick={randomSpiral}>
-                    Random Spiral
+                    Preview Random Spiral
                   </Button>
                 </div>
               )}
