@@ -268,10 +268,6 @@ function draw_path_with_rot(
 
   newCanvas.getContext("2d")?.putImageData(id, 0, 0);
 
-  if (rot === 0) {
-    ctx.scale(1/SCALE, 1/SCALE);
-  }
-
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.rect(0, 0, canvasWidth, canvasHeight);
   ctx.fillStyle = "black";
@@ -313,6 +309,7 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
 
   // Reset scale
   ctx?.resetTransform();
+  ctx?.scale(1/SCALE, 1/SCALE);
 
   // Remove any existing timers
   if (rotateTimerId) {
@@ -326,6 +323,13 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
     clickHandler = undefined;
   }
 
+  const clearCanvas = (ctx: CanvasRenderingContext2D) => {
+    ctx.clearRect(0, 0, canvasWidth * SCALE, canvasHeight * SCALE);
+    ctx.rect(0, 0, canvas.width * SCALE, canvas.height * SCALE);
+    ctx.fillStyle = "black";
+    ctx.fill();
+  }
+
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
@@ -334,20 +338,23 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
   cachedImage.onload = function() {
     ctx?.drawImage(cachedImage, 0, 0);
   };
+  cachedImage.onerror = function() {
+    if (!ctx) {
+      return;
+    }
+
+    clearCanvas(ctx);
+    ctx.fillStyle = 'white';
+    ctx.font = '48px serif';
+    ctx?.fillText("Loading...", 10, 100);
+  }
   cachedImage.src = `/${seed}.png`;
   let rot = 0;
 
+  // Create the image and display it in a timeout, allowing any existing changes above to take effect and be shown to the user.
   setTimeout(() => {
     const { cart_path, C } = get_steps(seed);
-    
     const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth);
-
-    const clearCanvas = (ctx: CanvasRenderingContext2D) => {
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      ctx.rect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "black";
-      ctx.fill();
-    }
 
     const drawFirstImage = (rot: number) => {
       if (!ctx) {
@@ -381,8 +388,7 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
         rotateTimerId = undefined;
         rot = 0;
 
-        clearCanvas(ctx);
-        drawFirstImage(0.0001);
+        drawFirstImage(0);
       }
     };
 
