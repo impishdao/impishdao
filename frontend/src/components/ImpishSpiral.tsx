@@ -5,8 +5,9 @@ import { format4Decimals, secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { setup_image } from "../spiralRenderer";
+import { setup_image, toHexString } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
+import { sha3_256 } from "js-sha3";
 
 type SpiralProps = DappState & {
   provider?: Web3Provider;
@@ -91,6 +92,15 @@ export function ImpishSpiral(props: SpiralProps) {
     })();
   }, [props.rwnft, props.selectedAddress, selectedUserRW]);
 
+  const randomSpiral = async () => {
+    if (canvasPreviewRef.current) {
+      const r = new Uint8Array(32);
+      window.crypto.getRandomValues(r);
+
+      setup_image(canvasPreviewRef.current, toHexString(r));
+    }
+  };
+
   return (
     <>
       <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
@@ -165,6 +175,11 @@ export function ImpishSpiral(props: SpiralProps) {
                   <br />
                   <Button className="connect" variant="warning" onClick={props.connectWallet}>
                     Connect Wallet
+                  </Button>
+                  <br/>
+                  <div className="mt-3">OR</div>
+                  <Button className="connect mt-3" variant="info" onClick={randomSpiral}>
+                    Random Spiral
                   </Button>
                 </div>
               )}

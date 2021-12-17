@@ -10,9 +10,8 @@ const fromHexString = (hexString: string) : Uint8Array => {
 
   return new Uint8Array(m.map((byte) => parseInt(byte, 16)));
 }
-  
+export const toHexString = (bytes: Uint8Array) => bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
 
-// const toHexString = (bytes: Uint8Array) => bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
 const SCALE = 2;
 
 function* random_generator(init_seed: string) {
