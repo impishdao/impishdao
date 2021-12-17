@@ -567,23 +567,26 @@ export function ImpishDAO(props: ImpishDAOProps) {
         </>
       )}
 
-      <div style={{border: 'solid 1px #fff', margin: 20, padding: 20}}>
-          {props.selectedAddress && (
-            <>
-              <Stack direction="horizontal" gap={3}>
-                <Button onClick={AdminDepositExternal}>Mint NFT Directly</Button>
-                <Button onClick={AdminWithdraw}>Withdraw() Directly</Button>
-                <Button onClick={props.readDappState}>Refresh DAO Data</Button>
-                <Button onClick={() => {
-                    props.readDappState();
-                    props.readUserData();
-                    timeNow += (30 * 24 * 3600 * 1000);
-                  }
-                }>Advance Time</Button>
-              </Stack>
-            </>
-          )}              
-        </div>
+      <div style={{ border: "solid 1px #fff", margin: 20, padding: 20 }}>
+        {props.selectedAddress && (
+          <>
+            <Stack direction="horizontal" gap={3}>
+              <Button onClick={AdminDepositExternal}>Mint NFT Directly</Button>
+              <Button onClick={AdminWithdraw}>Withdraw() Directly</Button>
+              <Button onClick={props.readDappState}>Refresh DAO Data</Button>
+              <Button
+                onClick={() => {
+                  props.readDappState();
+                  props.readUserData();
+                  timeNow += 30 * 24 * 3600 * 1000;
+                }}
+              >
+                Advance Time
+              </Button>
+            </Stack>
+          </>
+        )}
+      </div>
 
       <a id="stats"></a>
       <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>

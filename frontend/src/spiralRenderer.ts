@@ -273,7 +273,6 @@ function draw_path_with_rot(
     ctx.scale(1/SCALE, 1/SCALE);
   }
 
-
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.rect(0, 0, canvasWidth, canvasHeight);
   ctx.fillStyle = "black";

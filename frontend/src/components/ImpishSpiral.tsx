@@ -6,7 +6,7 @@ import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setup_image } from "../spiralRenderer";
-import {NFTCard, SelectableNFT} from "./NFTcard";
+import { SelectableNFT } from "./NFTcard";
 
 type SpiralProps = DappState & {
   provider?: Web3Provider;
@@ -25,11 +25,12 @@ export function ImpishSpiral(props: SpiralProps) {
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
   const mintStart = 1640113200;
-  const [timeRemaining, setTimeRemaining] = useState(mintStart - (Date.now() / 1000));
+  const [timeRemaining, setTimeRemaining] = useState(mintStart - Date.now() / 1000);
 
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
   const [selectedUserRW, setSelectedUserRW] = useState<BigNumber | null>(null);
 
+  // Countdown timer.
   useEffect(() => {
     const timerID = setInterval(() => {
       setTimeRemaining(timeRemaining - 1);
@@ -40,20 +41,20 @@ export function ImpishSpiral(props: SpiralProps) {
     };
   });
 
+  // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
-    setTimeout(() => {
-      if (canvasRef.current && !canvasRef.current.getAttribute("spiralPresent")) {
-        canvasRef.current.setAttribute("spiralPresent", "true");
-        setup_image(canvasRef.current, "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
-      }
+    if (canvasRef.current && !canvasRef.current.getAttribute("spiralPresent")) {
+      canvasRef.current.setAttribute("spiralPresent", "true");
+      setup_image(canvasRef.current, "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
+    }
 
-      if (canvasCompanionRef.current && !canvasCompanionRef.current.getAttribute("spiralPresent")) {
-        canvasCompanionRef.current.setAttribute("spiralPresent", "true");
-        setup_image(canvasCompanionRef.current, "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
-      }
-    }, 100);
+    if (canvasCompanionRef.current && !canvasCompanionRef.current.getAttribute("spiralPresent")) {
+      canvasCompanionRef.current.setAttribute("spiralPresent", "true");
+      setup_image(canvasCompanionRef.current, "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
+    }
   });
 
+  // Fetch the user's wallet's RW NFTs.
   useEffect(() => {
     if (!props.selectedAddress) {
       return;
@@ -62,9 +63,17 @@ export function ImpishSpiral(props: SpiralProps) {
     fetch(`/rwnft_wallet/${props.selectedAddress}`)
       .then((r) => r.json())
       .then((data) => {
-        setUserRWNFTs((data as Array<any>).map((d) => BigNumber.from(d)));
+        let tokenIds = (data as Array<any>).map((d) => BigNumber.from(d));
+        setUserRWNFTs(tokenIds);
       });
   }, [props.selectedAddress]);
+
+  // Select the first RW NFT when it loads
+  useEffect(() => {
+    if (userRWNFTs.length > 0) {
+      setSelectedUserRW(userRWNFTs[0]);
+    }
+  }, [userRWNFTs]);
 
   return (
     <>
@@ -104,22 +113,30 @@ export function ImpishSpiral(props: SpiralProps) {
           {secondsToDhms(timeRemaining)}
         </h3> */}
         <Row>
-          <Col xs={8} style={{padding: '20px', textAlign: 'center'}}>
+          <Col xs={8} style={{ padding: "20px", textAlign: "center" }}>
             <h2>Your RandomWalkNFTs</h2>
-            <div style={{display: 'flex', justifyContent: 'center', gap: '10px', margin: '20px'}}>
-              {userRWNFTs.map((tokenId) => 
-                 <SelectableNFT tokenId={tokenId} selected={tokenId.eq(selectedUserRW || -1)} onClick={() => {
-                   setSelectedUserRW(tokenId);
-                 }}/>
-              )}
+            <div style={{ display: "flex", justifyContent: "center", gap: "10px", margin: "20px" }}>
+              {userRWNFTs.map((tokenId) => (
+                <SelectableNFT
+                  tokenId={tokenId}
+                  selected={tokenId.eq(selectedUserRW || -1)}
+                  onClick={() => {
+                    setSelectedUserRW(tokenId);
+                  }}
+                />
+              ))}
             </div>
 
-            <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
-              <Button variant="warning" disabled>Mint Companion</Button>
-              <Button variant="warning" disabled>Mint Random</Button>
+            <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+              <Button variant="warning" disabled>
+                Mint Companion
+              </Button>
+              <Button variant="warning" disabled>
+                Mint Random
+              </Button>
             </div>
           </Col>
-          <Col xs={4} style={{padding: '20px'}}>
+          <Col xs={4} style={{ padding: "20px" }}>
             <h2>You will recieve</h2>
           </Col>
         </Row>
@@ -169,7 +186,7 @@ export function ImpishSpiral(props: SpiralProps) {
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>What is a Companion Spiral?</span>
             <br />
-            If you own a RandomWalkNFT, you can choose  to base your spiral on your RandomWalkNFT. Your spiral will share
+            If you own a RandomWalkNFT, you can choose to base your spiral on your RandomWalkNFT. Your spiral will share
             the generative seed with your RandomWalkNFT, which means your spiral will look similar to your
             RandomWalkNFT. It will share the same random walk and the color pallette.
             <br />
@@ -200,7 +217,7 @@ export function ImpishSpiral(props: SpiralProps) {
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How are spirals generated?</span>
             <br />
-            The spirals are programmatically  generated from a random seed (or your companion RandomWalkNFT's seed). They
+            The spirals are programmatically generated from a random seed (or your companion RandomWalkNFT's seed). They
             are a "Random Walk", but plotted with polar co-ordinates with a slight spiral bias.
             <br />
             You can click on a Spiral to see it animate! Go ahead and try it :)

@@ -37,7 +37,7 @@ export function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: N
           </a>
         </Card.Title>
         {showPrice && <Card.Text>Price: {price} IMPISH</Card.Text>}
-        {(selectedAddress && buyNFTFromDAO) && (
+        {selectedAddress && buyNFTFromDAO && (
           <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId)}>
             Buy Now
           </Button>
@@ -52,24 +52,18 @@ type SelectableNFTProps = {
   selected: boolean;
   onClick: () => void;
 };
-export function SelectableNFT({tokenId, onClick, selected}: SelectableNFTProps) {
+export function SelectableNFT({ tokenId, onClick, selected }: SelectableNFTProps) {
   const paddedTokenId = pad(tokenId.toString(), 6);
   const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
   let borderProps = {};
   if (selected) {
-    borderProps = {borderColor: '#ffd454', borderWidth: '4px'};
+    borderProps = { borderColor: "#ffd454", borderWidth: "4px" };
   }
 
-
   return (
-    <Card style={{ width: "160px", borderRadius: "5px", ...borderProps }}
-      key={tokenId.toString()}
-      onClick={onClick}
-    >
-       <Card.Img variant="top" src={imgurl} style={{ maxWidth: "150px" }} />
-       <Card.Body>
-        #{paddedTokenId}
-        </Card.Body>
+    <Card style={{ width: "160px", borderRadius: "5px", ...borderProps }} key={tokenId.toString()} onClick={onClick}>
+      <Card.Img variant="top" src={imgurl} style={{ maxWidth: "150px" }} />
+      <Card.Body>#{paddedTokenId}</Card.Body>
     </Card>
-  )
+  );
 }
