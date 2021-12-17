@@ -20,7 +20,6 @@ type SpiralProps = DappState & {
   showModal: (title: string, message: JSX.Element) => void;
 };
 
-
 export function ImpishSpiral(props: SpiralProps) {
   const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
@@ -58,12 +57,11 @@ export function ImpishSpiral(props: SpiralProps) {
       }
 
       console.log("Calling RWNFT walletOfOwner");
-      const tokenIDs = await props.rwnft.walletOfOwner(props.selectedAddress) as Array<BigNumber>;
-      
+      const tokenIDs = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+
       // Limit to 20 for now.
       setUserRWNFTs(tokenIDs.slice(0, 20));
     })();
-    
   }, [props.selectedAddress, props.rwnft]);
 
   // Select the first RW NFT when it loads
@@ -82,7 +80,7 @@ export function ImpishSpiral(props: SpiralProps) {
           return;
         }
 
-        const seed = await props.rwnft.seeds(selectedUserRW) as string;
+        const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
         setup_image(canvasPreviewRef.current, seed);
       }
     })();
@@ -120,34 +118,51 @@ export function ImpishSpiral(props: SpiralProps) {
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
-        
+
         <Row className="mt-4">
-          <div style={{display: 'flex', justifyContent: 'center'}}>
-            <div style={{ padding: "20px", marginRight: "20px", textAlign: "center", minWidth: '800px' }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div style={{ padding: "20px", marginRight: "20px", textAlign: "center", minWidth: "800px" }}>
               {props.selectedAddress && (
-                <><h4>Your RandomWalkNFTs</h4><div style={{ display: "flex", justifyContent: "center", gap: "10px", rowGap: '20px', margin: "20px", flexWrap: 'wrap', maxWidth: '800px' }}>
-                  {userRWNFTs.map((tokenId) => (
-                    <SelectableNFT
-                      key={tokenId.toString()}
-                      tokenId={tokenId}
-                      selected={tokenId.eq(selectedUserRW || -1)}
-                      onClick={() => {
-                        setSelectedUserRW(tokenId);
-                      } } />
-                  ))}
-                </div></>
+                <>
+                  <h4>Your RandomWalkNFTs</h4>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: "10px",
+                      rowGap: "20px",
+                      margin: "20px",
+                      flexWrap: "wrap",
+                      maxWidth: "800px",
+                    }}
+                  >
+                    {userRWNFTs.map((tokenId) => (
+                      <SelectableNFT
+                        key={tokenId.toString()}
+                        tokenId={tokenId}
+                        selected={tokenId.eq(selectedUserRW || -1)}
+                        onClick={() => {
+                          setSelectedUserRW(tokenId);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
 
               {!props.selectedAddress && (
                 <div className="mt-4">
-                  <div style={{marginTop: '100px'}}>Connect your Metamask wallet<br/>to view your RandomWalkNFTs</div>
-                  <br/>
+                  <div style={{ marginTop: "100px" }}>
+                    Connect your Metamask wallet
+                    <br />
+                    to view your RandomWalkNFTs
+                  </div>
+                  <br />
                   <Button className="connect" variant="warning" onClick={props.connectWallet}>
                     Connect Wallet
                   </Button>
                 </div>
               )}
-
 
               {/* <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
                 <Button variant="warning" disabled>
@@ -160,14 +175,16 @@ export function ImpishSpiral(props: SpiralProps) {
             </div>
             <div style={{ padding: "20px" }}>
               <h4 className="mb-2">Companion Spiral NFT Preview</h4>
-              <div style={{border: 'solid 1px', borderRadius: '10px', padding: '10px'}}>
+              <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
                 <canvas ref={canvasPreviewRef} width="400px" height="400px"></canvas>
               </div>
             </div>
           </div>
         </Row>
         <Row>
-          <div className="mt-2" style={{ fontWeight: "bold", color: "#ffd454" }}>Minting Starts In</div>
+          <div className="mt-2" style={{ fontWeight: "bold", color: "#ffd454" }}>
+            Minting Starts In
+          </div>
           <div className="mb-4" style={{ fontFamily: "monospace" }}>
             {secondsToDhms(timeRemaining)}
           </div>
