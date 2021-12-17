@@ -304,8 +304,28 @@ function cart_ranges(path: number[][]) {
   return { min_x, max_x, min_y, max_y };
 }
 
+// Persist the rotate timer ID across setup_image calls.
+let rotateTimerId: any;
+let clickHandler: any;
+
 export function setup_image(canvas: HTMLCanvasElement, seed: string) {
   const ctx = canvas.getContext("2d");
+
+  // Reset scale
+  ctx?.resetTransform();
+
+  // Remove any existing timers
+  if (rotateTimerId) {
+    clearInterval(rotateTimerId);
+    rotateTimerId = undefined;
+  }
+
+  // Remove any existing listener
+  if (clickHandler) {
+    canvas.removeEventListener('click', clickHandler);
+    clickHandler = undefined;
+  }
+
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
@@ -321,7 +341,6 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
     const { cart_path, C } = get_steps(seed);
     
     const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth);
-    
 
     const clearCanvas = (ctx: CanvasRenderingContext2D) => {
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -340,14 +359,12 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
         clearCanvas(ctx);
       }
 
-
       draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
     };
 
     drawFirstImage(0);
-
-    let rotateTimerId: any;
-    const onClick = () => {
+    
+    clickHandler = () => {
       if (!ctx) {
         console.log("Couldn't get canvas context");
         return;
@@ -369,9 +386,7 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
       }
     };
 
-      // Remove any existing listener, and add a new one.
-    canvas.removeEventListener('click', onClick);
-    canvas.addEventListener("click", onClick);
+    canvas.addEventListener("click", clickHandler);
   }, 1000);
 }
 
