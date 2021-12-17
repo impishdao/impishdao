@@ -43,6 +43,11 @@ export function ImpishSpiral(props: SpiralProps) {
 
   // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
+    if (canvasPreviewRef.current && !canvasPreviewRef.current.getAttribute("spiralPresent")) {
+      canvasPreviewRef.current.setAttribute("spiralPresent", "true");
+      setup_image(canvasPreviewRef.current, "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
+    }
+
     if (canvasCompanionRef.current && !canvasCompanionRef.current.getAttribute("spiralPresent")) {
       canvasCompanionRef.current.setAttribute("spiralPresent", "true");
       setup_image(canvasCompanionRef.current, "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
@@ -174,7 +179,7 @@ export function ImpishSpiral(props: SpiralProps) {
               </div> */}
             </div>
             <div style={{ padding: "20px" }}>
-              <h4 className="mb-2">Companion Spiral NFT Preview</h4>
+              <h4 className="mb-2">{`${props.selectedAddress ? "Companion Spiral NFT Preview" : "Spiral NFT Preview"}`}</h4>
               <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
                 <canvas ref={canvasPreviewRef} width="400px" height="400px"></canvas>
               </div>
