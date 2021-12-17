@@ -1,4 +1,5 @@
 node_modules
+yarn.lock
 .env
 coverage
 coverage.json
@@ -10,3 +11,5 @@ typechain
 #Hardhat files
 cache
 artifacts
+
+local-impishdao-config.json
