@@ -4,15 +4,16 @@ import { pad } from "./utils";
 
 type NFTCardProps = {
   selectedAddress?: string;
-  buyNFTFromDAO: (tokenId: BigNumber) => Promise<void>;
+  buyNFTFromDAO?: (tokenId: BigNumber) => Promise<void>;
   tokenId: BigNumber;
-  nftPrice: BigNumber;
+  nftPrice?: BigNumber;
 };
 
-export default function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: NFTCardProps) {
+export function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: NFTCardProps) {
   const paddedTokenId = pad(tokenId.toString(), 6);
   const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
-  const price = parseFloat(ethers.utils.formatEther(nftPrice)).toFixed(4);
+  const showPrice = nftPrice && nftPrice.gt(0);
+  const price = parseFloat(ethers.utils.formatEther(nftPrice || 0)).toFixed(4);
 
   return (
     <Card style={{ width: "320px", padding: "10px", borderRadius: "5px" }} key={tokenId.toString()}>
@@ -35,8 +36,8 @@ export default function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, toke
             #{paddedTokenId}
           </a>
         </Card.Title>
-        <Card.Text>Price: {price} IMPISH</Card.Text>
-        {selectedAddress && (
+        {showPrice && <Card.Text>Price: {price} IMPISH</Card.Text>}
+        {(selectedAddress && buyNFTFromDAO) && (
           <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId)}>
             Buy Now
           </Button>
@@ -44,4 +45,31 @@ export default function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, toke
       </Card.Body>
     </Card>
   );
+}
+
+type SelectableNFTProps = {
+  tokenId: BigNumber;
+  selected: boolean;
+  onClick: () => void;
+};
+export function SelectableNFT({tokenId, onClick, selected}: SelectableNFTProps) {
+  const paddedTokenId = pad(tokenId.toString(), 6);
+  const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
+  let borderProps = {};
+  if (selected) {
+    borderProps = {borderColor: '#ffd454', borderWidth: '4px'};
+  }
+
+
+  return (
+    <Card style={{ width: "160px", borderRadius: "5px", ...borderProps }}
+      key={tokenId.toString()}
+      onClick={onClick}
+    >
+       <Card.Img variant="top" src={imgurl} style={{ maxWidth: "150px" }} />
+       <Card.Body>
+        #{paddedTokenId}
+        </Card.Body>
+    </Card>
+  )
 }

@@ -108,6 +108,23 @@ getLastETHPrice();
 const nftPriceCache = new Map<number, BigNumber>();
 let nftPriceCacheExpiry = Date.now();
 
+app.get("/rwnft_wallet/:address", async (req, res) => {
+  const address = req.params.address;
+  if (!address) {
+    res.send({});
+    return;
+  }
+
+  try {
+    console.log(`Fetching wallet of ${address}`);
+    const tokenIDs = await _rwnft.walletOfOwner(address);
+    res.send(tokenIDs);
+  } catch (err) {
+    console.log("Wallet error");
+    console.log(err);
+  }
+});
+
 app.get("/api", async (req, res) => {
   try {
     // impdao methods
@@ -170,8 +187,9 @@ app.get("/api", async (req, res) => {
 
     res.send(sendJson);
   } catch (err) {
+    console.log("API error");
     console.log(err);
-    console.log("Sending empty API response");
+    
     res.send({});
   }
 });

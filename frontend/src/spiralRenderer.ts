@@ -137,14 +137,6 @@ function get_steps(seed: string) {
     C.push([c1[i], c2[i], c3[i]]);
   }
 
-  // Trim the steps to a max of 2 million, to avoid overcrowding
-  const MAX_LEN = 2000000;
-  if (steps.length > MAX_LEN) {
-      steps.splice(MAX_LEN);
-      C.splice(MAX_LEN);
-      console.log(`Number of steps in walk: ${steps.length}`);
-  }  
-
   // Convert to Cartesian
   const cart_path = [];
   for (let i = 0; i < steps.length; i++) {
@@ -325,7 +317,6 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
     ctx?.drawImage(cachedImage, 0, 0);
   };
   cachedImage.src = `/${seed}.png`;
-  console.log("Drew static image");
   let rot = 0;
 
   setTimeout(() => {
@@ -339,11 +330,9 @@ export function setup_image(canvas: HTMLCanvasElement, seed: string) {
       ctx.rect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "black";
       ctx.fill();
-      console.log("cleared canvas");
     }
 
     const drawFirstImage = (rot: number) => {
-      console.log("Drawing first image");
       if (!ctx) {
         console.log("Couldn't get canvas context");
         return;

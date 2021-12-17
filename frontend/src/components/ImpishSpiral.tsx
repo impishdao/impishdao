@@ -3,9 +3,10 @@ import { LinkContainer } from "react-router-bootstrap";
 import { DappState } from "../AppState";
 import { format4Decimals, secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
-import { Contract } from "ethers";
+import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setup_image } from "../spiralRenderer";
+import {NFTCard, SelectableNFT} from "./NFTcard";
 
 type SpiralProps = DappState & {
   provider?: Web3Provider;
@@ -25,6 +26,9 @@ export function ImpishSpiral(props: SpiralProps) {
 
   const mintStart = 1640113200;
   const [timeRemaining, setTimeRemaining] = useState(mintStart - (Date.now() / 1000));
+
+  const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
+  const [selectedUserRW, setSelectedUserRW] = useState<BigNumber | null>(null);
 
   useEffect(() => {
     const timerID = setInterval(() => {
@@ -49,6 +53,18 @@ export function ImpishSpiral(props: SpiralProps) {
       }
     }, 100);
   });
+
+  useEffect(() => {
+    if (!props.selectedAddress) {
+      return;
+    }
+
+    fetch(`/rwnft_wallet/${props.selectedAddress}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setUserRWNFTs((data as Array<any>).map((d) => BigNumber.from(d)));
+      });
+  }, [props.selectedAddress]);
 
   return (
     <>
@@ -82,11 +98,31 @@ export function ImpishSpiral(props: SpiralProps) {
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
-        <canvas ref={canvasRef} width="400px" height="400px"></canvas>
+        {/* <canvas ref={canvasRef} width="400px" height="400px"></canvas>
         <div className="mt-2" style={{ fontWeight: "bold", color: "#ffd454" }}>Minting Starts In</div>
         <h3 className="mb-4" style={{ fontFamily: "monospace" }}>
           {secondsToDhms(timeRemaining)}
-        </h3>
+        </h3> */}
+        <Row>
+          <Col xs={8} style={{padding: '20px', textAlign: 'center'}}>
+            <h2>Your RandomWalkNFTs</h2>
+            <div style={{display: 'flex', justifyContent: 'center', gap: '10px', margin: '20px'}}>
+              {userRWNFTs.map((tokenId) => 
+                 <SelectableNFT tokenId={tokenId} selected={tokenId.eq(selectedUserRW || -1)} onClick={() => {
+                   setSelectedUserRW(tokenId);
+                 }}/>
+              )}
+            </div>
+
+            <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
+              <Button variant="warning" disabled>Mint Companion</Button>
+              <Button variant="warning" disabled>Mint Random</Button>
+            </div>
+          </Col>
+          <Col xs={4} style={{padding: '20px'}}>
+            <h2>You will recieve</h2>
+          </Col>
+        </Row>
       </div>
 
       <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>

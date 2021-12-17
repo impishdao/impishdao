@@ -6,7 +6,7 @@ import { Web3Provider } from "@ethersproject/providers";
 import { Button, InputGroup, FormControl, Row, Col, Stack, Table, Navbar, Container, Nav } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
 import { format4Decimals, formatUSD, pad, secondsToDhms } from "./utils";
-import NFTCard from "./NFTcard";
+import { NFTCard } from "./NFTcard";
 import React, { useEffect, useState } from "react";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { LinkContainer } from "react-router-bootstrap";
@@ -567,23 +567,23 @@ export function ImpishDAO(props: ImpishDAOProps) {
         </>
       )}
 
-      {/* <div style={{border: 'solid 1px #fff', margin: 20, padding: 20}}>
+      <div style={{border: 'solid 1px #fff', margin: 20, padding: 20}}>
           {props.selectedAddress && (
             <>
               <Stack direction="horizontal" gap={3}>
-                <Button onClick={this.AdminDepositExternal}>Mint NFT Directly</Button>
-                <Button onClick={this.AdminWithdraw}>Withdraw() Directly</Button>
-                <Button onClick={this.readDAOandNFTData}>Refresh DAO Data</Button>
+                <Button onClick={AdminDepositExternal}>Mint NFT Directly</Button>
+                <Button onClick={AdminWithdraw}>Withdraw() Directly</Button>
+                <Button onClick={props.readDappState}>Refresh DAO Data</Button>
                 <Button onClick={() => {
-                    this.readDAOandNFTData();
-                    this.readUserData();
+                    props.readDappState();
+                    props.readUserData();
                     timeNow += (30 * 24 * 3600 * 1000);
                   }
                 }>Advance Time</Button>
               </Stack>
             </>
           )}              
-        </div> */}
+        </div>
 
       <a id="stats"></a>
       <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>

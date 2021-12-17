@@ -200,6 +200,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
     fetch("/api")
       .then((r) => r.json())
       .then((data) => {
+        if (data.contractState === undefined) {
+          // server returned empty response, so just return
+          // TODO Show error instead of just loading...
+          return;
+        }
+
         const areWeWinning = data.areWeWinning;
         const contractState = data.contractState;
         const isRoundFinished = data.isRoundFinished;
