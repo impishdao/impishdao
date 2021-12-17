@@ -154,7 +154,7 @@ export function ImpishSpiral(props: SpiralProps) {
             <a style={{ color: "white" }} target="_blank" rel="noreferrer" href="https://www.randomwalknft.com/">
               RandomWalkNFT
             </a>{" "}
-            project. The Spirals are NFTs that you can mint on Arbitrum, with the following rules:
+            project. The Spirals are NFTs that anyone can mint on Arbitrum. It has the following rules:
             <br />
             <br />
             <ul>
