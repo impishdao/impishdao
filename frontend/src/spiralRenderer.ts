@@ -13,8 +13,7 @@ const fromHexString = (hexString: string) : Uint8Array => {
   
 
 // const toHexString = (bytes: Uint8Array) => bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
-
-const SCALE = 4;
+const SCALE = 2;
 
 function* random_generator(init_seed: string) {
   if (init_seed.startsWith("0x")) {
@@ -267,7 +266,7 @@ function draw_path_with_rot(
     pixels[off] = r;
     pixels[off + 1] = g;
     pixels[off + 2] = b;
-    pixels[off + 3] = 255;
+    pixels[off + 3] = 192; // 75%, to account for a 2x SCALE
   }
 
   //ctx.putImageData(id, 0, 0);
