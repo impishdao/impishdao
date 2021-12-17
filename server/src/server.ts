@@ -102,28 +102,28 @@ async function getLastETHPrice(): Promise<number> {
   }
 }
 
-// At startup, fetch the ETH Price.
-getLastETHPrice();
-
 const nftPriceCache = new Map<number, BigNumber>();
 let nftPriceCacheExpiry = Date.now();
 
-app.get("/rwnft_wallet/:address", async (req, res) => {
-  const address = req.params.address;
-  if (!address) {
-    res.send({});
-    return;
-  }
+// At startup, fetch the ETH Price.
+getLastETHPrice();
 
-  try {
-    console.log(`Fetching wallet of ${address}`);
-    const tokenIDs = await _rwnft.walletOfOwner(address);
-    res.send(tokenIDs);
-  } catch (err) {
-    console.log("Wallet error");
-    console.log(err);
-  }
-});
+// app.get("/rwnft_wallet/:address", async (req, res) => {
+//   const address = req.params.address;
+//   if (!address) {
+//     res.send({});
+//     return;
+//   }
+
+//   try {
+//     console.log(`Fetching wallet of ${address}`);
+//     const tokenIDs = await _rwnft.walletOfOwner(address);
+//     res.send(tokenIDs);
+//   } catch (err) {
+//     console.log("Wallet error");
+//     console.log(err);
+//   }
+// });
 
 type RadomWalkNFTData = {
   roundNum: BigNumber;
@@ -147,7 +147,7 @@ async function getRandomWalkNFTData(): Promise<RadomWalkNFTData> {
       _rwnft?.withdrawalAmount(),
     ]);
 
-    rwNFTDataCache = {roundNum, numWithdrawals, lastMintTime, mintPrice, withdrawalAmount};
+    rwNFTDataCache = { roundNum, numWithdrawals, lastMintTime, mintPrice, withdrawalAmount };
     lastRWNFTDataMintPrice = mintPrice;
 
     return rwNFTDataCache;
@@ -203,14 +203,14 @@ app.get("/api", async (req, res) => {
       isRoundFinished,
       daoBalance,
       nftsWithPrice,
-      ...rwNFTData
+      ...rwNFTData,
     };
 
     res.send(sendJson);
   } catch (err) {
     console.log("API error");
     console.log(err);
-    
+
     res.send({});
   }
 });

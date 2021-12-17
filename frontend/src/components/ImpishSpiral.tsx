@@ -20,8 +20,9 @@ type SpiralProps = DappState & {
   showModal: (title: string, message: JSX.Element) => void;
 };
 
+
 export function ImpishSpiral(props: SpiralProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
   const mintStart = 1640113200;
@@ -43,11 +44,6 @@ export function ImpishSpiral(props: SpiralProps) {
 
   // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
-    if (canvasRef.current && !canvasRef.current.getAttribute("spiralPresent")) {
-      canvasRef.current.setAttribute("spiralPresent", "true");
-      setup_image(canvasRef.current, "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
-    }
-
     if (canvasCompanionRef.current && !canvasCompanionRef.current.getAttribute("spiralPresent")) {
       canvasCompanionRef.current.setAttribute("spiralPresent", "true");
       setup_image(canvasCompanionRef.current, "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
@@ -56,17 +52,20 @@ export function ImpishSpiral(props: SpiralProps) {
 
   // Fetch the user's wallet's RW NFTs.
   useEffect(() => {
-    if (!props.selectedAddress) {
-      return;
-    }
 
-    fetch(`/rwnft_wallet/${props.selectedAddress}`)
-      .then((r) => r.json())
-      .then((data) => {
-        let tokenIds = (data as Array<any>).map((d) => BigNumber.from(d));
-        setUserRWNFTs(tokenIds);
-      });
-  }, [props.selectedAddress]);
+    (async () => {
+      if (!props.selectedAddress || !props.rwnft) {
+        return;
+      }
+
+      console.log("Calling RWNFT walletOfOwner");
+      const tokenIDs = await props.rwnft.walletOfOwner(props.selectedAddress) as Array<BigNumber>;
+      console.log(tokenIDs);
+
+      setUserRWNFTs(tokenIDs);
+    })();
+    
+  }, [props.selectedAddress, props.rwnft]);
 
   // Select the first RW NFT when it loads
   useEffect(() => {
@@ -74,6 +73,21 @@ export function ImpishSpiral(props: SpiralProps) {
       setSelectedUserRW(userRWNFTs[0]);
     }
   }, [userRWNFTs]);
+
+  // When a UserRWNFT is selected, update the preview
+  useEffect(() => {
+    // Fetch the Seed
+    (async () => {
+      if (canvasPreviewRef.current && selectedUserRW) {
+        if (!props.selectedAddress || !props.rwnft) {
+          return;
+        }
+
+        const seed = await props.rwnft.seeds(selectedUserRW) as string;
+        setup_image(canvasPreviewRef.current, seed);
+      }
+    })();
+  }, [props.rwnft, props.selectedAddress, selectedUserRW]);
 
   return (
     <>
@@ -118,6 +132,7 @@ export function ImpishSpiral(props: SpiralProps) {
             <div style={{ display: "flex", justifyContent: "center", gap: "10px", margin: "20px" }}>
               {userRWNFTs.map((tokenId) => (
                 <SelectableNFT
+                  key={tokenId.toString()} 
                   tokenId={tokenId}
                   selected={tokenId.eq(selectedUserRW || -1)}
                   onClick={() => {
@@ -138,6 +153,7 @@ export function ImpishSpiral(props: SpiralProps) {
           </Col>
           <Col xs={4} style={{ padding: "20px" }}>
             <h2>You will recieve</h2>
+            <canvas ref={canvasPreviewRef} width="250px" height="250px"></canvas>
           </Col>
         </Row>
       </div>
