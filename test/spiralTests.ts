@@ -146,6 +146,14 @@ describe("ImpishSpiral", function () {
       expect(await impishSpiral.ownerOf(i)).to.be.equal(wallet.address);
     }
 
+    // Can't mint a second RWNFT companion
+    const lastRwNFTTokenId = (await rwnft.nextTokenId()).sub(2);  // 2 because the ImpishSpiral has the rwnft-1 (to issue IMPISH tokens)
+    await expect(impishSpiral.mintSpiralWithRWNFT(lastRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("AlreadyMinted");
+
+    // Can't mint one that we don't own.
+    const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1);  // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
+    await expect(impishSpiral.mintSpiralWithRWNFT(notWalletRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("MinterDoesntOwnToken");
+
     // Prematurely claiming win is error
     await expect(impishSpiral.claimWin(0)).to.be.revertedWith("MintsStillOpen");
 

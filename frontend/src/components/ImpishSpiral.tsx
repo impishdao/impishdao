@@ -181,7 +181,7 @@ export function ImpishSpiral(props: SpiralProps) {
                     </>
                   )}
                   <Button className="connect mt-3" variant="info" onClick={randomSpiral}>
-                    Preview Random Spiral
+                    Preview Original Spiral
                   </Button>
                 </div>
               )}
@@ -191,12 +191,12 @@ export function ImpishSpiral(props: SpiralProps) {
                   Mint Companion
                 </Button>
                 <Button variant="warning" disabled>
-                  Mint Random
+                  Mint Original
                 </Button>
               </div> */}
             </div>
             <div style={{ padding: "20px" }}>
-              <h4 className="mb-2">{`${props.selectedAddress ? "Companion Spiral NFT Preview" : "Spiral NFT Preview"}`}</h4>
+              <h4 className="mb-2">{`${props.selectedAddress ? "RandomWalkNFT Companion Spiral Preview" : "Original Spiral Preview"}`}</h4>
               <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
                 <canvas ref={canvasPreviewRef} width="400px" height="400px"></canvas>
               </div>
@@ -244,18 +244,18 @@ export function ImpishSpiral(props: SpiralProps) {
                   <li>10th place gets 1% of the prize ETH</li>
                 </ul>
               </li>
-              <li>You can choose to mint a Random spiral, or a "Companion Spiral" to your RandomWalkNFT</li>
+              <li>You can choose to mint an Original spiral, or a RandomWalkNFT Companion Spiral</li>
               <ul>
                 <li>
-                  If you mint a Companion Spiral, 1/3rd of your mint price is returned back to you as IMPISH tokens!
+                  If you mint a RandomWalkNFT Companion Spiral, 1/3rd of your mint price is returned back to you as IMPISH tokens!
                 </li>
-                <li>If you mint a Random Spiral, you'll get an original spiral that doesn't look like any other!</li>
+                <li>If you mint an Original Spiral, you'll get an original spiral that doesn't look like any other!</li>
               </ul>
             </ul>
           </div>
 
           <div className="mb-3">
-            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What is a Companion Spiral?</span>
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What is a RandomWalkNFT Companion Spiral?</span>
             <br />
             If you own a RandomWalkNFT, you can choose to base your spiral on your RandomWalkNFT. Your spiral will share
             the generative seed with your RandomWalkNFT, which means your spiral will look similar to your
@@ -274,7 +274,7 @@ export function ImpishSpiral(props: SpiralProps) {
               </Col>
             </Row>
             <br />
-            If you mint a companion spiral, 1/3rd of your mint price is used to purchase{" "}
+            If you mint a RandomWalkNFT Companion spiral, 1/3rd of your mint price is used to purchase{" "}
             <a style={{ color: "white" }} target="_blank" rel="noreferrer" href="https://impishdao.com/">
               IMPISH tokens
             </a>{" "}
@@ -283,6 +283,14 @@ export function ImpishSpiral(props: SpiralProps) {
               ImpishDAO
             </a>{" "}
             tokens, which will pay out the RandomWalkNFT prize pool if ImpishDAO wins!
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>Do I need to have my RandomWalkNFT in my wallet to mint a RandomWalkNFT companion spiral?</span>
+            <br />
+            Yes, you need to have your RandomWalkNFT in your wallet to mint it's companion spiral. Note that only owner's of an RandomWalkNFT can mint its companion spiral. 
+            <br />
+            Each RandomWalkNFT can only have 1 companion spiral. 
           </div>
 
           <div className="mb-3">
