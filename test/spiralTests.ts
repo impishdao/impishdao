@@ -154,6 +154,10 @@ describe("ImpishSpiral", function () {
     const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1);  // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
     await expect(impishSpiral.mintSpiralWithRWNFT(notWalletRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("MinterDoesntOwnToken");
 
+    // Can't mint non-existing token
+    const notExistingRwNFTTokenId = (await rwnft.nextTokenId());  // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
+    await expect(impishSpiral.mintSpiralWithRWNFT(notExistingRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("ERC721: owner query for nonexistent token");
+    
     // Prematurely claiming win is error
     await expect(impishSpiral.claimWin(0)).to.be.revertedWith("MintsStillOpen");
 

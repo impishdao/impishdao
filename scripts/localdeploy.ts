@@ -36,6 +36,9 @@ async function main() {
   console.log("ImpishDAO deployed to:", impdao.address);
   console.log("ImpishSpiral deployed to:", impishspiral.address);
 
+  // Start the ImpishSpiral for ease
+  await impishspiral.startMints();
+
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(rwnft, impdao, impishspiral);
 }
@@ -56,7 +59,7 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
   fs.writeFileSync(
     contractsDir + "/contract-addresses.json",
     JSON.stringify(
-      { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral },
+      { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral.address },
       undefined,
       2
     )

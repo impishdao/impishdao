@@ -61,7 +61,7 @@ export function SelectableNFT({ tokenId, onClick, selected }: SelectableNFTProps
   }
 
   return (
-    <Card style={{ width: "160px", borderRadius: "5px", ...borderProps }} onClick={onClick}>
+    <Card style={{ width: "160px", height: '160px', borderRadius: "5px", ...borderProps }} onClick={onClick}>
       <Card.Img variant="top" src={imgurl} style={{ maxWidth: "150px" }} />
       <Card.Body>#{paddedTokenId}</Card.Body>
     </Card>

@@ -1,18 +1,18 @@
-import { Button, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
+import { Button, ButtonGroup, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { DappState } from "../AppState";
-import { format4Decimals, secondsToDhms } from "./utils";
+import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setup_image, toHexString } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
-import { sha3_256 } from "js-sha3";
 
 type SpiralProps = DappState & {
   provider?: Web3Provider;
   impdao?: Contract;
   rwnft?: Contract;
+  impspiral?: Contract;
 
   connectWallet: () => void;
 
@@ -31,6 +31,9 @@ export function ImpishSpiral(props: SpiralProps) {
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
   const [selectedUserRW, setSelectedUserRW] = useState<BigNumber | null>(null);
 
+  const [spiralType, setSpiralType] = useState("original");
+  const [mintPrice, setMintPrice] = useState<BigNumber>(BigNumber.from(0));
+
   // Countdown timer.
   useEffect(() => {
     const timerID = setInterval(() => {
@@ -44,16 +47,16 @@ export function ImpishSpiral(props: SpiralProps) {
 
   // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
-    if (canvasPreviewRef.current && !canvasPreviewRef.current.getAttribute("spiralPresent")) {
-      canvasPreviewRef.current.setAttribute("spiralPresent", "true");
-      setup_image(canvasPreviewRef.current, "main", "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
-    }
+    // if (canvasPreviewRef.current && !canvasPreviewRef.current.getAttribute("spiralPresent")) {
+    //   canvasPreviewRef.current.setAttribute("spiralPresent", "true");
+    //   setup_image(canvasPreviewRef.current, "main", "0xb5ffb54c5eb19112305a6c2abe60c4612369b1a8af878a3b30867baa018e96a6");
+    // }
 
     if (canvasCompanionRef.current && !canvasCompanionRef.current.getAttribute("spiralPresent")) {
       canvasCompanionRef.current.setAttribute("spiralPresent", "true");
       setup_image(canvasCompanionRef.current, "faq", "0x532b99fbdb1156fb7970b0ad4e4c0718bdb360bec4e040734c7f549e62c54819");
     }
-  });
+  });  
 
   // Fetch the user's wallet's RW NFTs.
   useEffect(() => {
@@ -61,12 +64,15 @@ export function ImpishSpiral(props: SpiralProps) {
       if (!props.selectedAddress || !props.rwnft) {
         return;
       }
-
-      console.log("Calling RWNFT walletOfOwner");
       const tokenIDs = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
 
       // Limit to 20 for now.
       setUserRWNFTs(tokenIDs.slice(0, 20));
+
+      // Also get the latest mint price
+      if (props.impspiral) {
+        setMintPrice(await props.impspiral.getMintPrice());
+      }
     })();
   }, [props.selectedAddress, props.rwnft]);
 
@@ -78,19 +84,19 @@ export function ImpishSpiral(props: SpiralProps) {
   }, [userRWNFTs]);
 
   // When a UserRWNFT is selected, update the preview
-  useEffect(() => {
-    // Fetch the Seed
-    (async () => {
-      if (canvasPreviewRef.current && selectedUserRW) {
-        if (!props.selectedAddress || !props.rwnft) {
-          return;
-        }
-
-        const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
-        setup_image(canvasPreviewRef.current, "main", seed);
+  const updatePreview = async () => {
+    if (canvasPreviewRef.current && selectedUserRW) {
+      if (!props.selectedAddress || !props.rwnft) {
+        return;
       }
-    })();
-  }, [props.rwnft, props.selectedAddress, selectedUserRW]);
+
+      const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
+      setup_image(canvasPreviewRef.current, "main", seed);
+    }
+  };
+  useLayoutEffect(() => {
+    updatePreview();
+  }, [props.rwnft, props.selectedAddress, selectedUserRW, spiralType]);
 
   const randomSpiral = async () => {
     if (canvasPreviewRef.current) {
@@ -100,6 +106,24 @@ export function ImpishSpiral(props: SpiralProps) {
       setup_image(canvasPreviewRef.current, "main", toHexString(r));
     }
   };
+
+  const mintSpiral = async () => {
+    if (!props.impspiral) {
+      return;
+    }
+
+    if (spiralType === 'original') {
+      let tx = await props.impspiral.mintSpiralRandom({value: await props.impspiral.getMintPrice()});
+      await tx.wait();
+    } else {
+      if (selectedUserRW) {
+        let tx = await props.impspiral.mintSpiralWithRWNFT(selectedUserRW, {value: await props.impspiral.getMintPrice()});
+        await tx.wait();
+      } else {
+        console.log("Error, no user selected RandomWalkNFT found!");
+      }
+    }
+  }
 
   return (
     <>
@@ -133,84 +157,93 @@ export function ImpishSpiral(props: SpiralProps) {
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
-
+        <Container>
         <Row className="mt-4">
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div style={{ padding: "20px", marginRight: "20px", textAlign: "center", minWidth: "800px" }}>
-              {props.selectedAddress && (
+          {props.selectedAddress && (
+            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'start', marginLeft: '50px'}}>
+              <h5>Step 1: What kind of Spiral?</h5>
+              <ButtonGroup className="mb-4">
+                <Button style={{marginRight: '10px'}} variant={spiralType === 'original' ? "primary" : "outline-primary"} onClick={() => setSpiralType("original")}>Original Spiral</Button>
+                <Button variant={spiralType === 'companion' ? "primary" : "outline-primary"} 
+                  onClick={() => setSpiralType("companion")}>
+                    RandomWalkNFT Companion Spiral
+                </Button>
+              </ButtonGroup>
+
+              {(spiralType === "companion") && (
                 <>
-                  {userRWNFTs.length > 0 ? <h4>Your RandomWalkNFTs</h4> : `You don't have any RandomWalkNFTs in your wallet`}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: "10px",
-                      rowGap: "20px",
-                      margin: "20px",
-                      flexWrap: "wrap",
-                      maxWidth: "800px",
-                    }}
-                  >
-                    {userRWNFTs.map((tokenId) => (
-                      <SelectableNFT
-                        key={tokenId.toString()}
-                        tokenId={tokenId}
-                        selected={tokenId.eq(selectedUserRW || -1)}
-                        onClick={() => {
-                          setSelectedUserRW(tokenId);
-                        }}
-                      />
-                    ))}
-                  </div>
+                  <h5>Step 2: Select a RandomWalkNFT to mint its companion</h5>
+                  {userRWNFTs.length > 0 && (
+                    <div style={{display: 'flex'}}>
+                      <div style={{ padding: "20px", minWidth: '75%' }}>
+                        <div>Your RandomWalkNFTs</div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "start",
+                            gap: "10px",
+                            rowGap: "20px",
+                            margin: "20px",
+                            flexWrap: "wrap",
+                            maxWidth: "800px",
+                          }}
+                        >
+                          {userRWNFTs.map((tokenId) => (
+                            <SelectableNFT
+                              key={tokenId.toString()}
+                              tokenId={tokenId}
+                              selected={tokenId.eq(selectedUserRW || -1)}
+                              onClick={() => {
+                                setSelectedUserRW(tokenId);
+                              } } />
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ padding: "20px" }}>
+                        <div>Preview</div>
+                        <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
+                          <canvas ref={canvasPreviewRef} width="300px" height="300px"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {userRWNFTs.length === 0 && (
+                    <div>You don't have any RandomWalkNFTs in your wallet</div>
+                  )}
                 </>
               )}
 
-              {(!props.selectedAddress || userRWNFTs.length === 0) && (
-                <div className="mt-4">
-                  {!props.selectedAddress && (
-                    <>
-                      <div style={{ marginTop: "100px" }}>
-                        Connect your Metamask wallet
-                        <br />
-                        to view your RandomWalkNFTs
-                      </div>
-                      <br />
-                      <Button className="connect" variant="warning" onClick={props.connectWallet}>
-                        Connect Wallet
-                      </Button><br /><div className="mt-3">OR</div>
-                    </>
-                  )}
-                  <Button className="connect mt-3" variant="info" onClick={randomSpiral}>
-                    Preview Original Spiral
-                  </Button>
-                </div>
-              )}
+              <h5>Step {spiralType === "companion" ? "3" : "2"}: Mint!</h5>
+              <div>Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}</div>
+              <Button variant="warning" onClick={mintSpiral}>Mint</Button>
+              <div style={{marginBottom: '50px'}}></div>
+            </div>
+          )}
 
-              {/* <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
-                <Button variant="warning" disabled>
-                  Mint Companion
-                </Button>
-                <Button variant="warning" disabled>
-                  Mint Original
-                </Button>
-              </div> */}
-            </div>
-            <div style={{ padding: "20px" }}>
-              <h4 className="mb-2">{`${props.selectedAddress ? "RandomWalkNFT Companion Spiral Preview" : "Original Spiral Preview"}`}</h4>
-              <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
-                <canvas ref={canvasPreviewRef} width="400px" height="400px"></canvas>
+          {(!props.selectedAddress) && (
+            <div style={{ marginTop: "50px", marginBottom: '100px' }}>
+              <div>
+                Connect your Metamask wallet
+                <br />
+                to mint Spirals
               </div>
+              <br />
+              <Button className="connect" variant="warning" onClick={props.connectWallet}>
+                Connect Wallet
+              </Button>
             </div>
-          </div>
+          )}
         </Row>
-        <Row>
+      </Container>
+        {/* <Row>
           <div className="mt-2" style={{ fontWeight: "bold", color: "#ffd454" }}>
             Minting Starts In
           </div>
           <div className="mb-4" style={{ fontFamily: "monospace" }}>
             {secondsToDhms(timeRemaining)}
           </div>
-        </Row>
+        </Row> */}
       </div>
 
       <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>

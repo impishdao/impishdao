@@ -320,7 +320,7 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
   // Remove any existing listener
   const clkHdl = clickHandlerMap.get(id);
   if (clkHdl) {
-    console.log("Removing click handler that is present");
+    // console.log("Removing click handler that is present");
     canvas.removeEventListener('click', clkHdl);
     clickHandlerMap.delete(id);
   }
@@ -374,7 +374,7 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
     drawFirstImage(0);
     
     const clickHandler = () => {
-      console.log(`Clicked for id ${id}`);
+      // console.log(`Clicked for id ${id}`);
       if (!ctx) {
         console.log("Couldn't get canvas context");
         return;
@@ -397,7 +397,7 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
       }
     };
 
-    console.log("Adding click handler");
+    // console.log("Adding click handler");
     canvas.addEventListener("click", clickHandler);
     clickHandlerMap.set(id, clickHandler);
   }, 1000);

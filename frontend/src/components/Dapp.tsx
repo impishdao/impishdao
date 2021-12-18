@@ -8,6 +8,7 @@ import { BigNumber, Contract, ethers } from "ethers";
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
 import RandomWalkNFTArtifact from "../contracts/rwnft.json";
+import ImpishSpiralArtifact from "../contracts/impishspiral.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
@@ -50,6 +51,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   provider?: Web3Provider;
   impdao?: Contract;
   rwnft?: Contract;
+  impspiral?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -78,7 +80,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
     // artifact. You can do this same thing with your contracts.
     this.impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, this.provider.getSigner(0));
 
+    // Interface to RWNFT
     this.rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, this.provider);
+
+    // Interface to ImpishSpiral contract
+    this.impspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, this.provider.getSigner(0));
 
     this.readDappState();
     this.readUserData();
@@ -301,6 +307,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   provider={this.provider}
                   impdao={this.impdao}
                   rwnft={this.rwnft}
+                  impspiral={this.impspiral}
                 />
               }
             />
