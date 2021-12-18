@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
+import { Button, ButtonGroup, Col, Container, Form, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { DappState } from "../AppState";
 import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
@@ -161,22 +161,26 @@ export function ImpishSpiral(props: SpiralProps) {
         <Row className="mt-4">
           {props.selectedAddress && (
             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'start', marginLeft: '50px'}}>
-              <h5>Step 1: What kind of Spiral?</h5>
-              <ButtonGroup className="mb-4">
+              <h5><span style={{color: '#ffc106'}}>Step 1:</span> What kind of Spiral?</h5>
+              {/* <ButtonGroup className="mb-4">
                 <Button style={{marginRight: '10px'}} variant={spiralType === 'original' ? "primary" : "outline-primary"} onClick={() => setSpiralType("original")}>Original Spiral</Button>
                 <Button variant={spiralType === 'companion' ? "primary" : "outline-primary"} 
                   onClick={() => setSpiralType("companion")}>
                     RandomWalkNFT Companion Spiral
                 </Button>
-              </ButtonGroup>
+              </ButtonGroup> */}
+              <Form style={{textAlign: 'left'}}>
+                <Form.Check checked={spiralType === 'original'} label="Original Spiral" type="radio" onChange={() => setSpiralType("original")} id="minttype" />
+                <Form.Check checked={spiralType === 'companion'} label="RandomWalkNFT Companion Spiral" type="radio" onChange={() => setSpiralType("companion")} id="minttype" />
+              </Form>
 
               {(spiralType === "companion") && (
                 <>
-                  <h5>Step 2: Select a RandomWalkNFT to mint its companion</h5>
+                  <h5 style={{marginTop: '30px'}}><span style={{color: '#ffc106'}}>Step 2:</span> Select a RandomWalkNFT to mint its companion</h5>
                   {userRWNFTs.length > 0 && (
                     <div style={{display: 'flex'}}>
-                      <div style={{ padding: "20px", minWidth: '75%' }}>
-                        <div>Your RandomWalkNFTs</div>
+                      <div style={{ padding: "0px", minWidth: '75%' }}>
+                        {/* <div>Your RandomWalkNFTs</div> */}
                         <div
                           style={{
                             display: "flex",
@@ -199,7 +203,7 @@ export function ImpishSpiral(props: SpiralProps) {
                           ))}
                         </div>
                       </div>
-                      <div style={{ padding: "20px" }}>
+                      <div style={{ padding: "0px" }}>
                         <div>Preview</div>
                         <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
                           <canvas ref={canvasPreviewRef} width="300px" height="300px"></canvas>
@@ -214,9 +218,9 @@ export function ImpishSpiral(props: SpiralProps) {
                 </>
               )}
 
-              <h5>Step {spiralType === "companion" ? "3" : "2"}: Mint!</h5>
+              <h5 style={{marginTop: '30px'}}><span style={{color: '#ffc106'}}>Step {spiralType === "companion" ? "3" : "2"}:</span> Mint!</h5>
               <div>Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}</div>
-              <Button variant="warning" onClick={mintSpiral}>Mint</Button>
+              <Button style={{marginTop: '10px'}} variant="warning" onClick={mintSpiral}>Mint</Button>
               <div style={{marginBottom: '50px'}}></div>
             </div>
           )}

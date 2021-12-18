@@ -397,7 +397,7 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
       }
     };
 
-    // console.log("Adding click handler");
+    console.log("Adding click handler");
     canvas.addEventListener("click", clickHandler);
     clickHandlerMap.set(id, clickHandler);
   }, 1000);
