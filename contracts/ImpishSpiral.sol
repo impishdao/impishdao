@@ -126,8 +126,8 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
     // Mint a spiral based on a RandomWalkNFT
     function mintSpiralWithRWNFT(uint256 _rwnftTokenId) public payable nonReentrant {
-        require(_rwNFT.ownerOf(_rwnftTokenId) == msg.sender, "MinterDoesntOwnToken");
         require(!mintedRWs[_rwnftTokenId], "AlreadyMinted");
+        require(_rwNFT.ownerOf(_rwnftTokenId) == msg.sender, "MinterDoesntOwnToken");
 
         // Mark this RandomWalkNFT as already minted.
         mintedRWs[_rwnftTokenId] = true;
