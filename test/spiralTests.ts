@@ -39,22 +39,26 @@ describe("ImpishSpiral", function () {
     expect(await impishSpiral.started()).to.equal(false);
 
     // First mint is 0.005 ETH + 0.5%
+    const firstMintPrice = await impishSpiral.getMintPrice();
     expect(await impishSpiral.getMintPrice()).to.equal(ethers.utils.parseEther("0.005025"));
 
     await rwnft.mint({ value: await rwnft.getMintPrice() });
-    await expect(impishSpiral.mintSpiralWithRWNFT(0)).to.be.revertedWith("NotYetStarted");
+    await expect(impishSpiral.mintSpiralWithRWNFT(0, {value: firstMintPrice})).to.be.revertedWith("NotYetStarted");
     await expect(impishSpiral.claimWin(1)).to.be.revertedWith("NotYetStarted");
-    await expect(impishSpiral.mintSpiralRandom()).to.be.revertedWith("NotYetStarted");
+    await expect(impishSpiral.mintSpiralRandom({value: firstMintPrice})).to.be.revertedWith("NotYetStarted");
 
     // Start the mints
     await impishSpiral.startMints();
 
     // Mint random
-    await impishSpiral.mintSpiralRandom({ value: impishSpiral.getMintPrice() });
+    await impishSpiral.mintSpiralRandom({ value: firstMintPrice });
 
     // Assert balances
     expect(await impdao.balanceOf(impishSpiral.address), "spiral balance").to.be.equal(0);
     expect(await impdao.balanceOf(wallet.address), "wallet balance").to.be.equal(0);
+
+    // Can't mint with less than mint price
+    await expect(impishSpiral.mintSpiralRandom({value: 1})).to.be.revertedWith("NotEnoughETH");
 
     // Mint with RW, since we own #0
     const mintPrice = await impishSpiral.getMintPrice();
