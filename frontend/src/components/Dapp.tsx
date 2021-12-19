@@ -19,6 +19,8 @@ import React from "react";
 import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
+import { SpiralWallet } from "./SpiralWallet";
+import { SpiralDetail } from "./SpiralDetail";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -310,6 +312,16 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   impspiral={this.impspiral}
                 />
               }
+            />
+
+            <Route 
+              path="/spirals/wallet/:address"
+              element={<SpiralWallet />}
+            />
+
+            <Route
+              path="/spirals/detail/:id"
+              element={<SpiralDetail />}
             />
           </Routes>
 
