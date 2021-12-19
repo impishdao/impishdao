@@ -325,7 +325,10 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route path="/spirals/wallet/:address" element={<SpiralWallet />} />
 
-            <Route path="/spirals/detail/:id" element={<SpiralDetail />} />
+            <Route
+              path="/spirals/detail/:id"
+              element={<SpiralDetail {...this.state} connectWallet={() => this._connectWallet()} />}
+            />
           </Routes>
 
           <Row
