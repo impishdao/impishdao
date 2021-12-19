@@ -86,7 +86,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, this.provider);
 
     // Interface to ImpishSpiral contract
-    this.impspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, this.provider.getSigner(0));
+    this.impspiral = new ethers.Contract(
+      contractAddresses.ImpishSpiral,
+      ImpishSpiralArtifact.abi,
+      this.provider.getSigner(0)
+    );
 
     this.readDappState();
     this.readUserData();
@@ -252,8 +256,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.readDappState();
   }
 
-  showModal = (title: string, message: JSX.Element) => {
-    this.setState({ modalTitle: title, modalMessage: message, modalShowing: true });
+  showModal = (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => {
+    this.setState({ modalTitle: title, modalMessage: message, modalShowing: true, modalCloseCallBack });
   };
 
   render() {
@@ -266,7 +270,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
             message={this.state.modalMessage || <></>}
             title={this.state.modalTitle || ""}
             show={this.state.modalShowing}
-            close={() => this.setState({ modalShowing: false })}
+            close={() => {
+              this.setState({ modalShowing: false });
+              if (this.state.modalCloseCallBack) {
+                this.state.modalCloseCallBack();
+              }
+            }}
           />
 
           <div className="mt-5" />
@@ -314,15 +323,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
               }
             />
 
-            <Route 
-              path="/spirals/wallet/:address"
-              element={<SpiralWallet />}
-            />
+            <Route path="/spirals/wallet/:address" element={<SpiralWallet />} />
 
-            <Route
-              path="/spirals/detail/:id"
-              element={<SpiralDetail />}
-            />
+            <Route path="/spirals/detail/:id" element={<SpiralDetail />} />
           </Routes>
 
           <Row

@@ -22,7 +22,7 @@ type ImpishDAOProps = DappState & {
 
   readDappState: () => Promise<void>;
   readUserData: () => Promise<void>;
-  showModal: (title: string, message: JSX.Element) => void;
+  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
 };
 
 type BeenOutbidProps = DappState & {

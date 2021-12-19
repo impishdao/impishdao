@@ -304,6 +304,12 @@ let rotateTimerIdMap = new Map<string, NodeJS.Timeout>();
 let clickHandlerMap = new Map<string, any>();
 
 export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string) {
+  if (canvas.getAttribute("spiralPresent") === id) {
+    // console.log("Already has Spiral")
+    return;
+  }
+  canvas.setAttribute("spiralPresent", id);
+
   const ctx = canvas.getContext("2d");
 
   // Reset scale
@@ -374,7 +380,7 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
     drawFirstImage(0);
     
     const clickHandler = () => {
-      // console.log(`Clicked for id ${id}`);
+      console.log(`Clicked for id ${id}`);
       if (!ctx) {
         console.log("Couldn't get canvas context");
         return;

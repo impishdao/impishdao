@@ -221,6 +221,20 @@ app.get("/lastethprice", async (req, res) => {
   res.send({ lastETHPrice });
 });
 
+app.get("/spiralapi/seedforid/:id", async (req, res) => {
+  const id = BigNumber.from(req.params.id);
+
+  const seed = await _impishspiral.spiralSeeds(id);
+  if (BigNumber.from(seed).eq(0)) {
+    res.status(404).send("Not Found");
+    return;
+  }
+
+  const owner = await _impishspiral.ownerOf(id);
+
+  res.send({id, seed, owner});
+});
+
 app.get("/spiral_image/id/:id", async (req, res) => {
   const id = BigNumber.from(req.params.id);
 

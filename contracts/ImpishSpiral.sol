@@ -26,7 +26,7 @@ abstract contract IImpishDAO is IERC20 {
 
 contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     // Next TokenID
-    uint256 private _tokenIdCounter;
+    uint256 public _tokenIdCounter;
 
     // When the last token was minted
     uint256 public lastMintTime;

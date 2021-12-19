@@ -29,6 +29,7 @@ export class DappState {
   modalTitle?: string;
   modalMessage?: JSX.Element;
   modalShowing: boolean;
+  modalCloseCallBack?: () => void;
 
   // DAO State
   areWeWinning: boolean;
