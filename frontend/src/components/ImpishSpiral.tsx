@@ -229,7 +229,7 @@ export function ImpishSpiral(props: SpiralProps) {
                       <span style={{ color: "#ffc106" }}>Step 2:</span> Select a RandomWalkNFT to mint its companion
                     </h5>
                     {userRWNFTs.length > 0 && (
-                      <div style={{ display: "flex" }}>
+                      <div style={{ display: "flex", textAlign: 'left' }}>
                         <div style={{ padding: "0px", minWidth: "75%" }}>
                           {/* <div>Your RandomWalkNFTs</div> */}
                           <div
@@ -254,6 +254,17 @@ export function ImpishSpiral(props: SpiralProps) {
                               />
                             ))}
                           </div>
+                          <div style={{textAlign: 'left'}}>
+                            <h5 style={{ marginTop: "30px" }}>
+                              <span style={{ color: "#ffc106" }}>Step {spiralType === "companion" ? "3" : "2"}:</span> Mint!
+                            </h5>
+                            <div>
+                              Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}
+                            </div>
+                            <Button style={{ marginTop: "10px" }} variant="warning" onClick={mintSpiral}>
+                              Mint
+                            </Button>
+                          </div>
                         </div>
                         <div style={{ padding: "0px" }}>
                           <div>Preview</div>
@@ -264,19 +275,28 @@ export function ImpishSpiral(props: SpiralProps) {
                       </div>
                     )}
 
-                    {userRWNFTs.length === 0 && <div>You don't have any available RandomWalkNFTs in your wallet</div>}
+                    {userRWNFTs.length === 0 && 
+                      <div style={{textAlign: 'left'}}>You don't have any available RandomWalkNFTs in your wallet<br/>
+                      Please select "Original Spiral" to mint.
+                      </div>
+                    }
                   </>
                 )}
 
-                <h5 style={{ marginTop: "30px" }}>
-                  <span style={{ color: "#ffc106" }}>Step {spiralType === "companion" ? "3" : "2"}:</span> Mint!
-                </h5>
-                <div>
-                  Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}
-                </div>
-                <Button style={{ marginTop: "10px" }} variant="warning" onClick={mintSpiral}>
-                  Mint
-                </Button>
+                {spiralType === "original" && (
+                  <>
+                    <h5 style={{ marginTop: "30px" }}>
+                      <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
+                    </h5>
+                    <div>
+                      Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}
+                    </div>
+                    <Button style={{ marginTop: "10px" }} variant="warning" onClick={mintSpiral}>
+                      Mint
+                    </Button>
+                  </>
+                )}
+                
                 <div style={{ marginBottom: "50px" }}></div>
               </div>
             )}

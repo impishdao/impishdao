@@ -101,7 +101,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
         uint256 excessETH = 0;
         if (msg.value > nextMintPrice) {
-            excessETH = nextMintPrice - msg.value;
+            excessETH = msg.value - nextMintPrice;
         }
 
         // Increase the mint price

@@ -5,7 +5,7 @@ import { ethers, network, waffle } from "hardhat";
 import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
 import type { ImpishSpiral } from "../typechain/ImpishSpiral";
-import { BigNumber } from "ethers";
+import { BigNumber, providers } from "ethers";
 
 type FixtureType = {
   impishSpiral: ImpishSpiral;
@@ -196,6 +196,112 @@ describe("ImpishSpiral", function () {
 
     // The actual dev fee should be 12% of total reward
     expect(actualDevFee.sub(totalReward.mul(12).div(100)).toNumber()).to.be.closeTo(0, 10);
+
+    // Now should be empty
+    await expect(impishSpiral.afterAllWinnings()).to.be.revertedWith("Empty");
+  });
+
+
+  it("Should return excess ETH", async function () {
+    const { impishSpiral } = await loadContracts();
+    const provider = waffle.provider;
+    const [wallet] = provider.getWallets();
+
+    // Start the mints
+    await impishSpiral.startMints();
+
+    const mintPrice = await impishSpiral.getMintPrice();
+    await expect(await impishSpiral.mintSpiralRandom({value: mintPrice.mul(2)}))
+      .to.changeEtherBalance(wallet, -mintPrice);
+  });
+
+  it("Should allow a mix of NFTs to win", async function () {
+    const { impishSpiral, impdao, rwnft } = await loadContracts();
+    const provider = waffle.provider;
+
+    // Get 10 wallets
+    const signers = (await ethers.getSigners()).slice(0, 10);
+    const wallet = signers[0];
+
+    // Start the mints
+    await impishSpiral.startMints();
+
+    // Mint 20 Random Spirals first
+    let expectedBal = BigNumber.from(0);
+    for (let i = 0; i < 20; i++) {
+      expectedBal = expectedBal.add(await impishSpiral.getMintPrice());
+      await impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()});
+    }
+
+    const startBal = await provider.getBalance(impishSpiral.address);
+    expect(startBal).to.be.equals(expectedBal);
+
+    // Now, the first 5 signers mint random Spirals
+    for (let i = 0; i < 5; i++) {
+      const mintPrice = await impishSpiral.getMintPrice();
+      const expectedToken = await impishSpiral._tokenIdCounter();
+      await impishSpiral.connect(signers[i]).mintSpiralRandom({value: mintPrice});
+      expect(await impishSpiral.ownerOf(expectedToken)).to.be.equal(signers[i].address);
+    }
+
+    // The next 10 signers mint RandomWalkNFT spirals
+    // First, get all the 5 to mint a RWNFT
+    const rwTokenIDs = [];
+    for (let i = 5; i < 10; i++) {
+      rwTokenIDs.push(await rwnft.nextTokenId());
+      await rwnft.connect(signers[i]).mint({value: await rwnft.getMintPrice()});
+      expect(await rwnft.ownerOf(rwTokenIDs[rwTokenIDs.length - 1])).to.be.equal(signers[i].address);
+    }
+
+    // Now, mint the Companions
+    let impishDAOFunds = BigNumber.from(0);
+    for (let i = 5; i < 10; i++) {
+      const mintPrice = await impishSpiral.getMintPrice();
+      const expectedToken = await impishSpiral._tokenIdCounter();
+
+      await impishSpiral.connect(signers[i]).mintSpiralWithRWNFT(rwTokenIDs[i-5], {value: mintPrice});
+      expect(await impishSpiral.ownerOf(expectedToken), "Wrong token owner").to.be.equal(signers[i].address);
+
+      // Make sure we got the IMPISH tokens
+      const impishETH = mintPrice.mul(33).div(100);
+      impishDAOFunds = impishDAOFunds.add(impishETH);
+      expect(await impdao.balanceOf(signers[i].address), "Wrong IMPISH bal")
+        .to.be.equal(impishETH.mul(1000));
+
+      // And that the seeds are the same
+      expect(await rwnft.seeds(rwTokenIDs[i-5])).to.be.equal(await impishSpiral.spiralSeeds(expectedToken));
+    }
+
+    // Move forward 
+    await network.provider.send("evm_increaseTime", [1 + 3600 * 24 * 3]); // 3 days + 1 sec
+    await network.provider.send("evm_mine");
+
+    const totalReward = await impishSpiral.totalReward();
+
+    // Now, claim the winnings
+    let rewardsClaimed = BigNumber.from(0);
+    let lastTokenID = (await impishSpiral._tokenIdCounter()).sub(1);
+    for (let i = 0; i < 10; i++) {
+      const expectedReward = totalReward.mul(i + 1).div(100);
+      rewardsClaimed = rewardsClaimed.add(expectedReward);
+
+      const winningTokenID = lastTokenID.sub(9 - i);
+
+      // Note that anyone can claim win, no need for connect() here
+      await expect(await impishSpiral.claimWin(winningTokenID), `Didn't get Reward for ${i}`).to.changeEtherBalance(
+        signers[i],
+        expectedReward
+      );
+
+      expect(await impishSpiral.winningsClaimed(winningTokenID)).to.be.equal(true);
+
+      // Claiming it again should be error
+      await expect(impishSpiral.claimWin(winningTokenID)).to.be.revertedWith("AlreadyClaimed");
+    }
+
+    // Now claim the developer fee
+    const actualDevFee = totalReward.sub(rewardsClaimed).sub(impishDAOFunds);
+    await expect(await impishSpiral.afterAllWinnings()).to.changeEtherBalance(wallet, actualDevFee);
 
     // Now should be empty
     await expect(impishSpiral.afterAllWinnings()).to.be.revertedWith("Empty");
