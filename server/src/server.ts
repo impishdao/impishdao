@@ -221,30 +221,50 @@ app.get("/lastethprice", async (req, res) => {
   res.send({ lastETHPrice });
 });
 
-app.get("/spiralapi/seedforid/:id", async (req, res) => {
-  const id = BigNumber.from(req.params.id);
+app.get("/spiralapi/wallet/:address", async (req, res) => {
+  const address = req.params.address;
 
-  const seed = await _impishspiral.spiralSeeds(id);
-  if (BigNumber.from(seed).eq(0)) {
-    res.status(404).send("Not Found");
-    return;
+  try {
+    const wallet = await _impishspiral.walletOfOwner(address) as Array<BigNumber>;
+    res.send(wallet);
+  } catch (err) {
+    res.status(500).send("Something went wrong fetch address NFTs");
   }
 
-  const owner = await _impishspiral.ownerOf(id);
+});
 
-  res.send({id, seed, owner});
+app.get("/spiralapi/seedforid/:id", async (req, res) => {
+  try {
+    const id = BigNumber.from(req.params.id);
+    const seed = await _impishspiral.spiralSeeds(id);
+    if (BigNumber.from(seed).eq(0)) {
+      res.status(404).send("Not Found");
+      return;
+    }
+
+    const owner = await _impishspiral.ownerOf(id);
+
+    res.send({id, seed, owner});
+  } catch (err) {
+    console.log(err);
+    res.send({});
+  }
 });
 
 app.get("/spiral_image/id/:id", async (req, res) => {
   const id = BigNumber.from(req.params.id);
 
-  const seed = await _impishspiral.spiralSeeds(id);
-  if (BigNumber.from(seed).eq(0)) {
-    res.status(404).send("Not Found");
-    return;
-  }
+  try {
+    const seed = await _impishspiral.spiralSeeds(id);
+    if (BigNumber.from(seed).eq(0)) {
+      res.status(404).send("Not Found");
+      return;
+    }
 
-  res.redirect(`/spiral_image/seed/${seed}`);
+    res.redirect(`/spiral_image/seed/${seed}`);
+  } catch (err){
+    res.status(500).send("Something went wrong");
+  }
 });
 
 app.get("/spiral_image/seed/:seed/:size?", async (req, res) => {
@@ -281,6 +301,10 @@ app.get("/spiral_image/seed/:seed/:size?", async (req, res) => {
   res.send(png_buf);
 
   setTimeout(() => {
+    if (!fs.existsSync(path.join(__dirname, "data"))) {
+      fs.mkdirSync(path.join(__dirname, "data"));
+    }
+
     fs.writeFileSync(path.join(__dirname, fileName), png_buf);
   });
 });

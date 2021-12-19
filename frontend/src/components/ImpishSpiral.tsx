@@ -123,18 +123,21 @@ export function ImpishSpiral(props: SpiralProps) {
       let tx = await props.impspiral.mintSpiralRandom({ value: await props.impspiral.getMintPrice() });
       await tx.wait();
       props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
-        console.log("Navigating!");
         nav(`/spirals/detail/${id}`);
       });
     } else {
       if (selectedUserRW) {
+        const id = await props.impspiral._tokenIdCounter();
         let tx = await props.impspiral.mintSpiralWithRWNFT(selectedUserRW, {
           value: await props.impspiral.getMintPrice(),
         });
         await tx.wait();
         props.showModal(
           "Yay!",
-          <div>You successfully minted a RandomWalkNFT Companion Spiral. You can now to view it.</div>
+          <div>You successfully minted a RandomWalkNFT Companion Spiral. You can now to view it.</div>,
+          () => {
+            nav(`/spirals/detail/${id}`);
+          }
         );
       } else {
         console.log("Error, no user selected RandomWalkNFT found!");

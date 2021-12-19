@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Button, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DappState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
 import { format4Decimals } from "./utils";
@@ -35,6 +35,8 @@ export function SpiralDetail(props: SpiralDetailProps) {
   useLayoutEffect(() => {
     fetchSeedForToken();
   });
+
+  const nav = useNavigate();
 
   return (
     <>
@@ -80,7 +82,13 @@ export function SpiralDetail(props: SpiralDetailProps) {
                 <h5 className="mt-3" style={{ color: "#ffd454" }}>
                   Owner
                 </h5>
-                <div>{owner}</div>
+                <div
+                  onClick={() => {
+                    nav(`/spirals/wallet/${owner}`);
+                  }}
+                >
+                  {owner}
+                </div>
 
                 <h5 className="mt-3" style={{ color: "#ffd454" }}>
                   Seed
@@ -94,6 +102,8 @@ export function SpiralDetail(props: SpiralDetailProps) {
                 <canvas ref={canvasDetailRef} width="300px" height="300px"></canvas>
               </div>
             </Col>
+
+            <div className="mb-4"></div>
           </Row>
         </Container>
       </div>
