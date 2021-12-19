@@ -294,6 +294,19 @@ export function ImpishSpiral(props: SpiralProps) {
           </div>
 
           <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How is the ETH in the contract used?</span>
+            <br />
+            The ETH that is paid to mint Spirals is used in the following way:
+            <ul>
+              <li>55% of the ETH is reserved for rewards to the last 10 Spiral NFTs</li>
+              <li>33% of the ETH is used to mint IMPISH tokens. ImpishDAO in turn uses the ETH to buy RandomWalkNFTs to win the RandomWalkNFT prize</li>
+              <li>12% of the ETH can be withdrawn by the developers at the end of the game, and will be used for "Chapter 2 - The SpiralBits"</li>
+            </ul>
+            <br />
+            Each RandomWalkNFT can only have 1 companion spiral. 
+          </div>
+
+          <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How are spirals generated?</span>
             <br />
             The spirals are programmatically generated from a random seed (or your companion RandomWalkNFT's seed). They
