@@ -342,28 +342,24 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
   const canvasHeight = canvas.height;
 
   // Load the static image at start while we compute everything else.
-  // const cachedImage = new Image();
-  // cachedImage.onload = function() {
-  //   ctx?.drawImage(cachedImage, 0, 0);
-  // };
-  // cachedImage.onerror = function() {
-  //   if (!ctx) {
-  //     return;
-  //   }
+  const cachedImage = new Image();
+  cachedImage.onload = function() {
+    ctx?.save();
+    ctx?.scale(SCALE, SCALE);
+    ctx?.drawImage(cachedImage, 0, 0);
+    ctx?.restore();
+  };
+  cachedImage.onerror = function() {
+    if (!ctx) {
+      return;
+    }
 
-  //   clearCanvas(ctx);
-  //   ctx.fillStyle = 'white';
-  //   ctx.font = '48px serif';
-  //   ctx?.fillText("Loading...", 10, 100);
-  // }
-  // cachedImage.src = `/${seed}.png`;
-
-  if (ctx) {
     clearCanvas(ctx);
     ctx.fillStyle = 'white';
     ctx.font = '48px serif';
-    ctx.fillText("Loading...", 10, 100);
+    ctx?.fillText("Loading...", 10, 100);
   }
+  cachedImage.src = `/spiral_image/seed/${seed}/300`;
 
   let rot = 0;
 
