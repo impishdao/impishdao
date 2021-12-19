@@ -342,21 +342,29 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
   const canvasHeight = canvas.height;
 
   // Load the static image at start while we compute everything else.
-  const cachedImage = new Image();
-  cachedImage.onload = function() {
-    ctx?.drawImage(cachedImage, 0, 0);
-  };
-  cachedImage.onerror = function() {
-    if (!ctx) {
-      return;
-    }
+  // const cachedImage = new Image();
+  // cachedImage.onload = function() {
+  //   ctx?.drawImage(cachedImage, 0, 0);
+  // };
+  // cachedImage.onerror = function() {
+  //   if (!ctx) {
+  //     return;
+  //   }
 
+  //   clearCanvas(ctx);
+  //   ctx.fillStyle = 'white';
+  //   ctx.font = '48px serif';
+  //   ctx?.fillText("Loading...", 10, 100);
+  // }
+  // cachedImage.src = `/${seed}.png`;
+
+  if (ctx) {
     clearCanvas(ctx);
     ctx.fillStyle = 'white';
     ctx.font = '48px serif';
-    ctx?.fillText("Loading...", 10, 100);
+    ctx.fillText("Loading...", 10, 100);
   }
-  cachedImage.src = `/${seed}.png`;
+
   let rot = 0;
 
   // Create the image and display it in a timeout, allowing any existing changes above to take effect and be shown to the user.

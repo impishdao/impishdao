@@ -51,6 +51,11 @@ export function SpiralDetail(props: SpiralDetailProps) {
             <LinkContainer to="/spirals">
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
+            {props.selectedAddress && (
+              <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
+                <Nav.Link>Your Wallet</Nav.Link>
+              </LinkContainer>
+            )}
           </Nav>
           {!props.selectedAddress && (
             <Button className="connect" variant="warning" onClick={props.connectWallet}>
@@ -83,6 +88,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                   Owner
                 </h5>
                 <div
+                  style={{ cursor: "pointer" }}
                   onClick={() => {
                     nav(`/spirals/wallet/${owner}`);
                   }}

@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,8 +23,6 @@ export function SpiralWallet(props: SpiraWalletProps) {
     fetch(`/spiralapi/wallet/${address}`)
       .then((r) => r.json())
       .then((data) => {
-        console.log(data);
-
         (async () => {
           // Map all the data to get the seeds
           const spiralDetails = await Promise.all(
@@ -43,7 +41,6 @@ export function SpiralWallet(props: SpiraWalletProps) {
           );
 
           const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
-          console.log(filtered);
           setSpirals(filtered);
         })();
       });
@@ -68,6 +65,11 @@ export function SpiralWallet(props: SpiraWalletProps) {
             <LinkContainer to="/spirals">
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
+            {props.selectedAddress && (
+              <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
+                <Nav.Link>Your Wallet</Nav.Link>
+              </LinkContainer>
+            )}
           </Nav>
           {!props.selectedAddress && (
             <Button className="connect" variant="warning" onClick={props.connectWallet}>
@@ -96,7 +98,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
               return (
                 <Col md={4} key={s.seed} className="mb-3">
                   <Card
-                    style={{ width: "320px", padding: "10px", borderRadius: "5px" }}
+                    style={{ width: "320px", padding: "10px", borderRadius: "5px", cursor: "pointer" }}
                     onClick={() => {
                       nav(`/spirals/detail/${s.tokenId.toString()}`);
                     }}

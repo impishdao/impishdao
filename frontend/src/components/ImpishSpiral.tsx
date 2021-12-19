@@ -1,11 +1,11 @@
-import { Button, ButtonGroup, Col, Container, Form, Nav, Navbar, Row } from "react-bootstrap";
+import { Button, Col, Container, Form, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { DappState } from "../AppState";
-import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
+import { format4Decimals, formatUSD } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { setup_image, toHexString } from "../spiralRenderer";
+import { setup_image } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 
@@ -70,10 +70,21 @@ export function ImpishSpiral(props: SpiralProps) {
       if (!props.selectedAddress || !props.rwnft) {
         return;
       }
-      const tokenIDs = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+      // Limit to 20 tokens for now
+      const tokenIDs = ((await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>).slice(0, 20);
+
+      // Filter out tokens that have already been used.
+      const shouldInclude = await Promise.all(
+        tokenIDs.map(async (t) => {
+          const minted = await props.impspiral?.mintedRWs(t);
+          return !minted;
+        })
+      );
+
+      const filteredTokenIDs = tokenIDs.filter((t, i) => shouldInclude[i]);
 
       // Limit to 20 for now.
-      setUserRWNFTs(tokenIDs.slice(0, 20));
+      setUserRWNFTs(filteredTokenIDs);
 
       // Also get the latest mint price
       if (props.impspiral) {
@@ -89,29 +100,28 @@ export function ImpishSpiral(props: SpiralProps) {
     }
   }, [userRWNFTs]);
 
-  // When a UserRWNFT is selected, update the preview
-  const updatePreview = async () => {
-    if (canvasPreviewRef.current && selectedUserRW) {
-      if (!props.selectedAddress || !props.rwnft) {
-        return;
-      }
-
-      const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
-      setup_image(canvasPreviewRef.current, "main", seed);
-    }
-  };
   useLayoutEffect(() => {
-    updatePreview();
+    (async () => {
+      // When a UserRWNFT is selected, update the preview
+      if (canvasPreviewRef.current && selectedUserRW) {
+        if (!props.selectedAddress || !props.rwnft) {
+          return;
+        }
+
+        const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
+        setup_image(canvasPreviewRef.current, "main", seed);
+      }
+    })();
   }, [props.rwnft, props.selectedAddress, selectedUserRW, spiralType]);
 
-  const randomSpiral = async () => {
-    if (canvasPreviewRef.current) {
-      const r = new Uint8Array(32);
-      window.crypto.getRandomValues(r);
+  // const randomSpiral = async () => {
+  //   if (canvasPreviewRef.current) {
+  //     const r = new Uint8Array(32);
+  //     window.crypto.getRandomValues(r);
 
-      setup_image(canvasPreviewRef.current, "main", toHexString(r));
-    }
-  };
+  //     setup_image(canvasPreviewRef.current, "main", toHexString(r));
+  //   }
+  // };
 
   const mintSpiral = async () => {
     if (!props.impspiral) {
@@ -158,6 +168,11 @@ export function ImpishSpiral(props: SpiralProps) {
             <LinkContainer to="/spirals">
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
+            {props.selectedAddress && (
+              <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
+                <Nav.Link>Your Wallet</Nav.Link>
+              </LinkContainer>
+            )}
           </Nav>
           {!props.selectedAddress && (
             <Button className="connect" variant="warning" onClick={props.connectWallet}>
@@ -249,7 +264,7 @@ export function ImpishSpiral(props: SpiralProps) {
                       </div>
                     )}
 
-                    {userRWNFTs.length === 0 && <div>You don't have any RandomWalkNFTs in your wallet</div>}
+                    {userRWNFTs.length === 0 && <div>You don't have any available RandomWalkNFTs in your wallet</div>}
                   </>
                 )}
 
