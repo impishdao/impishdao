@@ -169,6 +169,10 @@ describe("ImpishSpiral", function () {
     await network.provider.send("evm_increaseTime", [1 + 3600 * 24 * 3]); // 3 days + 1 sec
     await network.provider.send("evm_mine");
 
+    // Can't mint tokens after
+    await expect(impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()}))
+      .to.be.revertedWith("MintsFinished");
+
     // Can't claim win for bogus token
     await expect(impishSpiral.claimWin(100)).to.be.revertedWith("TokenIDOutofRange");
 

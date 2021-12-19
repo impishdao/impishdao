@@ -128,7 +128,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     // Mint a spiral based on a RandomWalkNFT
-    function mintSpiralWithRWNFT(uint256 _rwnftTokenId) public payable nonReentrant {
+    function mintSpiralWithRWNFT(uint256 _rwnftTokenId) external payable nonReentrant {
         require(!mintedRWs[_rwnftTokenId], "AlreadyMinted");
         require(_rwNFT.ownerOf(_rwnftTokenId) == msg.sender, "MinterDoesntOwnToken");
 
@@ -147,7 +147,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     // Mint a random Spiral
-    function mintSpiralRandom() public payable nonReentrant {
+    function mintSpiralRandom() external payable nonReentrant {
         entropy = keccak256(abi.encode(
             block.timestamp,
             blockhash(block.number),
@@ -159,7 +159,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     // Claim winnings 
-    function claimWin(uint256 tokenId) public nonReentrant {
+    function claimWin(uint256 tokenId) external nonReentrant {
         require(started, "NotYetStarted");
         require(block.timestamp > (lastMintTime + MINT_EXPIRY_TIME), "MintsStillOpen");
         require(tokenId < _tokenIdCounter, "TokenIDOutofRange");
@@ -187,7 +187,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         require(success, "Transfer failed.");
     }
 
-    function afterAllWinnings() public onlyOwner nonReentrant{
+    function afterAllWinnings() external onlyOwner nonReentrant{
         require(started, "NotYetStarted");
         require(address(this).balance > 0, "Empty");
         require(block.timestamp > (lastMintTime + MINT_EXPIRY_TIME), "MintsStillOpen");
