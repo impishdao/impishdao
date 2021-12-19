@@ -56,18 +56,14 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
     fs.mkdirSync(serverDir);
   }
 
-  fs.writeFileSync(
-    contractsDir + "/contract-addresses.json",
-    JSON.stringify(
-      { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral.address },
-      undefined,
-      2
-    )
+  const contractAddress = JSON.stringify(
+    { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral.address },
+    undefined,
+    2
   );
-  fs.writeFileSync(
-    serverDir + "/contract-addresses.json",
-    JSON.stringify({ RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address }, undefined, 2)
-  );
+
+  fs.writeFileSync(contractsDir + "/contract-addresses.json", contractAddress);
+  fs.writeFileSync(serverDir + "/contract-addresses.json", contractAddress);
 
   const rwnftArtifact = artifacts.readArtifactSync("RandomWalkNFT");
   fs.writeFileSync(contractsDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));

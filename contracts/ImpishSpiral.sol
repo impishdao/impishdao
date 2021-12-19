@@ -88,6 +88,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         return (price * 1005) / 1000;
     }
 
+    event SpiralMinted(uint256, bytes32);
     function _mintSpiral(bytes32 seed) internal {
         require(started, "NotYetStarted");
         require(block.timestamp < (lastMintTime + MINT_EXPIRY_TIME), "MintsFinished");
@@ -122,6 +123,8 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
         // And actually mint
         _safeMint(msg.sender, tokenId);
+
+        emit SpiralMinted(tokenId, seed);
     }
 
     // Mint a spiral based on a RandomWalkNFT

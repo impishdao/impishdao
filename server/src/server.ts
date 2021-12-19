@@ -7,9 +7,11 @@ import lineReader from "line-reader";
 import { BigNumber, ethers } from "ethers";
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
+import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 import ImpishDAOConfig from "./impishdao-config.json";
 import path from "path";
+import { get_image } from "./serverSpiralRenderer";
 
 const app = express();
 
@@ -20,8 +22,8 @@ const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
 // When, we initialize the contract using the provider and the token's
 // artifacts.
 const _impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, provider);
-
 const _rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, provider);
+const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
 
 const nftsAvailable = new Set<number>();
 
@@ -173,7 +175,7 @@ app.get("/api", async (req, res) => {
     if (nftPriceCacheExpiry < Date.now()) {
       nftPriceCache.clear();
       // eslint-disable-next-line prettier/prettier
-      nftPriceCacheExpiry = Date.now() + (6 * 3600 * 1000); // 6 hours
+      nftPriceCacheExpiry = Date.now() + 6 * 3600 * 1000; // 6 hours
     }
 
     const nftsWithPrice = (
@@ -217,6 +219,56 @@ app.get("/api", async (req, res) => {
 
 app.get("/lastethprice", async (req, res) => {
   res.send({ lastETHPrice });
+});
+
+app.get("/spiral_image/id/:id", async (req, res) => {
+  const id = BigNumber.from(req.params.id);
+
+  const seed = await _impishspiral.spiralSeeds(id);
+  if (BigNumber.from(seed).eq(0)) {
+    res.status(404).send("Not Found");
+    return;
+  }
+
+  res.redirect(`/spiral_image/seed/${seed}`);
+});
+
+app.get("/spiral_image/seed/:seed/:size?", async (req, res) => {
+  const seed = req.params.seed;
+  try {
+    const num = BigNumber.from(seed);
+  } catch (e) {
+    // If this errored, the seed is bad.
+    res.status(404).send("Bad Seed");
+    return;
+  }
+
+  if (seed.length != 66 || seed.slice(0, 2) !== "0x") {
+    res.status(404).send("Bad Seed Hex");
+    return;
+  }
+
+  const size = parseInt(req.params.size || "4000");
+  if (isNaN(size)) {
+    res.status(404).send("Bad Size");
+    return;
+  }
+
+  const fileName = `data/${seed}x${size}.png`;
+
+  // See if the file already exists
+  if (fs.existsSync(path.join(__dirname, fileName))) {
+    res.sendFile(path.join(__dirname, fileName));
+    return;
+  }
+
+  const png_buf = get_image(seed, size);
+  res.contentType("png");
+  res.send(png_buf);
+
+  setTimeout(() => {
+    fs.writeFileSync(path.join(__dirname, fileName), png_buf);
+  });
 });
 
 // Serve static files
