@@ -567,7 +567,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         </>
       )}
 
-      {/* <div style={{ border: "solid 1px #fff", margin: 20, padding: 20 }}>
+      <div style={{ border: "solid 1px #fff", margin: 20, padding: 20 }}>
         {props.selectedAddress && (
           <>
             <Stack direction="horizontal" gap={3}>
@@ -586,7 +586,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
             </Stack>
           </>
         )}
-      </div> */}
+      </div>
 
       <a id="stats"></a>
       <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
