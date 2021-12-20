@@ -1,7 +1,7 @@
 import { Button, Col, Container, Form, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
-import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
+import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -27,8 +27,8 @@ export function ImpishSpiral(props: SpiralProps) {
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
   // By default, 3days remain
-  const THREE_DAYS = 3 * 24 * 3600;
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  
+  const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
 
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
   const [selectedUserRW, setSelectedUserRW] = useState<BigNumber | null>(null);
@@ -58,7 +58,7 @@ export function ImpishSpiral(props: SpiralProps) {
         console.log(`Last mint time was ${lastMintTime.toNumber()}`);
         setTimeRemaining((lastMintTime.toNumber() + THREE_DAYS) - (Date.now() / 1000));
       })
-  }, [THREE_DAYS])
+  }, [])
 
   // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
@@ -158,7 +158,7 @@ export function ImpishSpiral(props: SpiralProps) {
           console.log("Error, no user selected RandomWalkNFT found!");
         }
       }
-    }  catch (e: any) {
+    } catch (e: any) {
       console.log(e);
 
       let msg: string | undefined;
@@ -173,7 +173,6 @@ export function ImpishSpiral(props: SpiralProps) {
         props.showModal("Error Minting Impish Spiral!", <div>{msg}</div>);
       }
     }
-
   };
 
   return (
@@ -214,12 +213,14 @@ export function ImpishSpiral(props: SpiralProps) {
       <div className="withSpiralBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
         <Row className="mt-1">
-          <div>Minting is open for <span style={{color: "#ffd454"}}>{secondsToDhms(timeRemaining)}</span></div>
+          <div>
+            Minting is open for <span style={{ color: "#ffd454" }}>{secondsToDhms(timeRemaining)}</span>
+          </div>
         </Row>
         <Row className="mt-3">
           {props.selectedAddress && (
             <>
-              <Row style={{marginTop: '50px'}}>
+              <Row style={{ marginTop: "50px" }}>
                 <Col xs={{ offset: 4 }} style={{ textAlign: "left" }}>
                   <h5>
                     <span style={{ color: "#ffc106" }}>Step 1:</span> What kind of Spiral?
@@ -424,11 +425,14 @@ export function ImpishSpiral(props: SpiralProps) {
           </div>
 
           <div className="mb-3">
-            <span style={{ fontWeight: "bold", color: "#ffd454" }}>Do I need to have my RandomWalkNFT in my wallet to mint a RandomWalkNFT companion spiral?</span>
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>
+              Do I need to have my RandomWalkNFT in my wallet to mint a RandomWalkNFT companion spiral?
+            </span>
             <br />
-            Yes, you need to have your RandomWalkNFT in your wallet to mint it's companion spiral. Note that only owner's of an RandomWalkNFT can mint its companion spiral. 
+            Yes, you need to have your RandomWalkNFT in your wallet to mint it's companion spiral. Note that only
+            owner's of an RandomWalkNFT can mint its companion spiral.
             <br />
-            Each RandomWalkNFT can only have 1 companion spiral. 
+            Each RandomWalkNFT can only have 1 companion spiral.
           </div>
 
           <div className="mb-3">
@@ -437,8 +441,14 @@ export function ImpishSpiral(props: SpiralProps) {
             The ETH that is paid to mint Spirals is used in the following way:
             <ul>
               <li>55% of the ETH is reserved for rewards to the last 10 Spiral NFTs</li>
-              <li>33% of the ETH is used to mint IMPISH tokens. ImpishDAO in turn uses the ETH to buy RandomWalkNFTs to win the RandomWalkNFT prize</li>
-              <li>12% of the ETH can be withdrawn by the developers at the end of the game, and will be used for "Chapter 2 - The SpiralBits"</li>
+              <li>
+                33% of the ETH is used to mint IMPISH tokens. ImpishDAO in turn uses the ETH to buy RandomWalkNFTs to
+                win the RandomWalkNFT prize
+              </li>
+              <li>
+                12% of the ETH can be withdrawn by the developers at the end of the game, and will be used for "Chapter
+                2 - The SpiralBits"
+              </li>
             </ul>
           </div>
 

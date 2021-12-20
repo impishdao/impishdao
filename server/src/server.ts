@@ -223,11 +223,16 @@ app.get("/lastethprice", async (req, res) => {
 
 app.get("/spiralapi/spiraldata", async (req, res) => {
   try {
-    const lastMintTime = await _impishspiral.lastMintTime();
+    const [lastMintTime, nextTokenId, totalReward] = await Promise.all([
+      _impishspiral.lastMintTime(),
+      _impishspiral._tokenIdCounter(),
+      _impishspiral.totalReward(),
+    ]);
 
     res.contentType("application/json");
-    res.send(JSON.stringify({ lastMintTime }));
+    res.send(JSON.stringify({ lastMintTime, nextTokenId, totalReward }));
   } catch (err) {
+    console.log(err);
     res.status(500).send("Something went wrong generating metadata");
   }
 });

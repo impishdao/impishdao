@@ -1,14 +1,21 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { BigNumber } from "ethers";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
-import { format4Decimals } from "./utils";
+import { format4Decimals, secondsToDhms, THREE_DAYS } from "./utils";
 
 type SpiralDetailProps = DappState & {
   connectWallet: () => void;
 };
+
+type SpiralsState = {
+  lastMintTime: BigNumber;
+  nextTokenId: BigNumber;
+  totalReward: BigNumber;
+}
 
 export function SpiralDetail(props: SpiralDetailProps) {
   const { id } = useParams();
@@ -16,9 +23,36 @@ export function SpiralDetail(props: SpiralDetailProps) {
 
   const [seed, setSeed] = useState("");
   const [owner, setOwner] = useState("");
+  const [spiralState, setSpiralState] = useState<SpiralsState | undefined>();
 
-  // Setup the image
-  const fetchSeedForToken = async () => {
+  const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
+
+  useEffect(() => {
+    fetch("/spiralapi/spiraldata")
+    .then((data) => data.json())
+    .then((j) => {
+      const lastMintTime = BigNumber.from(j.lastMintTime || 0);
+      const nextTokenId = BigNumber.from(j.nextTokenId || 0);
+      const totalReward = BigNumber.from(j.totalReward || 0);
+
+      setTimeRemaining((lastMintTime.toNumber() + THREE_DAYS) - (Date.now() / 1000));
+      setSpiralState({ lastMintTime, nextTokenId, totalReward });
+    });
+  }, [])
+
+  // Countdown timer.
+  useEffect(() => {
+    const timerID = setInterval(() => {
+      setTimeRemaining(timeRemaining - 1);
+    }, 1000);
+
+    return function cleanup() {
+      clearInterval(timerID);
+    };
+  }, [timeRemaining]);
+
+
+  useLayoutEffect(() => {
     fetch(`/spiralapi/seedforid/${id}`)
       .then((r) => r.json())
       .then((data) => {
@@ -30,13 +64,20 @@ export function SpiralDetail(props: SpiralDetailProps) {
           setup_image(canvasDetailRef.current, `detail${id}`, seed);
         }
       });
-  };
-
-  useLayoutEffect(() => {
-    fetchSeedForToken();
-  });
+  }, [id]);
 
   const nav = useNavigate();
+
+  let isWinning = false;
+  let winningPosition = 0;
+  let ethReward = BigNumber.from(0);
+  if (spiralState?.nextTokenId && spiralState.totalReward && !isNaN(parseInt(id || ""))) {
+    winningPosition = spiralState.nextTokenId.toNumber() - parseInt(id || "0");
+    if (winningPosition <= 10) {
+      isWinning = true;
+      ethReward = spiralState.totalReward.mul(11 - winningPosition).div(100);
+    }
+  }
 
   return (
     <>
@@ -100,12 +141,24 @@ export function SpiralDetail(props: SpiralDetailProps) {
                   Seed
                 </h5>
                 <div>{seed}</div>
+
+                {isWinning && (
+                  <>
+                    <h5 className="mt-3" style={{ color: "#ffd454" }}>
+                      Winning Position #{winningPosition}
+                    </h5>
+                    <div>This Spiral is currently #{winningPosition}, and can claim ETH 
+                    {` ${format4Decimals(ethReward)} `}
+                    if no other mints in <br/>
+                    {secondsToDhms(timeRemaining)}</div>
+                  </>
+                )}
               </div>
             </Col>
             <Col xs={5}>
               <div>Spiral #{id}</div>
               <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
-                <canvas ref={canvasDetailRef} width="300px" height="300px" style={{cursor: 'pointer'}}></canvas>
+                <canvas ref={canvasDetailRef} width="300px" height="300px" style={{ cursor: "pointer" }}></canvas>
               </div>
             </Col>
 

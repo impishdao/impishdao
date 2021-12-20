@@ -19,7 +19,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
   const { address } = useParams();
   const [spirals, setSpirals] = useState<Array<SpiralDetail>>([]);
 
-  const fetchWalletTokens = async () => {
+  useEffect(() => {
     fetch(`/spiralapi/wallet/${address}`)
       .then((r) => r.json())
       .then((data) => {
@@ -44,10 +44,6 @@ export function SpiralWallet(props: SpiraWalletProps) {
           setSpirals(filtered);
         })();
       });
-  };
-
-  useEffect(() => {
-    fetchWalletTokens();
   }, [address]);
 
   const nav = useNavigate();
