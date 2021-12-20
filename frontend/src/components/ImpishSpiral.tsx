@@ -25,7 +25,7 @@ export function ImpishSpiral(props: SpiralProps) {
   const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
-  const mintStart = 1640113200;
+  const mintStart = 1640034021;
   const [timeRemaining, setTimeRemaining] = useState(mintStart - Date.now() / 1000);
 
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
