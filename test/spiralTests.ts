@@ -43,9 +43,9 @@ describe("ImpishSpiral", function () {
     expect(await impishSpiral.getMintPrice()).to.equal(ethers.utils.parseEther("0.005025"));
 
     await rwnft.mint({ value: await rwnft.getMintPrice() });
-    await expect(impishSpiral.mintSpiralWithRWNFT(0, {value: firstMintPrice})).to.be.revertedWith("NotYetStarted");
+    await expect(impishSpiral.mintSpiralWithRWNFT(0, { value: firstMintPrice })).to.be.revertedWith("NotYetStarted");
     await expect(impishSpiral.claimWin(1)).to.be.revertedWith("NotYetStarted");
-    await expect(impishSpiral.mintSpiralRandom({value: firstMintPrice})).to.be.revertedWith("NotYetStarted");
+    await expect(impishSpiral.mintSpiralRandom({ value: firstMintPrice })).to.be.revertedWith("NotYetStarted");
 
     // Start the mints
     await impishSpiral.startMints();
@@ -58,7 +58,7 @@ describe("ImpishSpiral", function () {
     expect(await impdao.balanceOf(wallet.address), "wallet balance").to.be.equal(0);
 
     // Can't mint with less than mint price
-    await expect(impishSpiral.mintSpiralRandom({value: 1})).to.be.revertedWith("NotEnoughETH");
+    await expect(impishSpiral.mintSpiralRandom({ value: 1 })).to.be.revertedWith("NotEnoughETH");
 
     // Mint with RW, since we own #0
     const mintPrice = await impishSpiral.getMintPrice();
@@ -151,17 +151,26 @@ describe("ImpishSpiral", function () {
     }
 
     // Can't mint a second RWNFT companion
-    const lastRwNFTTokenId = (await rwnft.nextTokenId()).sub(2);  // 2 because the ImpishSpiral has the rwnft-1 (to issue IMPISH tokens)
-    await expect(impishSpiral.mintSpiralWithRWNFT(lastRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("AlreadyMinted");
+    // 2 because the ImpishSpiral has the rwnft-1 (to issue IMPISH tokens)
+    const lastRwNFTTokenId = (await rwnft.nextTokenId()).sub(2); 
+    await expect(
+      impishSpiral.mintSpiralWithRWNFT(lastRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
+    ).to.be.revertedWith("AlreadyMinted");
 
     // Can't mint one that we don't own.
-    const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1);  // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
-    await expect(impishSpiral.mintSpiralWithRWNFT(notWalletRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("MinterDoesntOwnToken");
+    // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
+    const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1); 
+    await expect(
+      impishSpiral.mintSpiralWithRWNFT(notWalletRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
+    ).to.be.revertedWith("MinterDoesntOwnToken");
 
     // Can't mint non-existing token
-    const notExistingRwNFTTokenId = (await rwnft.nextTokenId());  // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
-    await expect(impishSpiral.mintSpiralWithRWNFT(notExistingRwNFTTokenId, {value: await impishSpiral.getMintPrice()})).to.be.revertedWith("ERC721: owner query for nonexistent token");
-    
+    // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
+    const notExistingRwNFTTokenId = await rwnft.nextTokenId(); 
+    await expect(
+      impishSpiral.mintSpiralWithRWNFT(notExistingRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
+    ).to.be.revertedWith("ERC721: owner query for nonexistent token");
+
     // Prematurely claiming win is error
     await expect(impishSpiral.claimWin(0)).to.be.revertedWith("MintsStillOpen");
 
@@ -170,8 +179,9 @@ describe("ImpishSpiral", function () {
     await network.provider.send("evm_mine");
 
     // Can't mint tokens after
-    await expect(impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()}))
-      .to.be.revertedWith("MintsFinished");
+    await expect(impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() })).to.be.revertedWith(
+      "MintsFinished"
+    );
 
     // Can't claim win for bogus token
     await expect(impishSpiral.claimWin(100)).to.be.revertedWith("TokenIDOutofRange");
@@ -205,18 +215,32 @@ describe("ImpishSpiral", function () {
     await expect(impishSpiral.afterAllWinnings()).to.be.revertedWith("Empty");
   });
 
-
   it("Should return excess ETH", async function () {
-    const { impishSpiral } = await loadContracts();
+    const { impishSpiral, rwnft, impdao } = await loadContracts();
     const provider = waffle.provider;
     const [wallet] = provider.getWallets();
 
     // Start the mints
     await impishSpiral.startMints();
 
-    const mintPrice = await impishSpiral.getMintPrice();
-    await expect(await impishSpiral.mintSpiralRandom({value: mintPrice.mul(2)}))
-      .to.changeEtherBalance(wallet, -mintPrice);
+    let mintPrice = await impishSpiral.getMintPrice();
+    await expect(await impishSpiral.mintSpiralRandom({ value: mintPrice.mul(2) })).to.changeEtherBalance(
+      wallet,
+      -mintPrice
+    );
+
+    // Mint via RWNFT
+    const rwNFTID = await rwnft.nextTokenId();
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
+    expect(await rwnft.ownerOf(rwNFTID)).to.be.equal(wallet.address);
+
+    mintPrice = await impishSpiral.getMintPrice();
+    await expect(await impishSpiral.mintSpiralWithRWNFT(rwNFTID, { value: mintPrice.mul(5) })).to.changeEtherBalance(
+      wallet,
+      -mintPrice
+    );
+    // Make sure we got the correct impish tokens
+    expect(await impdao.balanceOf(wallet.address)).to.be.equal(mintPrice.mul(33 * 1000).div(100));
   });
 
   it("Should allow a mix of NFTs to win", async function () {
@@ -234,7 +258,7 @@ describe("ImpishSpiral", function () {
     let expectedBal = BigNumber.from(0);
     for (let i = 0; i < 20; i++) {
       expectedBal = expectedBal.add(await impishSpiral.getMintPrice());
-      await impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()});
+      await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
     }
 
     const startBal = await provider.getBalance(impishSpiral.address);
@@ -244,7 +268,7 @@ describe("ImpishSpiral", function () {
     for (let i = 0; i < 5; i++) {
       const mintPrice = await impishSpiral.getMintPrice();
       const expectedToken = await impishSpiral._tokenIdCounter();
-      await impishSpiral.connect(signers[i]).mintSpiralRandom({value: mintPrice});
+      await impishSpiral.connect(signers[i]).mintSpiralRandom({ value: mintPrice });
       expect(await impishSpiral.ownerOf(expectedToken)).to.be.equal(signers[i].address);
     }
 
@@ -253,7 +277,7 @@ describe("ImpishSpiral", function () {
     const rwTokenIDs = [];
     for (let i = 5; i < 10; i++) {
       rwTokenIDs.push(await rwnft.nextTokenId());
-      await rwnft.connect(signers[i]).mint({value: await rwnft.getMintPrice()});
+      await rwnft.connect(signers[i]).mint({ value: await rwnft.getMintPrice() });
       expect(await rwnft.ownerOf(rwTokenIDs[rwTokenIDs.length - 1])).to.be.equal(signers[i].address);
     }
 
@@ -263,20 +287,19 @@ describe("ImpishSpiral", function () {
       const mintPrice = await impishSpiral.getMintPrice();
       const expectedToken = await impishSpiral._tokenIdCounter();
 
-      await impishSpiral.connect(signers[i]).mintSpiralWithRWNFT(rwTokenIDs[i-5], {value: mintPrice});
+      await impishSpiral.connect(signers[i]).mintSpiralWithRWNFT(rwTokenIDs[i - 5], { value: mintPrice });
       expect(await impishSpiral.ownerOf(expectedToken), "Wrong token owner").to.be.equal(signers[i].address);
 
       // Make sure we got the IMPISH tokens
       const impishETH = mintPrice.mul(33).div(100);
       impishDAOFunds = impishDAOFunds.add(impishETH);
-      expect(await impdao.balanceOf(signers[i].address), "Wrong IMPISH bal")
-        .to.be.equal(impishETH.mul(1000));
+      expect(await impdao.balanceOf(signers[i].address), "Wrong IMPISH bal").to.be.equal(impishETH.mul(1000));
 
       // And that the seeds are the same
-      expect(await rwnft.seeds(rwTokenIDs[i-5])).to.be.equal(await impishSpiral.spiralSeeds(expectedToken));
+      expect(await rwnft.seeds(rwTokenIDs[i - 5])).to.be.equal(await impishSpiral.spiralSeeds(expectedToken));
     }
 
-    // Move forward 
+    // Move forward
     await network.provider.send("evm_increaseTime", [1 + 3600 * 24 * 3]); // 3 days + 1 sec
     await network.provider.send("evm_mine");
 
