@@ -329,17 +329,22 @@ app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
     return;
   }
 
-  const pngBuf = get_image(seed, size);
-  res.contentType("png");
-  res.send(pngBuf);
+  try {
+    const pngBuf = get_image(seed, size);
+    res.contentType("png");
+    res.send(pngBuf);
 
-  setTimeout(() => {
-    if (!fs.existsSync(path.join(__dirname, "data"))) {
-      fs.mkdirSync(path.join(__dirname, "data"));
-    }
+    setTimeout(() => {
+      if (!fs.existsSync(path.join(__dirname, "data"))) {
+        fs.mkdirSync(path.join(__dirname, "data"));
+      }
 
-    fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
-  });
+      fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send(`Server error generating image for ${seed} x ${size}`);
+  }
 });
 
 // Serve static files
