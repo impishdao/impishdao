@@ -440,8 +440,6 @@ export function ImpishSpiral(props: SpiralProps) {
               <li>33% of the ETH is used to mint IMPISH tokens. ImpishDAO in turn uses the ETH to buy RandomWalkNFTs to win the RandomWalkNFT prize</li>
               <li>12% of the ETH can be withdrawn by the developers at the end of the game, and will be used for "Chapter 2 - The SpiralBits"</li>
             </ul>
-            <br />
-            Each RandomWalkNFT can only have 1 companion spiral. 
           </div>
 
           <div className="mb-3">
@@ -451,6 +449,21 @@ export function ImpishSpiral(props: SpiralProps) {
             are a "Random Walk", but plotted with polar co-ordinates with a slight spiral bias.
             <br />
             You can click on a Spiral to see it animate! Go ahead and try it :)
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>Where are the contracts deployed?</span>
+            <br />
+            The Impish Spiral is verified and deployed at{" "}
+            <a
+              style={{ color: "white" }}
+              href="https://arbiscan.io/address/0xb6945b73ed554df8d52ecdf1ab08f17564386e0f"
+              target="_blank"
+              rel="noreferrer"
+            >
+              0xb6945b73ed554df8d52ecdf1ab08f17564386e0f
+            </a>
+            .
           </div>
 
           <div className="mb-3">
