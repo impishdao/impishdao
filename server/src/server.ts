@@ -2,6 +2,7 @@
 import express from "express";
 import fs from "fs";
 import got from "got";
+import path from "path";
 
 import lineReader from "line-reader";
 import { BigNumber, ethers } from "ethers";
@@ -10,7 +11,6 @@ import ImpishDAOArtifact from "./contracts/impdao.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 import ImpishDAOConfig from "./impishdao-config.json";
-import path from "path";
 import { get_image } from "./serverSpiralRenderer";
 
 const app = express();
@@ -250,7 +250,7 @@ app.get("/spiralapi/spirals/metadata/:id", async (req, res) => {
     res.contentType("application/json");
     res.send(JSON.stringify(r));
   } catch (err) {
-    res.status(500).send("Something went wrong fetch address NFTs");
+    res.status(500).send("Something went wrong generating metadata");
   }
 });
 

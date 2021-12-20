@@ -334,7 +334,7 @@ describe("ImpishSpiral", function () {
     await expect(impishSpiral.afterAllWinnings()).to.be.revertedWith("Empty");
   });
 
-  it.only("Should work with base URLs", async function () {
+  it("Should work with base URLs", async function () {
     const { impishSpiral } = await loadContracts();
     // eslint-disable-next-line no-unused-vars
     const [signer, otherSigner] = await ethers.getSigners();
@@ -347,7 +347,7 @@ describe("ImpishSpiral", function () {
     );
 
     // Set base URI as owner works
-    const baseURI = "https://impishdao.com/spiralapi/spirals/";
+    const baseURI = "https://impishdao.com//spiralapi/spirals/metadata/";
     await impishSpiral.setBaseURI(baseURI);
 
     const tokenID = await impishSpiral._tokenIdCounter();
