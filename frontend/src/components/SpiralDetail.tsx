@@ -105,7 +105,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
             <Col xs={5}>
               <div>Spiral #{id}</div>
               <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
-                <canvas ref={canvasDetailRef} width="300px" height="300px"></canvas>
+                <canvas ref={canvasDetailRef} width="300px" height="300px" style={{cursor: 'pointer'}}></canvas>
               </div>
             </Col>
 

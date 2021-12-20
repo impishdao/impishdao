@@ -5,7 +5,7 @@ import { ethers, network, waffle } from "hardhat";
 import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
 import type { ImpishSpiral } from "../typechain/ImpishSpiral";
-import { BigNumber, providers } from "ethers";
+import { BigNumber } from "ethers";
 
 type FixtureType = {
   impishSpiral: ImpishSpiral;
@@ -152,21 +152,21 @@ describe("ImpishSpiral", function () {
 
     // Can't mint a second RWNFT companion
     // 2 because the ImpishSpiral has the rwnft-1 (to issue IMPISH tokens)
-    const lastRwNFTTokenId = (await rwnft.nextTokenId()).sub(2); 
+    const lastRwNFTTokenId = (await rwnft.nextTokenId()).sub(2);
     await expect(
       impishSpiral.mintSpiralWithRWNFT(lastRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
     ).to.be.revertedWith("AlreadyMinted");
 
     // Can't mint one that we don't own.
     // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
-    const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1); 
+    const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1);
     await expect(
       impishSpiral.mintSpiralWithRWNFT(notWalletRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
     ).to.be.revertedWith("MinterDoesntOwnToken");
 
     // Can't mint non-existing token
     // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
-    const notExistingRwNFTTokenId = await rwnft.nextTokenId(); 
+    const notExistingRwNFTTokenId = await rwnft.nextTokenId();
     await expect(
       impishSpiral.mintSpiralWithRWNFT(notExistingRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
     ).to.be.revertedWith("ERC721: owner query for nonexistent token");
@@ -307,7 +307,7 @@ describe("ImpishSpiral", function () {
 
     // Now, claim the winnings
     let rewardsClaimed = BigNumber.from(0);
-    let lastTokenID = (await impishSpiral._tokenIdCounter()).sub(1);
+    const lastTokenID = (await impishSpiral._tokenIdCounter()).sub(1);
     for (let i = 0; i < 10; i++) {
       const expectedReward = totalReward.mul(i + 1).div(100);
       rewardsClaimed = rewardsClaimed.add(expectedReward);

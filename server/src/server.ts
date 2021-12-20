@@ -225,12 +225,11 @@ app.get("/spiralapi/wallet/:address", async (req, res) => {
   const address = req.params.address;
 
   try {
-    const wallet = await _impishspiral.walletOfOwner(address) as Array<BigNumber>;
+    const wallet = (await _impishspiral.walletOfOwner(address)) as Array<BigNumber>;
     res.send(wallet);
   } catch (err) {
     res.status(500).send("Something went wrong fetch address NFTs");
   }
-
 });
 
 app.get("/spiralapi/seedforid/:id", async (req, res) => {
@@ -244,7 +243,7 @@ app.get("/spiralapi/seedforid/:id", async (req, res) => {
 
     const owner = await _impishspiral.ownerOf(id);
 
-    res.send({id, seed, owner});
+    res.send({ id, seed, owner });
   } catch (err) {
     console.log(err);
     res.send({});
@@ -261,15 +260,16 @@ app.get("/spiral_image/id/:id", async (req, res) => {
       return;
     }
 
-    res.redirect(`/spiral_image/seed/${seed}`);
-  } catch (err){
+    res.redirect(`/spiral_image/seed/${seed}.png`);
+  } catch (err) {
     res.status(500).send("Something went wrong");
   }
 });
 
-app.get("/spiral_image/seed/:seed/:size?", async (req, res) => {
+app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
   const seed = req.params.seed;
   try {
+    // eslint-disable-next-line no-unused-vars
     const num = BigNumber.from(seed);
   } catch (e) {
     // If this errored, the seed is bad.
@@ -277,12 +277,12 @@ app.get("/spiral_image/seed/:seed/:size?", async (req, res) => {
     return;
   }
 
-  if (seed.length != 66 || seed.slice(0, 2) !== "0x") {
+  if (seed.length !== 66 || seed.slice(0, 2) !== "0x") {
     res.status(404).send("Bad Seed Hex");
     return;
   }
 
-  const size = parseInt(req.params.size || "4000");
+  const size = parseInt(req.params.size);
   if (isNaN(size)) {
     res.status(404).send("Bad Size");
     return;
@@ -296,16 +296,16 @@ app.get("/spiral_image/seed/:seed/:size?", async (req, res) => {
     return;
   }
 
-  const png_buf = get_image(seed, size);
+  const pngBuf = get_image(seed, size);
   res.contentType("png");
-  res.send(png_buf);
+  res.send(pngBuf);
 
   setTimeout(() => {
     if (!fs.existsSync(path.join(__dirname, "data"))) {
       fs.mkdirSync(path.join(__dirname, "data"));
     }
 
-    fs.writeFileSync(path.join(__dirname, fileName), png_buf);
+    fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
   });
 });
 

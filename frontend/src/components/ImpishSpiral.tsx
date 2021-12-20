@@ -103,7 +103,7 @@ export function ImpishSpiral(props: SpiralProps) {
       }
 
       const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
-      setPreviewURL(`/spiral_image/seed/${seed}/300`);
+      setPreviewURL(`/spiral_image/seed/${seed}/300.png`);
     })();
   }, [props.selectedAddress, props.rwnft, selectedUserRW]);
 
@@ -183,12 +183,12 @@ export function ImpishSpiral(props: SpiralProps) {
         </Container>
       </Navbar>
 
-      <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
+      <div className="withSpiralBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
         <Row className="mt-4">
           {props.selectedAddress && (
             <>
-              <Row>
+              <Row style={{marginTop: '50px'}}>
                 <Col xs={{ offset: 4 }} style={{ textAlign: "left" }}>
                   <h5>
                     <span style={{ color: "#ffc106" }}>Step 1:</span> What kind of Spiral?
@@ -263,7 +263,7 @@ export function ImpishSpiral(props: SpiralProps) {
                       <Col xs={3} style={{ marginTop: "-50px" }}>
                         <div>Preview</div>
                         <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
-                          <img src={previewURL} />
+                          <img src={previewURL} alt="spiral" />
                         </div>
                       </Col>
                     </Row>

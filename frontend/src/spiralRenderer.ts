@@ -359,7 +359,7 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
     ctx.font = '48px serif';
     ctx?.fillText("Loading...", 10, 100);
   }
-  cachedImage.src = `/spiral_image/seed/${seed}/300`;
+  cachedImage.src = `/spiral_image/seed/${seed}/300.png`;
 
   let rot = 0;
 

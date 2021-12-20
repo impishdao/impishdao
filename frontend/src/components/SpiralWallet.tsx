@@ -94,7 +94,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
         <Container>
           <Row className="mt-5 mb-5">
             {spirals.map((s) => {
-              const imgurl = `/spiral_image/seed/${s.seed}/300`;
+              const imgurl = `/spiral_image/seed/${s.seed}/300.png`;
               return (
                 <Col md={4} key={s.seed} className="mb-3">
                   <Card
