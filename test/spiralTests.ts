@@ -393,6 +393,6 @@ describe("ImpishSpiral", function () {
 
     // Can't remove or add too much
     await expect(impishSpiral.removeLengthFromSpiral(0, 700000)).to.be.revertedWith("CantTrim");
-    await expect(impishSpiral.addLengthToSpiral(0, 5000000)).to.be.revertedWith("CantAdd");
+    await expect(impishSpiral.addLengthToSpiral(0, 10000000)).to.be.revertedWith("CantAdd");
   });
 });
