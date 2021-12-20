@@ -148,12 +148,15 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         // Mark this RandomWalkNFT as already minted.
         mintedRWs[_rwnftTokenId] = true;
 
-        // The equivalent of 33% of the ETH is used to mint IMPISH tokens.
-        _impishDAO.deposit{value: (getMintPrice() * 33) / 100}();
-
+        // Record the mint price
+        uint256 mintPrice = getMintPrice();
+        
         // Since we're minting based on RW, use the same seed
         _mintSpiral(_rwNFT.seeds(_rwnftTokenId));
         
+        // The equivalent of 33% of the ETH is used to mint IMPISH tokens.
+        _impishDAO.deposit{value: (mintPrice * 33) / 100}();
+
         // And send the impish tokens to the caller. 
         _impishDAO.transfer(msg.sender, _impishDAO.balanceOf(address(this)));
     }
