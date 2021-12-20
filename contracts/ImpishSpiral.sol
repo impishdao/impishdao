@@ -269,7 +269,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         require(msg.sender == spiralBitsContract, "CantCall");
         require(spiralLengths[tokenId] > 0, "NoID");
         // Solidity 0.8.0 does the overflow check here automatically
-        require(spiralLengths[tokenId] + addLength < 5000000, "CantAdd");
+        require(spiralLengths[tokenId] + addLength < 10000000, "CantAdd");
 
         spiralLengths[tokenId] = spiralLengths[tokenId] + addLength;
     }
