@@ -1,7 +1,7 @@
 import { Button, Col, Container, Form, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
-import { DappState } from "../AppState";
-import { format4Decimals, formatUSD } from "./utils";
+import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -26,8 +26,9 @@ export function ImpishSpiral(props: SpiralProps) {
   // const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
-  const mintStart = 1640034021;
-  const [timeRemaining, setTimeRemaining] = useState(mintStart - Date.now() / 1000);
+  // By default, 3days remain
+  const THREE_DAYS = 3 * 24 * 3600;
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
   const [selectedUserRW, setSelectedUserRW] = useState<BigNumber | null>(null);
@@ -47,7 +48,17 @@ export function ImpishSpiral(props: SpiralProps) {
     return function cleanup() {
       clearInterval(timerID);
     };
-  });
+  }, [timeRemaining]);
+
+  useEffect(() => {
+    fetch("/spiralapi/spiraldata")
+      .then((data) => data.json())
+      .then((j) => {
+        const lastMintTime = BigNumber.from(j.lastMintTime || 0);
+        console.log(`Last mint time was ${lastMintTime.toNumber()}`);
+        setTimeRemaining((lastMintTime.toNumber() + THREE_DAYS) - (Date.now() / 1000));
+      })
+  }, [THREE_DAYS])
 
   // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
@@ -121,31 +132,48 @@ export function ImpishSpiral(props: SpiralProps) {
       return;
     }
 
-    if (spiralType === "original") {
-      const id = await props.impspiral._tokenIdCounter();
-      let tx = await props.impspiral.mintSpiralRandom({ value: await props.impspiral.getMintPrice() });
-      await tx.wait();
-      props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
-        nav(`/spirals/detail/${id}`);
-      });
-    } else {
-      if (selectedUserRW) {
+    try {
+      if (spiralType === "original") {
         const id = await props.impspiral._tokenIdCounter();
-        let tx = await props.impspiral.mintSpiralWithRWNFT(selectedUserRW, {
-          value: await props.impspiral.getMintPrice(),
-        });
+        let tx = await props.impspiral.mintSpiralRandom({ value: await props.impspiral.getMintPrice() });
         await tx.wait();
-        props.showModal(
-          "Yay!",
-          <div>You successfully minted a RandomWalkNFT Companion Spiral. You can now to view it.</div>,
-          () => {
-            nav(`/spirals/detail/${id}`);
-          }
-        );
+        props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
+          nav(`/spirals/detail/${id}`);
+        });
       } else {
-        console.log("Error, no user selected RandomWalkNFT found!");
+        if (selectedUserRW) {
+          const id = await props.impspiral._tokenIdCounter();
+          let tx = await props.impspiral.mintSpiralWithRWNFT(selectedUserRW, {
+            value: await props.impspiral.getMintPrice(),
+          });
+          await tx.wait();
+          props.showModal(
+            "Yay!",
+            <div>You successfully minted a RandomWalkNFT Companion Spiral. You can now to view it.</div>,
+            () => {
+              nav(`/spirals/detail/${id}`);
+            }
+          );
+        } else {
+          console.log("Error, no user selected RandomWalkNFT found!");
+        }
+      }
+    }  catch (e: any) {
+      console.log(e);
+
+      let msg: string | undefined;
+      if (e?.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        // User cancelled, so do nothing
+        msg = undefined;
+      } else {
+        msg = `Error: ${e?.data?.message}`;
+      }
+
+      if (msg) {
+        props.showModal("Error Minting Impish Spiral!", <div>{msg}</div>);
       }
     }
+
   };
 
   return (
@@ -185,7 +213,10 @@ export function ImpishSpiral(props: SpiralProps) {
 
       <div className="withSpiralBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
-        <Row className="mt-4">
+        <Row className="mt-1">
+          <div>Minting is open for <span style={{color: "#ffd454"}}>{secondsToDhms(timeRemaining)}</span></div>
+        </Row>
+        <Row className="mt-3">
           {props.selectedAddress && (
             <>
               <Row style={{marginTop: '50px'}}>

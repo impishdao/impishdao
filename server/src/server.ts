@@ -221,6 +221,17 @@ app.get("/lastethprice", async (req, res) => {
   res.send({ lastETHPrice });
 });
 
+app.get("/spiralapi/spiraldata", async (req, res) => {
+  try {
+    const lastMintTime = await _impishspiral.lastMintTime();
+
+    res.contentType("application/json");
+    res.send(JSON.stringify({ lastMintTime }));
+  } catch (err) {
+    res.status(500).send("Something went wrong generating metadata");
+  }
+});
+
 app.get("/spiralapi/wallet/:address", async (req, res) => {
   const address = req.params.address;
 
