@@ -334,6 +334,28 @@ describe("ImpishSpiral", function () {
     await expect(impishSpiral.afterAllWinnings()).to.be.revertedWith("Empty");
   });
 
+  it.only("Should work with base URLs", async function () {
+    const { impishSpiral } = await loadContracts();
+    // eslint-disable-next-line no-unused-vars
+    const [signer, otherSigner] = await ethers.getSigners();
+
+    // Start the mints
+    await impishSpiral.startMints();
+
+    await expect(impishSpiral.connect(otherSigner).setBaseURI("wrong URI")).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+
+    // Set base URI as owner works
+    const baseURI = "https://impishdao.com/spiralapi/spirals/";
+    await impishSpiral.setBaseURI(baseURI);
+
+    const tokenID = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+
+    expect(await impishSpiral.tokenURI(tokenID)).to.be.equal(baseURI + tokenID.toString());
+  });
+
   it("Should allow setting of Spiral Lengths", async function () {
     const { impishSpiral, rwnft } = await loadContracts();
     const [signer, otherSigner] = await ethers.getSigners();

@@ -232,6 +232,28 @@ app.get("/spiralapi/wallet/:address", async (req, res) => {
   }
 });
 
+app.get("/spiralapi/spirals/metadata/:id", async (req, res) => {
+  try {
+    const id = BigNumber.from(req.params.id);
+    const seed = await _impishspiral.spiralSeeds(id);
+    if (BigNumber.from(seed).eq(0)) {
+      res.status(404).send("Not Found");
+      return;
+    }
+
+    const r = {
+      image: `https://impishdao.com/spiral_image/seed/${seed}/300.png`,
+      description: "ImpishDAO Spirals",
+      attributes: [{ seed }],
+    };
+
+    res.contentType("application/json");
+    res.send(JSON.stringify(r));
+  } catch (err) {
+    res.status(500).send("Something went wrong fetch address NFTs");
+  }
+});
+
 app.get("/spiralapi/seedforid/:id", async (req, res) => {
   try {
     const id = BigNumber.from(req.params.id);
