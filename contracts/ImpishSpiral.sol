@@ -103,7 +103,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
     event SpiralMinted(uint256, bytes32);
     function _mintSpiral(bytes32 seed) internal {
-        require(started, "NotYetStarted");
+        require(started, "NotStarted");
         require(block.timestamp < (lastMintTime + MINT_EXPIRY_TIME), "MintsFinished");
 
         uint256 nextMintPrice = getMintPrice();

@@ -43,9 +43,9 @@ describe("ImpishSpiral", function () {
     expect(await impishSpiral.getMintPrice()).to.equal(ethers.utils.parseEther("0.005025"));
 
     await rwnft.mint({ value: await rwnft.getMintPrice() });
-    await expect(impishSpiral.mintSpiralWithRWNFT(0, { value: firstMintPrice })).to.be.revertedWith("NotYetStarted");
-    await expect(impishSpiral.claimWin(1)).to.be.revertedWith("NotYetStarted");
-    await expect(impishSpiral.mintSpiralRandom({ value: firstMintPrice })).to.be.revertedWith("NotYetStarted");
+    await expect(impishSpiral.mintSpiralWithRWNFT(0, { value: firstMintPrice })).to.be.revertedWith("NotStarted");
+    await expect(impishSpiral.claimWin(1)).to.be.revertedWith("NotStarted");
+    await expect(impishSpiral.mintSpiralRandom({ value: firstMintPrice })).to.be.revertedWith("NotStarted");
 
     // Start the mints
     await impishSpiral.startMints();
@@ -73,7 +73,7 @@ describe("ImpishSpiral", function () {
     expect(await impishSpiral.spiralSeeds(tokenId)).to.be.equal(await rwnft.seeds(0));
 
     // Try minting with the same RandomWalkNFT again, will fail
-    await expect(impishSpiral.mintSpiralWithRWNFT(0)).to.be.revertedWith("AlreadyMinted");
+    await expect(impishSpiral.mintSpiralWithRWNFT(0)).to.be.revertedWith("Minted");
   });
 
   it("Should allow winnings (10) by single wallet", async function () {
@@ -93,7 +93,7 @@ describe("ImpishSpiral", function () {
     }
 
     // Prematurely claiming win is error
-    await expect(impishSpiral.claimWin(0)).to.be.revertedWith("MintsStillOpen");
+    await expect(impishSpiral.claimWin(0)).to.be.revertedWith("StillOpen");
 
     // After 10 mints, advance EVM time by 3 days to win it.
     await network.provider.send("evm_increaseTime", [1 + 3600 * 24 * 3]); // 3 days + 1 sec
@@ -114,7 +114,7 @@ describe("ImpishSpiral", function () {
 
       expect(await impishSpiral.winningsClaimed(i)).to.be.equal(true);
       // Claiming it again should be error
-      await expect(impishSpiral.claimWin(i)).to.be.revertedWith("AlreadyClaimed");
+      await expect(impishSpiral.claimWin(i)).to.be.revertedWith("Claimed");
     }
 
     // Now claim the developer fee
@@ -155,14 +155,14 @@ describe("ImpishSpiral", function () {
     const lastRwNFTTokenId = (await rwnft.nextTokenId()).sub(2);
     await expect(
       impishSpiral.mintSpiralWithRWNFT(lastRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
-    ).to.be.revertedWith("AlreadyMinted");
+    ).to.be.revertedWith("Minted");
 
     // Can't mint one that we don't own.
     // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
     const notWalletRwNFTTokenId = (await rwnft.nextTokenId()).sub(1);
     await expect(
       impishSpiral.mintSpiralWithRWNFT(notWalletRwNFTTokenId, { value: await impishSpiral.getMintPrice() })
-    ).to.be.revertedWith("MinterDoesntOwnToken");
+    ).to.be.revertedWith("DoesntOwnToken");
 
     // Can't mint non-existing token
     // This one is owned by IMPISH DAO, generated when issuing IMPISH tokens
@@ -172,7 +172,7 @@ describe("ImpishSpiral", function () {
     ).to.be.revertedWith("ERC721: owner query for nonexistent token");
 
     // Prematurely claiming win is error
-    await expect(impishSpiral.claimWin(0)).to.be.revertedWith("MintsStillOpen");
+    await expect(impishSpiral.claimWin(0)).to.be.revertedWith("StillOpen");
 
     // After 10 mints, advance EVM time by 3 days to win it.
     await network.provider.send("evm_increaseTime", [1 + 3600 * 24 * 3]); // 3 days + 1 sec
@@ -184,7 +184,7 @@ describe("ImpishSpiral", function () {
     );
 
     // Can't claim win for bogus token
-    await expect(impishSpiral.claimWin(100)).to.be.revertedWith("TokenIDOutofRange");
+    await expect(impishSpiral.claimWin(100)).to.be.revertedWith("OutofRange");
 
     const totalReward = await impishSpiral.totalReward();
 
@@ -201,7 +201,7 @@ describe("ImpishSpiral", function () {
 
       expect(await impishSpiral.winningsClaimed(i)).to.be.equal(true);
       // Claiming it again should be error
-      await expect(impishSpiral.claimWin(i)).to.be.revertedWith("AlreadyClaimed");
+      await expect(impishSpiral.claimWin(i)).to.be.revertedWith("Claimed");
     }
 
     // Now claim the developer fee
@@ -323,7 +323,7 @@ describe("ImpishSpiral", function () {
       expect(await impishSpiral.winningsClaimed(winningTokenID)).to.be.equal(true);
 
       // Claiming it again should be error
-      await expect(impishSpiral.claimWin(winningTokenID)).to.be.revertedWith("AlreadyClaimed");
+      await expect(impishSpiral.claimWin(winningTokenID)).to.be.revertedWith("Claimed");
     }
 
     // Now claim the developer fee
@@ -392,7 +392,7 @@ describe("ImpishSpiral", function () {
     expect(await impishSpiral.spiralLengths(0)).to.be.equals(1000000 - 1000 + 5000);
 
     // Can't remove or add too much
-    await expect(impishSpiral.removeLengthFromSpiral(0, 700000)).to.be.revertedWith("CantTrimAnyMore");
-    await expect(impishSpiral.addLengthToSpiral(0, 5000000)).to.be.revertedWith("CantAddAnyMore");
+    await expect(impishSpiral.removeLengthFromSpiral(0, 700000)).to.be.revertedWith("CantTrim");
+    await expect(impishSpiral.addLengthToSpiral(0, 5000000)).to.be.revertedWith("CantAdd");
   });
 });
