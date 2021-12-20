@@ -23,10 +23,10 @@ export function format4Decimals(n?: BigNumber): string {
 
 export function formatUSD(bal: BigNumber, lastETHPrice?: number) {
   if (lastETHPrice === undefined || !lastETHPrice) {
-    return "($ -)";
+    return "(USD -)";
   }
 
-  return "($ " + (parseFloat(ethers.utils.formatEther(bal)) * lastETHPrice).toFixed(2) + ")";
+  return "(USD " + (parseFloat(ethers.utils.formatEther(bal)) * lastETHPrice).toFixed(2) + ")";
 }
 
 export function pad(num: string, size: number): string {

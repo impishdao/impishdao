@@ -8,6 +8,7 @@ import { BigNumber, Contract, ethers } from "ethers";
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
 import RandomWalkNFTArtifact from "../contracts/rwnft.json";
+import ImpishSpiralArtifact from "../contracts/impishspiral.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
@@ -18,6 +19,8 @@ import React from "react";
 import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
+import { SpiralWallet } from "./SpiralWallet";
+import { SpiralDetail } from "./SpiralDetail";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -50,6 +53,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   provider?: Web3Provider;
   impdao?: Contract;
   rwnft?: Contract;
+  impspiral?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -78,7 +82,15 @@ export class Dapp extends React.Component<DappProps, DappState> {
     // artifact. You can do this same thing with your contracts.
     this.impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, this.provider.getSigner(0));
 
+    // Interface to RWNFT
     this.rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, this.provider);
+
+    // Interface to ImpishSpiral contract
+    this.impspiral = new ethers.Contract(
+      contractAddresses.ImpishSpiral,
+      ImpishSpiralArtifact.abi,
+      this.provider.getSigner(0)
+    );
 
     this.readDappState();
     this.readUserData();
@@ -244,8 +256,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.readDappState();
   }
 
-  showModal = (title: string, message: JSX.Element) => {
-    this.setState({ modalTitle: title, modalMessage: message, modalShowing: true });
+  showModal = (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => {
+    this.setState({ modalTitle: title, modalMessage: message, modalShowing: true, modalCloseCallBack });
   };
 
   render() {
@@ -258,7 +270,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
             message={this.state.modalMessage || <></>}
             title={this.state.modalTitle || ""}
             show={this.state.modalShowing}
-            close={() => this.setState({ modalShowing: false })}
+            close={() => {
+              this.setState({ modalShowing: false });
+              if (this.state.modalCloseCallBack) {
+                this.state.modalCloseCallBack();
+              }
+            }}
           />
 
           <div className="mt-5" />
@@ -301,8 +318,19 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   provider={this.provider}
                   impdao={this.impdao}
                   rwnft={this.rwnft}
+                  impspiral={this.impspiral}
                 />
               }
+            />
+
+            <Route
+              path="/spirals/wallet/:address"
+              element={<SpiralWallet {...this.state} connectWallet={() => this._connectWallet()} />}
+            />
+
+            <Route
+              path="/spirals/detail/:id"
+              element={<SpiralDetail {...this.state} connectWallet={() => this._connectWallet()} />}
             />
           </Routes>
 

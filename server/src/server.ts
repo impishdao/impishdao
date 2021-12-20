@@ -2,14 +2,16 @@
 import express from "express";
 import fs from "fs";
 import got from "got";
+import path from "path";
 
 import lineReader from "line-reader";
 import { BigNumber, ethers } from "ethers";
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
+import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 import ImpishDAOConfig from "./impishdao-config.json";
-import path from "path";
+import { get_image } from "./serverSpiralRenderer";
 
 const app = express();
 
@@ -20,8 +22,8 @@ const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
 // When, we initialize the contract using the provider and the token's
 // artifacts.
 const _impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, provider);
-
 const _rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, provider);
+const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
 
 const nftsAvailable = new Set<number>();
 
@@ -173,7 +175,7 @@ app.get("/api", async (req, res) => {
     if (nftPriceCacheExpiry < Date.now()) {
       nftPriceCache.clear();
       // eslint-disable-next-line prettier/prettier
-      nftPriceCacheExpiry = Date.now() + (6 * 3600 * 1000); // 6 hours
+      nftPriceCacheExpiry = Date.now() + 6 * 3600 * 1000; // 6 hours
     }
 
     const nftsWithPrice = (
@@ -219,8 +221,119 @@ app.get("/lastethprice", async (req, res) => {
   res.send({ lastETHPrice });
 });
 
+app.get("/spiralapi/wallet/:address", async (req, res) => {
+  const address = req.params.address;
+
+  try {
+    const wallet = (await _impishspiral.walletOfOwner(address)) as Array<BigNumber>;
+    res.send(wallet);
+  } catch (err) {
+    res.status(500).send("Something went wrong fetch address NFTs");
+  }
+});
+
+app.get("/spiralapi/spirals/metadata/:id", async (req, res) => {
+  try {
+    const id = BigNumber.from(req.params.id);
+    const seed = await _impishspiral.spiralSeeds(id);
+    if (BigNumber.from(seed).eq(0)) {
+      res.status(404).send("Not Found");
+      return;
+    }
+
+    const r = {
+      image: `https://impishdao.com/spiral_image/seed/${seed}/300.png`,
+      description: "ImpishDAO Spirals",
+      attributes: [{ seed }],
+    };
+
+    res.contentType("application/json");
+    res.send(JSON.stringify(r));
+  } catch (err) {
+    res.status(500).send("Something went wrong generating metadata");
+  }
+});
+
+app.get("/spiralapi/seedforid/:id", async (req, res) => {
+  try {
+    const id = BigNumber.from(req.params.id);
+    const seed = await _impishspiral.spiralSeeds(id);
+    if (BigNumber.from(seed).eq(0)) {
+      res.status(404).send("Not Found");
+      return;
+    }
+
+    const owner = await _impishspiral.ownerOf(id);
+
+    res.send({ id, seed, owner });
+  } catch (err) {
+    console.log(err);
+    res.send({});
+  }
+});
+
+app.get("/spiral_image/id/:id", async (req, res) => {
+  const id = BigNumber.from(req.params.id);
+
+  try {
+    const seed = await _impishspiral.spiralSeeds(id);
+    if (BigNumber.from(seed).eq(0)) {
+      res.status(404).send("Not Found");
+      return;
+    }
+
+    res.redirect(`/spiral_image/seed/${seed}.png`);
+  } catch (err) {
+    res.status(500).send("Something went wrong");
+  }
+});
+
+app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
+  const seed = req.params.seed;
+  try {
+    // eslint-disable-next-line no-unused-vars
+    const num = BigNumber.from(seed);
+  } catch (e) {
+    // If this errored, the seed is bad.
+    res.status(404).send("Bad Seed");
+    return;
+  }
+
+  if (seed.length !== 66 || seed.slice(0, 2) !== "0x") {
+    res.status(404).send("Bad Seed Hex");
+    return;
+  }
+
+  const size = parseInt(req.params.size);
+  if (isNaN(size)) {
+    res.status(404).send("Bad Size");
+    return;
+  }
+
+  const fileName = `data/${seed}x${size}.png`;
+
+  // See if the file already exists
+  if (fs.existsSync(path.join(__dirname, fileName))) {
+    res.sendFile(path.join(__dirname, fileName));
+    return;
+  }
+
+  const pngBuf = get_image(seed, size);
+  res.contentType("png");
+  res.send(pngBuf);
+
+  setTimeout(() => {
+    if (!fs.existsSync(path.join(__dirname, "data"))) {
+      fs.mkdirSync(path.join(__dirname, "data"));
+    }
+
+    fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
+  });
+});
+
 // Serve static files
 app.use("/spirals", express.static(path.join(__dirname, "index.html")));
+app.use("/spirals/*", express.static(path.join(__dirname, "index.html")));
 app.use("/", express.static(path.join(__dirname)));
 
 app.listen(3001, () => console.log("Example app listening on port 3001!"));

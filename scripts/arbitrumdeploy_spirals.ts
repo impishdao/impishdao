@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
@@ -8,42 +9,41 @@ import { artifacts, ethers } from "hardhat";
 import path from "path";
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const [signer] = await ethers.getSigners();
+  console.log(`Deploying from ${signer.address}`);
 
   // We get the contract to deploy
-  const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
-  const RandomWalkNFT = await ethers.getContractFactory("RandomWalkNFT");
   const ImpishSpiral = await ethers.getContractFactory("ImpishSpiral");
 
-  const rwnft = await RandomWalkNFT.deploy();
-  await rwnft.deployed();
+  // Verified contract on Arbitrum
+  // https://arbiscan.io/address/0x895a6F444BE4ba9d124F61DF736605792B35D66b#code
+  const RandomWalkNFT_address = "0x895a6F444BE4ba9d124F61DF736605792B35D66b";
 
-  const impdao = await ImpishDAO.deploy(rwnft.address);
-  await impdao.deployed();
+  // Verified contract on Arbitrum
+  // https://arbiscan.io/address/0x36f6d831210109719d15abaee45b327e9b43d6c6
+  const IMPISHDAO_address = "0x36f6d831210109719d15abaee45b327e9b43d6c6";
 
-  const impishspiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
+  const impishspiral = await ImpishSpiral.deploy(RandomWalkNFT_address, IMPISHDAO_address);
   await impishspiral.deployed();
 
-  // Mint a new NFT to reset the last mint time
-  await rwnft.mint({ value: await rwnft.getMintPrice() });
+  console.log("Impish Spiral deployed to:", impishspiral.address);
 
-  console.log("RandomWalkNFT deployed to:", rwnft.address);
-  console.log("ImpishDAO deployed to:", impdao.address);
-  console.log("ImpishSpiral deployed to:", impishspiral.address);
+  // Also start the mints
+  const startTx = await impishspiral.startMints();
+  await startTx.wait();
+  console.log("Started Mints");
 
-  // Start the ImpishSpiral for ease
-  await impishspiral.startMints();
+  // Set the Base URI
+  const baseURI = "https://impishdao.com//spiralapi/spirals/metadata/";
+  const baseURITx = await impishspiral.setBaseURI(baseURI);
+  await baseURITx.wait();
+  console.log(`Base URI set to ${baseURI}`);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(rwnft, impdao, impishspiral);
+  saveFrontendFiles(RandomWalkNFT_address, IMPISHDAO_address, impishspiral);
 }
 
-function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract) {
+function saveFrontendFiles(rwnft: string, impdao: string, impishspiral: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -57,7 +57,7 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
   }
 
   const contractAddress = JSON.stringify(
-    { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral.address },
+    { RandomWalkNFT: rwnft, ImpishDAO: impdao, ImpishSpiral: impishspiral.address },
     undefined,
     2
   );

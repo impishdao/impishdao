@@ -41,6 +41,13 @@ div.withBackground {
   height: 800px;
 }
 
+div.withSpiralBackground {
+  background-image: url("bgspiral.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  min-height: 800px;
+}
+
 div.usdFaded {
   margin-top: -20px;
   color: #666;

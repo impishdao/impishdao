@@ -26,7 +26,7 @@ abstract contract IImpishDAO is IERC20 {
 
 contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     // Next TokenID
-    uint256 private _tokenIdCounter;
+    uint256 public _tokenIdCounter;
 
     // When the last token was minted
     uint256 public lastMintTime;
@@ -42,6 +42,9 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
     // Address of ImpishDAO
     IImpishDAO public _impishDAO;
+
+    // Base URI
+    string private _baseTokenURI;
 
     // The RNG seed that generates the spiral artwork
     // tokenId => seed
@@ -77,10 +80,20 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     function startMints() public onlyOwner {
-        require(!started, "CantStartTwice");
+        require(!started, "Started");
 
         lastMintTime = block.timestamp;
         started = true;
+    }
+
+    // Only owner can set the BaseURI
+    function setBaseURI(string memory baseURI) public onlyOwner {
+        _baseTokenURI = baseURI;
+    }
+
+    // Overrides the one in ERC721.sol
+    function _baseURI() internal view virtual override returns (string memory) {
+        return _baseTokenURI;
     }
 
     // Mint price increases 0.5% with every mint
@@ -88,8 +101,9 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         return (price * 1005) / 1000;
     }
 
+    event SpiralMinted(uint256, bytes32);
     function _mintSpiral(bytes32 seed) internal {
-        require(started, "NotYetStarted");
+        require(started, "NotStarted");
         require(block.timestamp < (lastMintTime + MINT_EXPIRY_TIME), "MintsFinished");
 
         uint256 nextMintPrice = getMintPrice();
@@ -100,7 +114,7 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
         uint256 excessETH = 0;
         if (msg.value > nextMintPrice) {
-            excessETH = nextMintPrice - msg.value;
+            excessETH = msg.value - nextMintPrice;
         }
 
         // Increase the mint price
@@ -122,29 +136,33 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
         // And actually mint
         _safeMint(msg.sender, tokenId);
+
+        emit SpiralMinted(tokenId, seed);
     }
 
     // Mint a spiral based on a RandomWalkNFT
-    function mintSpiralWithRWNFT(uint256 _rwnftTokenId) public payable nonReentrant {
-        require(!mintedRWs[_rwnftTokenId], "AlreadyMinted");
-        require(_rwNFT.ownerOf(_rwnftTokenId) == msg.sender, "MinterDoesntOwnToken");
+    function mintSpiralWithRWNFT(uint256 _rwnftTokenId) external payable nonReentrant {
+        require(!mintedRWs[_rwnftTokenId], "Minted");
+        require(_rwNFT.ownerOf(_rwnftTokenId) == msg.sender, "DoesntOwnToken");
 
         // Mark this RandomWalkNFT as already minted.
         mintedRWs[_rwnftTokenId] = true;
 
+        // Record the mint price
+        uint256 mintPrice = getMintPrice();
+        
         // Since we're minting based on RW, use the same seed
         _mintSpiral(_rwNFT.seeds(_rwnftTokenId));
         
         // The equivalent of 33% of the ETH is used to mint IMPISH tokens.
-        uint256 impishDAOETH = (msg.value * 33) / 100;
-        _impishDAO.deposit{value: impishDAOETH}();       
+        _impishDAO.deposit{value: (mintPrice * 33) / 100}();
 
         // And send the impish tokens to the caller. 
         _impishDAO.transfer(msg.sender, _impishDAO.balanceOf(address(this)));
     }
 
     // Mint a random Spiral
-    function mintSpiralRandom() public payable nonReentrant {
+    function mintSpiralRandom() external payable nonReentrant {
         entropy = keccak256(abi.encode(
             block.timestamp,
             blockhash(block.number),
@@ -156,18 +174,18 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     // Claim winnings 
-    function claimWin(uint256 tokenId) public nonReentrant {
-        require(started, "NotYetStarted");
-        require(block.timestamp > (lastMintTime + MINT_EXPIRY_TIME), "MintsStillOpen");
-        require(tokenId < _tokenIdCounter, "TokenIDOutofRange");
-        require(!winningsClaimed[tokenId], "AlreadyClaimed");
+    function claimWin(uint256 tokenId) external nonReentrant {
+        require(started, "NotStarted");
+        require(block.timestamp > (lastMintTime + MINT_EXPIRY_TIME), "StillOpen");
+        require(tokenId < _tokenIdCounter, "OutofRange");
+        require(!winningsClaimed[tokenId], "Claimed");
 
         // Make sure that this tokenId has actually won
         uint256 winningTokensAreGTE = 0;
         if (_tokenIdCounter > 10) {
             winningTokensAreGTE = _tokenIdCounter - 10;
         }
-        require(tokenId >= winningTokensAreGTE, "TokenDidnotWin");
+        require(tokenId >= winningTokensAreGTE, "DidnotWin");
 
         // 1st place wins 10%, 2nd place 9%.... 10th place wins 1%
         uint256 winningPercent =  tokenId - winningTokensAreGTE + 1;
@@ -184,10 +202,10 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         require(success, "Transfer failed.");
     }
 
-    function afterAllWinnings() public onlyOwner nonReentrant{
-        require(started, "NotYetStarted");
+    function afterAllWinnings() external onlyOwner nonReentrant{
+        require(started, "Started");
         require(address(this).balance > 0, "Empty");
-        require(block.timestamp > (lastMintTime + MINT_EXPIRY_TIME), "MintsStillOpen");
+        require(block.timestamp > (lastMintTime + MINT_EXPIRY_TIME), "StillOpen");
 
         uint256 winningTokensAreGTE = 0;
         if (_tokenIdCounter > 10) {
@@ -196,12 +214,12 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
 
         uint256 tid;
         for (tid = winningTokensAreGTE; tid < _tokenIdCounter; tid++) {
-            require(winningsClaimed[tid], "WinningsNotYetClaimed");
+            require(winningsClaimed[tid], "NotYetClaimed");
         }
 
         // Transfer winnings
         (bool success, ) = owner().call{value: address(this).balance}("");
-        require(success, "Transfer failed.");
+        require(success, "TfrFailed");
     }
 
     // Returns a list of token Ids owned by _owner.
@@ -241,17 +259,17 @@ contract ImpishSpiral is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
         require(msg.sender == spiralBitsContract, "YouCantCall");
         require(spiralLengths[tokenId] > 0, "NoTokenID");
         // Solidity 0.8.0 does the underflow check here automatically
-        require(spiralLengths[tokenId] - trimLength > 400000, "CantTrimAnyMore");
+        require(spiralLengths[tokenId] - trimLength > 400000, "CantTrim");
 
         spiralLengths[tokenId] = spiralLengths[tokenId] - trimLength;
     }
 
     // Decrease length of a spiral
     function addLengthToSpiral(uint256 tokenId, uint256 addLength) external {
-        require(msg.sender == spiralBitsContract, "YouCantCall");
-        require(spiralLengths[tokenId] > 0, "NoTokenID");
+        require(msg.sender == spiralBitsContract, "CantCall");
+        require(spiralLengths[tokenId] > 0, "NoID");
         // Solidity 0.8.0 does the overflow check here automatically
-        require(spiralLengths[tokenId] + addLength < 5000000, "CantAddAnyMore");
+        require(spiralLengths[tokenId] + addLength < 10000000, "CantAdd");
 
         spiralLengths[tokenId] = spiralLengths[tokenId] + addLength;
     }
