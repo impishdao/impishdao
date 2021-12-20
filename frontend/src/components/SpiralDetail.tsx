@@ -5,7 +5,7 @@ import { LinkContainer } from "react-router-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
-import { format4Decimals, secondsToDhms, THREE_DAYS } from "./utils";
+import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
 
 type SpiralDetailProps = DappState & {
   connectWallet: () => void;
@@ -73,7 +73,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
   let ethReward = BigNumber.from(0);
   if (spiralState?.nextTokenId && spiralState.totalReward && !isNaN(parseInt(id || ""))) {
     winningPosition = spiralState.nextTokenId.toNumber() - parseInt(id || "0");
-    if (winningPosition <= 10) {
+    if (winningPosition > 0 && winningPosition <= 10) {
       isWinning = true;
       ethReward = spiralState.totalReward.mul(11 - winningPosition).div(100);
     }
@@ -149,7 +149,8 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     </h5>
                     <div>This Spiral is currently #{winningPosition}, and can claim ETH 
                     {` ${format4Decimals(ethReward)} `}
-                    if no other mints in <br/>
+                    {` ${formatUSD(ethReward, props.lastETHPrice)} `}
+                    if no other Spirals are minted in <br/>
                     {secondsToDhms(timeRemaining)}</div>
                   </>
                 )}
