@@ -57,3 +57,9 @@ export class DappState {
     this.nftsWithPrice = [];
   }
 }
+
+export type SpiralsState = {
+  lastMintTime: BigNumber;
+  nextTokenId: BigNumber;
+  totalReward: BigNumber;
+};

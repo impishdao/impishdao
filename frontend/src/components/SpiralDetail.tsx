@@ -3,19 +3,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { DappState } from "../AppState";
+import { DappState, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
 import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
 
 type SpiralDetailProps = DappState & {
   connectWallet: () => void;
 };
-
-type SpiralsState = {
-  lastMintTime: BigNumber;
-  nextTokenId: BigNumber;
-  totalReward: BigNumber;
-}
 
 export function SpiralDetail(props: SpiralDetailProps) {
   const { id } = useParams();
@@ -91,6 +85,9 @@ export function SpiralDetail(props: SpiralDetailProps) {
             <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
             <LinkContainer to="/spirals">
               <Nav.Link>Spirals</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/spirals/top10">
+              <Nav.Link>Winning Spirals</Nav.Link>
             </LinkContainer>
             {props.selectedAddress && (
               <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>

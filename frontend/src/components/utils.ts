@@ -38,4 +38,12 @@ export function range(len: number, startAt: number = 0) {
   return Array.from(Array(len).keys()).map(i => i + startAt);
 }
 
+export function trimAddress(address: string): string {
+  if (!address || address.length < 10) {
+    return address;
+  }
+
+  return address.substring(0, 7) + "..." + address.substring(address.length - 5, address.length);
+}
+
 export const THREE_DAYS = 3 * 24 * 3600;

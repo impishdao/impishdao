@@ -270,9 +270,21 @@ app.get("/spiralapi/spirals/metadata/:id", async (req, res) => {
   }
 });
 
+type SeedToIDValue = {
+  id: BigNumber;
+  seed: string;
+  owner: string;
+} 
+const seedToIdCache = new Map<number, SeedToIDValue>();
 app.get("/spiralapi/seedforid/:id", async (req, res) => {
   try {
     const id = BigNumber.from(req.params.id);
+
+    if (seedToIdCache.has(id.toNumber())) {
+      res.send(seedToIdCache.get(id.toNumber()));
+      return;
+    }
+
     const seed = await _impishspiral.spiralSeeds(id);
     if (BigNumber.from(seed).eq(0)) {
       res.status(404).send("Not Found");
@@ -280,6 +292,8 @@ app.get("/spiralapi/seedforid/:id", async (req, res) => {
     }
 
     const owner = await _impishspiral.ownerOf(id);
+
+    seedToIdCache.set(id.toNumber(), {id, seed, owner});
 
     res.send({ id, seed, owner });
   } catch (err) {
