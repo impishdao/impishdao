@@ -274,7 +274,7 @@ type SeedToIDValue = {
   id: BigNumber;
   seed: string;
   owner: string;
-} 
+};
 const seedToIdCache = new Map<number, SeedToIDValue>();
 app.get("/spiralapi/seedforid/:id", async (req, res) => {
   try {
@@ -293,7 +293,7 @@ app.get("/spiralapi/seedforid/:id", async (req, res) => {
 
     const owner = await _impishspiral.ownerOf(id);
 
-    seedToIdCache.set(id.toNumber(), {id, seed, owner});
+    seedToIdCache.set(id.toNumber(), { id, seed, owner });
 
     res.send({ id, seed, owner });
   } catch (err) {

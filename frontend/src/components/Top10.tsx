@@ -17,7 +17,6 @@ type SpiralDetail = {
 };
 
 export function Top10(props: Top10Props) {
-  const { address } = useParams();
   const [spirals, setSpirals] = useState<Array<SpiralDetail>>([]);
   const [spiralState, setSpiralState] = useState<SpiralsState | undefined>();
   const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
