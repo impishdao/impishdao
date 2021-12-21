@@ -54,24 +54,24 @@ export function SpiralWallet(props: SpiraWalletProps) {
   const PageList = () => {
     return (
       <Row className="mb-2">
-        {(numPages > 1) && 
-          <Col xs={{span: 6, offset: 3}}>
-            <div style={{display: 'flex', flexDirection: 'row', gap: '10px', justifyContent: 'center'}}>
+        {numPages > 1 && (
+          <Col xs={{ span: 6, offset: 3 }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "center" }}>
               Pages
               {range(numPages).map((p) => {
-                const textDecoration = (p === startPage) ? "underline" : "";
+                const textDecoration = p === startPage ? "underline" : "";
                 return (
-                <div key={p} style={{cursor: 'pointer'}} onClick={() => setStartPage(p)}>
-                  <span style={{textDecoration}}>{p}</span>
-                </div>
+                  <div key={p} style={{ cursor: "pointer" }} onClick={() => setStartPage(p)}>
+                    <span style={{ textDecoration }}>{p}</span>
+                  </div>
                 );
               })}
             </div>
           </Col>
-        }
+        )}
       </Row>
     );
-  }; 
+  };
 
   return (
     <>
@@ -118,7 +118,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
         <Container className="mt-5 mb-5">
           <PageList />
           <Row>
-            {spirals.slice(startPage*PAGE_SIZE, (startPage*PAGE_SIZE) + PAGE_SIZE).map((s) => {
+            {spirals.slice(startPage * PAGE_SIZE, startPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
               const imgurl = `/spiral_image/seed/${s.seed}/300.png`;
               return (
                 <Col md={4} key={s.seed} className="mb-3">

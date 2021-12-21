@@ -27,7 +27,7 @@ export function ImpishSpiral(props: SpiralProps) {
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
   // By default, 3days remain
-  
+
   const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
 
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
@@ -56,9 +56,9 @@ export function ImpishSpiral(props: SpiralProps) {
       .then((j) => {
         const lastMintTime = BigNumber.from(j.lastMintTime || 0);
         console.log(`Last mint time was ${lastMintTime.toNumber()}`);
-        setTimeRemaining((lastMintTime.toNumber() + THREE_DAYS) - (Date.now() / 1000));
-      })
-  }, [])
+        setTimeRemaining(lastMintTime.toNumber() + THREE_DAYS - Date.now() / 1000);
+      });
+  }, []);
 
   // Draw on the canvas after the screen is loaded.
   useLayoutEffect(() => {
@@ -268,7 +268,7 @@ export function ImpishSpiral(props: SpiralProps) {
                             rowGap: "20px",
                             margin: "20px",
                             flexWrap: "wrap",
-                            marginLeft: "-100px"
+                            marginLeft: "-100px",
                           }}
                         >
                           {userRWNFTs.map((tokenId) => (
@@ -284,8 +284,7 @@ export function ImpishSpiral(props: SpiralProps) {
                         </div>
                         <div style={{ textAlign: "left" }}>
                           <h5 style={{ marginTop: "30px" }}>
-                            <span style={{ color: "#ffc106" }}>Step 3:</span>{" "}
-                            Mint!
+                            <span style={{ color: "#ffc106" }}>Step 3:</span> Mint!
                           </h5>
                           <div>
                             Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}
@@ -297,7 +296,9 @@ export function ImpishSpiral(props: SpiralProps) {
                       </Col>
                       <Col xs={3} style={{ marginTop: "-50px" }}>
                         <div>Preview</div>
-                        <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px", marginRight: '-20px' }}>
+                        <div
+                          style={{ border: "solid 1px", borderRadius: "10px", padding: "10px", marginRight: "-20px" }}
+                        >
                           <img src={previewURL} alt="spiral" />
                         </div>
                       </Col>

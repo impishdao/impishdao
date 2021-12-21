@@ -23,16 +23,16 @@ export function SpiralDetail(props: SpiralDetailProps) {
 
   useEffect(() => {
     fetch("/spiralapi/spiraldata")
-    .then((data) => data.json())
-    .then((j) => {
-      const lastMintTime = BigNumber.from(j.lastMintTime || 0);
-      const nextTokenId = BigNumber.from(j.nextTokenId || 0);
-      const totalReward = BigNumber.from(j.totalReward || 0);
+      .then((data) => data.json())
+      .then((j) => {
+        const lastMintTime = BigNumber.from(j.lastMintTime || 0);
+        const nextTokenId = BigNumber.from(j.nextTokenId || 0);
+        const totalReward = BigNumber.from(j.totalReward || 0);
 
-      setTimeRemaining((lastMintTime.toNumber() + THREE_DAYS) - (Date.now() / 1000));
-      setSpiralState({ lastMintTime, nextTokenId, totalReward });
-    });
-  }, [])
+        setTimeRemaining(lastMintTime.toNumber() + THREE_DAYS - Date.now() / 1000);
+        setSpiralState({ lastMintTime, nextTokenId, totalReward });
+      });
+  }, []);
 
   // Countdown timer.
   useEffect(() => {
@@ -44,7 +44,6 @@ export function SpiralDetail(props: SpiralDetailProps) {
       clearInterval(timerID);
     };
   }, [timeRemaining]);
-
 
   useLayoutEffect(() => {
     fetch(`/spiralapi/seedforid/${id}`)
@@ -144,11 +143,13 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     <h5 className="mt-3" style={{ color: "#ffd454" }}>
                       Winning Position #{winningPosition}
                     </h5>
-                    <div>This Spiral is currently #{winningPosition}, and can claim ETH 
-                    {` ${format4Decimals(ethReward)} `}
-                    {` ${formatUSD(ethReward, props.lastETHPrice)} `}
-                    if no other Spirals are minted in <br/>
-                    {secondsToDhms(timeRemaining)}</div>
+                    <div>
+                      This Spiral is currently #{winningPosition}, and can claim ETH
+                      {` ${format4Decimals(ethReward)} `}
+                      {` ${formatUSD(ethReward, props.lastETHPrice)} `}
+                      if no other Spirals are minted in <br />
+                      {secondsToDhms(timeRemaining)}
+                    </div>
                   </>
                 )}
               </div>

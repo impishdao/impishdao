@@ -503,24 +503,24 @@ export function ImpishDAO(props: ImpishDAOProps) {
   const PageList = () => {
     return (
       <Row className="mb-2">
-        {(numPages > 1) && 
-          <Col xs={{span: 6, offset: 3}}>
-            <div style={{display: 'flex', flexDirection: 'row', gap: '10px', justifyContent: 'center'}}>
+        {numPages > 1 && (
+          <Col xs={{ span: 6, offset: 3 }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "center" }}>
               Pages
               {range(numPages).map((p) => {
-                const textDecoration = (p === startPage) ? "underline" : "";
+                const textDecoration = p === startPage ? "underline" : "";
                 return (
-                <div key={p} style={{cursor: 'pointer'}} onClick={() => setStartPage(p)}>
-                  <span style={{textDecoration}}>{p}</span>
-                </div>
+                  <div key={p} style={{ cursor: "pointer" }} onClick={() => setStartPage(p)}>
+                    <span style={{ textDecoration }}>{p}</span>
+                  </div>
                 );
               })}
             </div>
           </Col>
-        }
+        )}
       </Row>
     );
-  }; 
+  };
 
   return (
     <>
@@ -578,7 +578,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
           <Row className="justify-content-md-center">
             <PageList />
             <Row>
-              {props.nftsWithPrice.slice(startPage*PAGE_SIZE, (startPage*PAGE_SIZE) + PAGE_SIZE).map((nft) => {
+              {props.nftsWithPrice.slice(startPage * PAGE_SIZE, startPage * PAGE_SIZE + PAGE_SIZE).map((nft) => {
                 return (
                   <Col xl={3} className="mb-3" key={nft.tokenId.toString()}>
                     <NFTCard

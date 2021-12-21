@@ -16,7 +16,6 @@ type SpiralDetail = {
   owner: string;
 };
 
-
 export function Top10(props: Top10Props) {
   const { address } = useParams();
   const [spirals, setSpirals] = useState<Array<SpiralDetail>>([]);
@@ -34,39 +33,40 @@ export function Top10(props: Top10Props) {
     };
   }, [timeRemaining]);
 
-
   useEffect(() => {
     fetch("/spiralapi/spiraldata")
-    .then((data) => data.json())
-    .then((j) => {
-      const lastMintTime = BigNumber.from(j.lastMintTime || 0);
-      const nextTokenId = BigNumber.from(j.nextTokenId || 0);
-      const totalReward = BigNumber.from(j.totalReward || 0);
+      .then((data) => data.json())
+      .then((j) => {
+        const lastMintTime = BigNumber.from(j.lastMintTime || 0);
+        const nextTokenId = BigNumber.from(j.nextTokenId || 0);
+        const totalReward = BigNumber.from(j.totalReward || 0);
 
-      setTimeRemaining((lastMintTime.toNumber() + THREE_DAYS) - (Date.now() / 1000));
-      setSpiralState({ lastMintTime, nextTokenId, totalReward });
+        setTimeRemaining(lastMintTime.toNumber() + THREE_DAYS - Date.now() / 1000);
+        setSpiralState({ lastMintTime, nextTokenId, totalReward });
 
-      (async () => {
-        // Fetch the top 10 spirals
-        const spiralDetails = await Promise.all(range(10, nextTokenId.toNumber() - 10).map(async (t) => {
-          try {
-            const tokenId = BigNumber.from(t);
-            const url = `/spiralapi/seedforid/${tokenId.toString()}`;
-            const { seed, owner } = await (await fetch(url)).json();
+        (async () => {
+          // Fetch the top 10 spirals
+          const spiralDetails = await Promise.all(
+            range(10, nextTokenId.toNumber() - 10).map(async (t) => {
+              try {
+                const tokenId = BigNumber.from(t);
+                const url = `/spiralapi/seedforid/${tokenId.toString()}`;
+                const { seed, owner } = await (await fetch(url)).json();
 
-            return { tokenId, seed, owner };
-          } catch (err) {
-            console.log(err);
-            return {};
-          }
-        }));
+                return { tokenId, seed, owner };
+              } catch (err) {
+                console.log(err);
+                return {};
+              }
+            })
+          );
 
-        const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
-        filtered.reverse();
-        setSpirals(filtered);
-      })();
-    });
-  }, [])
+          const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
+          filtered.reverse();
+          setSpirals(filtered);
+        })();
+      });
+  }, []);
 
   const nav = useNavigate();
 
@@ -128,9 +128,17 @@ export function Top10(props: Top10Props) {
                   >
                     <Card.Img variant="top" src={imgurl} style={{ width: "300px", height: "300px" }} />
                     <ListGroup variant="flush">
-                      <ListGroup.Item style={{backgroundColor: 'black', color: 'white', borderBottom: 'solid 1px white'}}>Rank #{rank+1} (Spiral #{s.tokenId.toString()})</ListGroup.Item>
-                      <ListGroup.Item style={{backgroundColor: 'black', color: 'white', borderBottom: 'solid 1px white'}}>Owned By: {trimAddress(s.owner)}</ListGroup.Item>
-                      <ListGroup.Item style={{backgroundColor: 'black', color: 'white'}}>
+                      <ListGroup.Item
+                        style={{ backgroundColor: "black", color: "white", borderBottom: "solid 1px white" }}
+                      >
+                        Rank #{rank + 1} (Spiral #{s.tokenId.toString()})
+                      </ListGroup.Item>
+                      <ListGroup.Item
+                        style={{ backgroundColor: "black", color: "white", borderBottom: "solid 1px white" }}
+                      >
+                        Owned By: {trimAddress(s.owner)}
+                      </ListGroup.Item>
+                      <ListGroup.Item style={{ backgroundColor: "black", color: "white" }}>
                         Reward ETH {format4Decimals(rewardETH)}
                         {` ${formatUSD(rewardETH, props.lastETHPrice)}`}
                       </ListGroup.Item>

@@ -35,7 +35,7 @@ export function pad(num: string, size: number): string {
 }
 
 export function range(len: number, startAt: number = 0) {
-  return Array.from(Array(len).keys()).map(i => i + startAt);
+  return Array.from(Array(len).keys()).map((i) => i + startAt);
 }
 
 export function trimAddress(address: string): string {
