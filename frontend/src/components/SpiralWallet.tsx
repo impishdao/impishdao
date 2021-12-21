@@ -4,7 +4,7 @@ import { Button, Card, Col, Container, Nav, Navbar, Row } from "react-bootstrap"
 import { LinkContainer } from "react-router-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState } from "../AppState";
-import { format4Decimals } from "./utils";
+import { format4Decimals, range } from "./utils";
 
 type SpiraWalletProps = DappState & {
   connectWallet: () => void;
@@ -18,6 +18,7 @@ type SpiralDetail = {
 export function SpiralWallet(props: SpiraWalletProps) {
   const { address } = useParams();
   const [spirals, setSpirals] = useState<Array<SpiralDetail>>([]);
+  const [startPage, setStartPage] = useState(0);
 
   useEffect(() => {
     fetch(`/spiralapi/wallet/${address}`)
@@ -47,6 +48,29 @@ export function SpiralWallet(props: SpiraWalletProps) {
   }, [address]);
 
   const nav = useNavigate();
+  const numPages = Math.floor(spirals.length / 12) + 1;
+
+  const PageList = () => {
+    return (
+      <Row className="mb-2">
+        {(numPages > 1) && 
+          <Col xs={{span: 6, offset: 3}}>
+            <div style={{display: 'flex', flexDirection: 'row', gap: '10px', justifyContent: 'center'}}>
+              Pages
+              {range(numPages).map((p) => {
+                const textDecoration = (p === startPage) ? "underline" : "";
+                return (
+                <div key={p} style={{cursor: 'pointer'}} onClick={() => setStartPage(p)}>
+                  <span style={{textDecoration}}>{p}</span>
+                </div>
+                );
+              })}
+            </div>
+          </Col>
+        }
+      </Row>
+    );
+  }; 
 
   return (
     <>
@@ -87,9 +111,10 @@ export function SpiralWallet(props: SpiraWalletProps) {
         <h1>Spirals owned by</h1>
         <h5 style={{ color: "#ffd454" }}>{address}</h5>
 
-        <Container>
-          <Row className="mt-5 mb-5">
-            {spirals.map((s) => {
+        <Container className="mt-5 mb-5">
+          <PageList />
+          <Row>
+            {spirals.slice(startPage*12, (startPage*12) + 12).map((s) => {
               const imgurl = `/spiral_image/seed/${s.seed}/300.png`;
               return (
                 <Col md={4} key={s.seed} className="mb-3">
@@ -108,6 +133,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
               );
             })}
           </Row>
+          <PageList />
         </Container>
       </div>
     </>

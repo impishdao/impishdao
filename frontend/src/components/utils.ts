@@ -34,4 +34,8 @@ export function pad(num: string, size: number): string {
   return s.substr(s.length - size);
 }
 
+export function range(len: number, startAt: number = 0) {
+  return Array.from(Array(len).keys()).map(i => i + startAt);
+}
+
 export const THREE_DAYS = 3 * 24 * 3600;
