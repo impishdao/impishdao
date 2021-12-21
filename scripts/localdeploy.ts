@@ -19,6 +19,7 @@ async function main() {
   const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
   const RandomWalkNFT = await ethers.getContractFactory("RandomWalkNFT");
   const ImpishSpiral = await ethers.getContractFactory("ImpishSpiral");
+  const SpiralMarket = await ethers.getContractFactory("SpiralMarket");
 
   const rwnft = await RandomWalkNFT.deploy();
   await rwnft.deployed();
@@ -29,33 +30,41 @@ async function main() {
   const impishspiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
   await impishspiral.deployed();
 
+  const spiralmarket = await SpiralMarket.deploy(impishspiral.address);
+  await spiralmarket.deployed();
+
   // Mint a new NFT to reset the last mint time
   await rwnft.mint({ value: await rwnft.getMintPrice() });
 
   console.log("RandomWalkNFT deployed to:", rwnft.address);
   console.log("ImpishDAO deployed to:", impdao.address);
   console.log("ImpishSpiral deployed to:", impishspiral.address);
+  console.log("SpiralMarket deployed to:", spiralmarket.address);
 
   // Start the ImpishSpiral for ease
   await impishspiral.startMints();
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(rwnft, impdao, impishspiral);
+  saveFrontendFiles(rwnft, impdao, impishspiral, spiralmarket);
 
-  // setTimeout(async () => {
-  //   // Mint 50 spirals
-  //   for (let i = 0; i < 50; i++) {
-  //     const mintPrice = await rwnft.getMintPrice();
-  //     let tx = await rwnft.mint({value: mintPrice});
-  //     await tx.wait();
+  setTimeout(async () => {
+    // Approve the market for listing
+    await impishspiral.setApprovalForAll(spiralmarket.address, true);
 
-  //     let tx1 = await impdao.deposit({value: mintPrice.mul(2)});
-  //     await tx1.wait();
-  //   }
-  // }, 10 * 1000);
+    // Mint 50 spirals
+    for (let i = 0; i < 50; i++) {
+      const mintPrice = await impishspiral.getMintPrice();
+      const tokenId = await impishspiral._tokenIdCounter();
+      const tx = await impishspiral.mintSpiralRandom({ value: mintPrice });
+      await tx.wait();
+
+      // And list it for sale
+      spiralmarket.listSpiral(tokenId, ethers.utils.parseEther("0.005"));
+    }
+  }, 10 * 1000);
 }
 
-function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract) {
+function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract, spiralmarket: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -69,7 +78,12 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
   }
 
   const contractAddress = JSON.stringify(
-    { RandomWalkNFT: rwnft.address, ImpishDAO: impdao.address, ImpishSpiral: impishspiral.address },
+    {
+      RandomWalkNFT: rwnft.address,
+      ImpishDAO: impdao.address,
+      ImpishSpiral: impishspiral.address,
+      SpiralMarket: spiralmarket.address,
+    },
     undefined,
     2
   );
@@ -88,6 +102,10 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
   const impSpiralArtifact = artifacts.readArtifactSync("ImpishSpiral");
   fs.writeFileSync(contractsDir + "/impishspiral.json", JSON.stringify(impSpiralArtifact, null, 2));
   fs.writeFileSync(serverDir + "/impishspiral.json", JSON.stringify(impSpiralArtifact, null, 2));
+
+  const spiralMarketArtifact = artifacts.readArtifactSync("SpiralMarket");
+  fs.writeFileSync(contractsDir + "/spiralmarket.json", JSON.stringify(spiralMarketArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/spiralmarket.json", JSON.stringify(spiralMarketArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

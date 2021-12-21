@@ -1,17 +1,20 @@
+/* eslint-disable node/no-missing-import */
 /* eslint-disable node/no-unpublished-import */
 import express from "express";
 import fs from "fs";
 import got from "got";
 import path from "path";
-
 import lineReader from "line-reader";
 import { BigNumber, ethers } from "ethers";
+
+import { get_image } from "./serverSpiralRenderer";
+
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 import ImpishDAOConfig from "./impishdao-config.json";
-import { get_image } from "./serverSpiralRenderer";
+import { setupSpiralMarket } from "./marketServer";
 
 const app = express();
 
@@ -365,6 +368,9 @@ app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
     res.status(500).send(`Server error generating image for ${seed} x ${size}`);
   }
 });
+
+// Setup Market
+setupSpiralMarket(app, provider);
 
 // Serve static files
 app.use("/spirals", express.static(path.join(__dirname, "index.html")));

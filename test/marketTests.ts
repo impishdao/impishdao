@@ -63,6 +63,9 @@ describe("SpiralMarket", function () {
       await spiralMarket.connect(otherSigner).buySpiral(spiralTokenId, { value: price })
     ).to.changeEtherBalances([signer, otherSigner], [price, -price]);
     expect(await impishSpiral.ownerOf(spiralTokenId)).to.be.equal(otherSigner.address);
+
+    // And the spiral should now be delisted
+    expect((await spiralMarket.forSale(spiralTokenId)).price).to.be.equal(0);
   });
 
   it("Should be able to buy and sell negative tests", async function () {

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-// import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -74,8 +72,11 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
 
   function buySpiral(uint256 tokenId) external payable whenNotPaused nonReentrant {
     require(forSale[tokenId].price > 0, "NotListed");
-    require(impishspiral.ownerOf(tokenId) == forSale[tokenId].owner, "OwnerChanged");
-    require(impishspiral.isApprovedForAll(forSale[tokenId].owner, address(this)), "NotApproved");
+
+    address seller = forSale[tokenId].owner;
+
+    require(impishspiral.ownerOf(tokenId) == seller, "OwnerChanged");
+    require(impishspiral.isApprovedForAll(seller, address(this)), "NotApproved");
     
     // Enough ETH has been sent
     require(msg.value == forSale[tokenId].price, "IncorrectETH");
@@ -85,12 +86,15 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
     uint256 fee = (msg.value * feeRate) / (100 * 100);
     uint256 sellerAmount = msg.value - fee;
 
-    // Step 1: Transfer the ETH
-    (bool success, ) = forSale[tokenId].owner.call{value: sellerAmount}("");
+    // Step 1: Delist the Spiral
+    delete forSale[tokenId];
+
+    // Step 2: Transfer the ETH
+    (bool success, ) = seller.call{value: sellerAmount}("");
     require(success, "Transfer failed.");
 
-    // Step 2: Transfer the Spiral
-    impishspiral.safeTransferFrom(forSale[tokenId].owner, msg.sender, tokenId);
+    // Step 3: Transfer the Spiral
+    impishspiral.safeTransferFrom(seller, msg.sender, tokenId);
 
     // Fees remain in the contract, and can be withdrawn with withdrawFees()
 
