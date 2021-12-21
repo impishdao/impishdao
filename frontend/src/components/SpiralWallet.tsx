@@ -48,7 +48,8 @@ export function SpiralWallet(props: SpiraWalletProps) {
   }, [address]);
 
   const nav = useNavigate();
-  const numPages = Math.floor(spirals.length / 12) + 1;
+  const PAGE_SIZE = 12;
+  const numPages = Math.floor(spirals.length / PAGE_SIZE) + 1;
 
   const PageList = () => {
     return (
@@ -114,7 +115,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
         <Container className="mt-5 mb-5">
           <PageList />
           <Row>
-            {spirals.slice(startPage*12, (startPage*12) + 12).map((s) => {
+            {spirals.slice(startPage*PAGE_SIZE, (startPage*PAGE_SIZE) + PAGE_SIZE).map((s) => {
               const imgurl = `/spiral_image/seed/${s.seed}/300.png`;
               return (
                 <Col md={4} key={s.seed} className="mb-3">

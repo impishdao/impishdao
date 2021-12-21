@@ -13,7 +13,7 @@ export default function Whitepaper({ withdrawalAmount }: WhitepaperProps) {
         <h1>FAQ</h1>
       </Row>
       <Row className="justify-content-md-center">
-        <Col md={6}>
+        <Col md={8}>
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>What is ImpishDAO?</span>
             <br />

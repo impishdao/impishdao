@@ -5,7 +5,7 @@ import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import { Web3Provider } from "@ethersproject/providers";
 import { Button, InputGroup, FormControl, Row, Col, Stack, Table, Navbar, Container, Nav } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
-import { format4Decimals, formatUSD, pad, secondsToDhms } from "./utils";
+import { format4Decimals, formatUSD, pad, range, secondsToDhms } from "./utils";
 import { NFTCard } from "./NFTcard";
 import React, { useEffect, useState } from "react";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
@@ -325,6 +325,8 @@ const Loading = () => {
 };
 
 export function ImpishDAO(props: ImpishDAOProps) {
+  const [startPage, setStartPage] = useState(0);
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const AdminDepositExternal = async () => {
     if (props.provider) {
@@ -495,6 +497,31 @@ export function ImpishDAO(props: ImpishDAOProps) {
       .div(props.totalTokenSupply);
   }
 
+  const PAGE_SIZE = 16;
+  const numPages = Math.floor(props.nftsWithPrice.length / PAGE_SIZE) + 1;
+
+  const PageList = () => {
+    return (
+      <Row className="mb-2">
+        {(numPages > 1) && 
+          <Col xs={{span: 6, offset: 3}}>
+            <div style={{display: 'flex', flexDirection: 'row', gap: '10px', justifyContent: 'center'}}>
+              Pages
+              {range(numPages).map((p) => {
+                const textDecoration = (p === startPage) ? "underline" : "";
+                return (
+                <div key={p} style={{cursor: 'pointer'}} onClick={() => setStartPage(p)}>
+                  <span style={{textDecoration}}>{p}</span>
+                </div>
+                );
+              })}
+            </div>
+          </Col>
+        }
+      </Row>
+    );
+  }; 
+
   return (
     <>
       <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
@@ -549,8 +576,9 @@ export function ImpishDAO(props: ImpishDAOProps) {
           </Row>
 
           <Row className="justify-content-md-center">
-            <Row style={{ maxWidth: "1600px" }}>
-              {props.nftsWithPrice.map((nft) => {
+            <PageList />
+            <Row>
+              {props.nftsWithPrice.slice(startPage*PAGE_SIZE, (startPage*PAGE_SIZE) + PAGE_SIZE).map((nft) => {
                 return (
                   <Col xl={3} className="mb-3" key={nft.tokenId.toString()}>
                     <NFTCard
@@ -563,6 +591,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
                 );
               })}
             </Row>
+            <PageList />
           </Row>
         </>
       )}
@@ -593,7 +622,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         <h1>ImpishDAO Stats</h1>
       </Row>
       <Row className="justify-content-md-center mb-4">
-        <Col md={3}>
+        <Col md={4}>
           <Table style={{ color: "white" }}>
             <tbody>
               <tr>
@@ -617,7 +646,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         </Col>
 
         {props.selectedAddress && (
-          <Col md={3}>
+          <Col md={4}>
             <Table style={{ color: "white" }}>
               <tbody>
                 <tr>

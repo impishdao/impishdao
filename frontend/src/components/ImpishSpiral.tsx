@@ -221,7 +221,7 @@ export function ImpishSpiral(props: SpiralProps) {
           {props.selectedAddress && (
             <>
               <Row style={{ marginTop: "50px" }}>
-                <Col xs={{ offset: 4 }} style={{ textAlign: "left" }}>
+                <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
                   <h5>
                     <span style={{ color: "#ffc106" }}>Step 1:</span> What kind of Spiral?
                   </h5>
@@ -247,7 +247,7 @@ export function ImpishSpiral(props: SpiralProps) {
               {spiralType === "companion" && (
                 <>
                   <Row>
-                    <Col xs={{ offset: 4 }} style={{ textAlign: "left" }}>
+                    <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
                       <h5 style={{ marginTop: "30px" }}>
                         <span style={{ color: "#ffc106" }}>Step 2:</span> Select a RandomWalkNFT to mint its companion
                       </h5>
@@ -255,17 +255,17 @@ export function ImpishSpiral(props: SpiralProps) {
                   </Row>
                   {userRWNFTs.length > 0 && (
                     <Row>
-                      <Col xs={{ offset: 4, span: 5 }}>
+                      <Col xs={{ offset: 3, span: 6 }}>
                         {/* <div>Your RandomWalkNFTs</div> */}
                         <div
                           style={{
                             display: "flex",
-                            justifyContent: "start",
+                            justifyContent: "center",
                             gap: "10px",
                             rowGap: "20px",
                             margin: "20px",
                             flexWrap: "wrap",
-                            maxWidth: "800px",
+                            marginLeft: "-100px"
                           }}
                         >
                           {userRWNFTs.map((tokenId) => (
@@ -281,7 +281,7 @@ export function ImpishSpiral(props: SpiralProps) {
                         </div>
                         <div style={{ textAlign: "left" }}>
                           <h5 style={{ marginTop: "30px" }}>
-                            <span style={{ color: "#ffc106" }}>Step {spiralType === "companion" ? "3" : "2"}:</span>{" "}
+                            <span style={{ color: "#ffc106" }}>Step 3:</span>{" "}
                             Mint!
                           </h5>
                           <div>
@@ -294,7 +294,7 @@ export function ImpishSpiral(props: SpiralProps) {
                       </Col>
                       <Col xs={3} style={{ marginTop: "-50px" }}>
                         <div>Preview</div>
-                        <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
+                        <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px", marginRight: '-20px' }}>
                           <img src={previewURL} alt="spiral" />
                         </div>
                       </Col>
@@ -303,7 +303,7 @@ export function ImpishSpiral(props: SpiralProps) {
 
                   {userRWNFTs.length === 0 && (
                     <Row>
-                      <Col xs={{ offset: 4 }}>
+                      <Col xs={{ offset: 3 }}>
                         <div style={{ textAlign: "left" }}>
                           You don't have any available RandomWalkNFTs in your wallet
                           <br />
@@ -317,7 +317,7 @@ export function ImpishSpiral(props: SpiralProps) {
 
               {spiralType === "original" && (
                 <Row>
-                  <Col xs={{ offset: 4 }} style={{ textAlign: "left" }}>
+                  <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
                     <h5 style={{ marginTop: "30px" }}>
                       <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
                     </h5>
@@ -355,7 +355,7 @@ export function ImpishSpiral(props: SpiralProps) {
         <h1>FAQ</h1>
       </Row>
       <Row className="justify-content-md-center">
-        <Col md={6}>
+        <Col md={8}>
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>What are The Spirals?</span>
             <br />

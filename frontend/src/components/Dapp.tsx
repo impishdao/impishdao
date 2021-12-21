@@ -265,7 +265,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
     return (
       <BrowserRouter>
-        <Container fluid>
+        <Container>
           <ModalDialog
             message={this.state.modalMessage || <></>}
             title={this.state.modalTitle || ""}

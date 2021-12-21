@@ -41,6 +41,18 @@ async function main() {
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(rwnft, impdao, impishspiral);
+
+  // setTimeout(async () => {
+  //   // Mint 50 spirals
+  //   for (let i = 0; i < 50; i++) {
+  //     const mintPrice = await rwnft.getMintPrice();
+  //     let tx = await rwnft.mint({value: mintPrice});
+  //     await tx.wait();
+
+  //     let tx1 = await impdao.deposit({value: mintPrice.mul(2)});
+  //     await tx1.wait();
+  //   }
+  // }, 10 * 1000);
 }
 
 function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract) {
