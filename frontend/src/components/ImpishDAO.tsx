@@ -538,6 +538,9 @@ export function ImpishDAO(props: ImpishDAOProps) {
             <LinkContainer to="/spirals">
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
+            <LinkContainer to="/spirals/top10">
+              <Nav.Link>Winning Spirals</Nav.Link>
+            </LinkContainer>
           </Nav>
           {!props.selectedAddress && (
             <Button className="connect" variant="warning" onClick={props.connectWallet}>

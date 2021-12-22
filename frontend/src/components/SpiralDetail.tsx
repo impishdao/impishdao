@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, Contract, ContractTransaction } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
@@ -9,6 +9,9 @@ import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
 
 type SpiralDetailProps = DappState & {
   connectWallet: () => void;
+  spiralmarket?: Contract;
+
+  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
 };
 
 export function SpiralDetail(props: SpiralDetailProps) {
@@ -19,9 +22,17 @@ export function SpiralDetail(props: SpiralDetailProps) {
   const [owner, setOwner] = useState("");
   const [spiralState, setSpiralState] = useState<SpiralsState | undefined>();
 
+  const [listingPrice, setListingPrice] = useState(BigNumber.from(0));
+  const [listingOwner, setListingOwner] = useState("");
+
+  const [refreshDataCounter, setRefreshDataCounter] = useState(0);
+
   const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
 
   useEffect(() => {
+    console.log("Fetching details");
+
+    // Fetch the spiral's details
     fetch("/spiralapi/spiraldata")
       .then((data) => data.json())
       .then((j) => {
@@ -32,7 +43,19 @@ export function SpiralDetail(props: SpiralDetailProps) {
         setTimeRemaining(lastMintTime.toNumber() + THREE_DAYS - Date.now() / 1000);
         setSpiralState({ lastMintTime, nextTokenId, totalReward });
       });
-  }, []);
+
+    // And listing details if it is on the marketplace
+    fetch(`/marketapi/listing/${id}`)
+      .then((data) => data.json())
+      .then((j) => {
+        console.log(`API returned ${JSON.stringify(j)}`);
+        const lstOwner = j.owner || "";
+        const price = BigNumber.from(j.price || 0);
+
+        setListingOwner(lstOwner);
+        setListingPrice(price);
+      });
+  }, [id, refreshDataCounter]);
 
   // Countdown timer.
   useEffect(() => {
@@ -71,6 +94,81 @@ export function SpiralDetail(props: SpiralDetailProps) {
       ethReward = spiralState.totalReward.mul(11 - winningPosition).div(100);
     }
   }
+
+  let marketPlaceStatus = 0; // Not listed
+  if (owner.toLowerCase() === props.selectedAddress?.toLowerCase()) {
+    // This is our Spiral
+    if (listingPrice.gt(0)) {
+      // Listed for Sale
+      marketPlaceStatus = 1; // Listed for sale by us
+    } else {
+      marketPlaceStatus = 2; // Owned by us, but not listed for sale
+    }
+  } else {
+    // Not our spiral, check if it available to buy
+    if (listingPrice.gt(0)) {
+      marketPlaceStatus = 3; // Available to buy
+    }
+  }
+
+  const cancelListing = async () => {
+    if (!props.selectedAddress || !props.spiralmarket) {
+      return;
+    }
+
+    let tx: ContractTransaction = await props.spiralmarket.cancelListing(BigNumber.from(id));
+    await tx.wait();
+
+    props.showModal("Listing Cancelled", <div>The Listing has been cancelled!</div>, () => {
+      // Refresh the data
+      setRefreshDataCounter(refreshDataCounter + 1);
+    });
+  };
+
+  const listForSale = async () => {
+    if (!props.selectedAddress || !props.spiralmarket) {
+      return;
+    }
+  };
+
+  const buyNow = async () => {
+    if (!props.selectedAddress || !props.spiralmarket) {
+      return;
+    }
+
+    // First, make sure the listing is still available
+    const isValid = await props.spiralmarket.isListingValid(BigNumber.from(id));
+    if (!isValid) {
+      props.showModal(
+        "Listing Invalid",
+        <div>
+          The Listing is invalid!
+          <br />
+          It has been changed while you were viewing it.
+        </div>,
+        () => {
+          // Refresh the data
+          setRefreshDataCounter(refreshDataCounter + 1);
+        }
+      );
+      return;
+    }
+
+    let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id));
+    await tx.wait();
+
+    props.showModal(
+      `Bought Spiral #${id}`,
+      <div>
+        Congratulations! You have successfully bought Spiral #{id} <br />
+        It should appear in your wallet shortly.
+      </div>,
+      () => {
+        // Refresh the data
+        setRefreshDataCounter(refreshDataCounter + 1);
+      }
+    );
+  };
 
   return (
     <>
@@ -116,6 +214,47 @@ export function SpiralDetail(props: SpiralDetailProps) {
           <Row>
             <Col xs={7}>
               <div style={{ textAlign: "left" }}>
+                {marketPlaceStatus === 1 && (
+                  <div className="mt-2 mb-5">
+                    <h3>On Sale On Marketplace</h3>
+                    <div>
+                      <h3 style={{ color: "#ffd454" }}>Buy Now Price: ETH {format4Decimals(listingPrice)}</h3>
+                      <h5>{formatUSD(listingPrice, props.lastETHPrice)}</h5>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
+                      <Button variant="primary" onClick={() => cancelListing()}>
+                        Cancel Listing
+                      </Button>
+                      <Button variant="warning">Change Price</Button>
+                    </div>
+                  </div>
+                )}
+
+                {marketPlaceStatus === 2 && (
+                  <>
+                    <div className="mt-2 mb-5">
+                      <h3>Sell On The Marketplace</h3>
+                      <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
+                        <Button variant="warning">List For Sale</Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {marketPlaceStatus === 3 && (
+                  <div className="mt-2 mb-5">
+                    <h3>Available On The Marketplace</h3>
+                    <div>
+                      <h3 style={{ color: "#ffd454" }}>Buy Now Price: ETH {format4Decimals(listingPrice)}</h3>
+                      <h5>{formatUSD(listingPrice, props.lastETHPrice)}</h5>
+                      <Button variant="warning" disabled={!props.selectedAddress} onClick={() => buyNow()}>
+                        Buy Now
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <h5 className="mt-1" style={{ color: "#ffd454" }}>
                   TokenID
                 </h5>

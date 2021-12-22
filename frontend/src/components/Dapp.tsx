@@ -10,6 +10,7 @@ import { BigNumber, Contract, ethers } from "ethers";
 import RandomWalkNFTArtifact from "../contracts/rwnft.json";
 import ImpishSpiralArtifact from "../contracts/impishspiral.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
+import SpiralMarketArtifact from "../contracts/spiralmarket.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
@@ -55,6 +56,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   impdao?: Contract;
   rwnft?: Contract;
   impspiral?: Contract;
+  spiralmarket?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -90,6 +92,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.impspiral = new ethers.Contract(
       contractAddresses.ImpishSpiral,
       ImpishSpiralArtifact.abi,
+      this.provider.getSigner(0)
+    );
+
+    this.spiralmarket = new ethers.Contract(
+      contractAddresses.SpiralMarket,
+      SpiralMarketArtifact.abi,
       this.provider.getSigner(0)
     );
 
@@ -331,7 +339,14 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route
               path="/spirals/detail/:id"
-              element={<SpiralDetail {...this.state} connectWallet={() => this._connectWallet()} />}
+              element={
+                <SpiralDetail
+                  {...this.state}
+                  showModal={this.showModal}
+                  spiralmarket={this.spiralmarket}
+                  connectWallet={() => this._connectWallet()}
+                />
+              }
             />
 
             <Route

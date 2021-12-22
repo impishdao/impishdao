@@ -79,6 +79,16 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
     res.send(JSON.stringify(j));
   });
 
+  app.get("/marketapi/listing/:id", async (req, res) => {
+    const tokenId = parseInt(req.params.id);
+    if (spiralsForSale.has(tokenId)) {
+      res.contentType("application/json");
+    res.send(JSON.stringify(spiralsForSale.get(tokenId)));
+    } else {
+      res.send({});
+    }
+  });
+
   app.get("/marketapi/isListingValid/:id", async (req, res) => {
     try {
       const tokenId = parseInt(req.params.id);
