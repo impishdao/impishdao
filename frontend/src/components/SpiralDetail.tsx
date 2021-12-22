@@ -18,8 +18,19 @@ type MarketPriceModalProps = {
   setPrice: (v: string) => void;
   close: () => void;
   success: () => void;
-}
-const MarketPriceModal = ({show, message, impishspiral, spiralmarket, modalNeedsApproval, tokenId, price, setPrice, close, success}: MarketPriceModalProps) => {
+};
+const MarketPriceModal = ({
+  show,
+  message,
+  impishspiral,
+  spiralmarket,
+  modalNeedsApproval,
+  tokenId,
+  price,
+  setPrice,
+  close,
+  success,
+}: MarketPriceModalProps) => {
   const [approved, setApproved] = useState(false);
 
   const approveMarketplace = async () => {
@@ -44,7 +55,7 @@ const MarketPriceModal = ({show, message, impishspiral, spiralmarket, modalNeeds
     // And then close it
     close();
     success();
-  }
+  };
 
   return (
     <Modal show={show} onHide={close}>
@@ -55,34 +66,46 @@ const MarketPriceModal = ({show, message, impishspiral, spiralmarket, modalNeeds
         {message}
         <Form.Group className="mb-3">
           <Form.Label>Price (ETH)</Form.Label>
-          <Form.Control type="number" placeholder="Price In ETH" value={price} 
-            onChange={(e) => setPrice(e.currentTarget.value)}/>
+          <Form.Control
+            type="number"
+            placeholder="Price In ETH"
+            value={price}
+            onChange={(e) => setPrice(e.currentTarget.value)}
+          />
         </Form.Group>
       </Modal.Body>
       <Modal.Footer>
-        <ListGroup variant="flush" style={{width: '100%'}}>
+        <ListGroup variant="flush" style={{ width: "100%" }}>
           {modalNeedsApproval && (
             <ListGroup.Item>
-              <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-                <div>Approve the Spiral Market</div> 
-                {!approved && <Button variant="warning" onClick={() => approveMarketplace()}>Approve</Button>}
+              <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                <div>Approve the Spiral Market</div>
+                {!approved && (
+                  <Button variant="warning" onClick={() => approveMarketplace()}>
+                    Approve
+                  </Button>
+                )}
                 {approved && <Badge bg="success">Done</Badge>}
               </div>
             </ListGroup.Item>
           )}
           <ListGroup.Item>
-            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'end', gap: '10px'}}>
-              {( !modalNeedsApproval || approved) && 
-                <Button variant="warning" onClick={() => listOnMarketplace()}>List On Marketplace</Button>
-              }
-              <Button variant="primary" onClick={() => close()}>Cancel</Button>
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "end", gap: "10px" }}>
+              {(!modalNeedsApproval || approved) && (
+                <Button variant="warning" onClick={() => listOnMarketplace()}>
+                  List On Marketplace
+                </Button>
+              )}
+              <Button variant="primary" onClick={() => close()}>
+                Cancel
+              </Button>
             </div>
-            </ListGroup.Item>
+          </ListGroup.Item>
         </ListGroup>
-      </Modal.Footer> 
+      </Modal.Footer>
     </Modal>
   );
-}
+};
 
 type SpiralDetailProps = DappState & {
   connectWallet: () => void;
@@ -207,15 +230,18 @@ export function SpiralDetail(props: SpiralDetailProps) {
     if (!props.selectedAddress || !props.spiralmarket || !props.impishspiral) {
       return;
     }
-   
+
     // Check if approval is needed
-    const isApprovalNeeded = !(await props.impishspiral.isApprovedForAll(props.selectedAddress, props.spiralmarket.address));
+    const isApprovalNeeded = !(await props.impishspiral.isApprovedForAll(
+      props.selectedAddress,
+      props.spiralmarket.address
+    ));
 
     setPrice(ethers.utils.formatEther(listingPrice));
     setModalMessage(<div>Set the Buy Now Price for this Spiral</div>);
     setModalNeedsApproval(isApprovalNeeded);
     setMarketPriceModalShowing(true);
-  }
+  };
 
   const listForSale = async () => {
     if (!props.selectedAddress || !props.spiralmarket || !props.impishspiral) {
@@ -223,7 +249,10 @@ export function SpiralDetail(props: SpiralDetailProps) {
     }
 
     // Check if approval is needed
-    const isApprovalNeeded = !(await props.impishspiral.isApprovedForAll(props.selectedAddress, props.spiralmarket.address));
+    const isApprovalNeeded = !(await props.impishspiral.isApprovedForAll(
+      props.selectedAddress,
+      props.spiralmarket.address
+    ));
 
     setModalMessage(<div>Set the Buy Now Price for this Spiral</div>);
     setModalNeedsApproval(isApprovalNeeded);
@@ -276,12 +305,12 @@ export function SpiralDetail(props: SpiralDetailProps) {
 
   return (
     <>
-      <MarketPriceModal 
-        show={marketPriceModalShowing} 
-        message={modalMessage} 
-        spiralmarket={props.spiralmarket} 
+      <MarketPriceModal
+        show={marketPriceModalShowing}
+        message={modalMessage}
+        spiralmarket={props.spiralmarket}
         impishspiral={props.impishspiral}
-        tokenId={BigNumber.from(id)} 
+        tokenId={BigNumber.from(id)}
         modalNeedsApproval={modalNeedsApproval}
         price={price}
         setPrice={setPrice}
@@ -301,11 +330,14 @@ export function SpiralDetail(props: SpiralDetailProps) {
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
             <LinkContainer to="/spirals/top10">
-              <Nav.Link>Winning Spirals</Nav.Link>
+              <Nav.Link>Leaderboard</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/spirals/marketplace">
+              <Nav.Link>Marketplace</Nav.Link>
             </LinkContainer>
             {props.selectedAddress && (
               <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
-                <Nav.Link>Your Wallet</Nav.Link>
+                <Nav.Link>Wallet</Nav.Link>
               </LinkContainer>
             )}
           </Nav>
@@ -343,7 +375,9 @@ export function SpiralDetail(props: SpiralDetailProps) {
                       <Button variant="primary" onClick={() => cancelListing()}>
                         Cancel Listing
                       </Button>
-                      <Button variant="warning" onClick={() => updateSalePrice()}>Update Price</Button>
+                      <Button variant="warning" onClick={() => updateSalePrice()}>
+                        Update Price
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -353,7 +387,9 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     <div className="mt-2 mb-5">
                       <h3>Sell On The Marketplace</h3>
                       <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                        <Button variant="warning" onClick={() => listForSale()}>Sell Spiral</Button>
+                        <Button variant="warning" onClick={() => listForSale()}>
+                          Sell Spiral
+                        </Button>
                       </div>
                     </div>
                   </>

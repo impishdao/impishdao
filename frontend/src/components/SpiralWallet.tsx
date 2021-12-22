@@ -87,11 +87,14 @@ export function SpiralWallet(props: SpiraWalletProps) {
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
             <LinkContainer to="/spirals/top10">
-              <Nav.Link>Winning Spirals</Nav.Link>
+              <Nav.Link>Leaderboard</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/spirals/marketplace">
+              <Nav.Link>Marketplace</Nav.Link>
             </LinkContainer>
             {props.selectedAddress && (
               <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
-                <Nav.Link>Your Wallet</Nav.Link>
+                <Nav.Link>Wallet</Nav.Link>
               </LinkContainer>
             )}
           </Nav>

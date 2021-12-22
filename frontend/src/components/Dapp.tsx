@@ -23,6 +23,7 @@ import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralWallet } from "./SpiralWallet";
 import { SpiralDetail } from "./SpiralDetail";
 import { Top10 } from "./Top10";
+import { Marketplace } from "./Marketplace";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -335,6 +336,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route
               path="/spirals/wallet/:address"
               element={<SpiralWallet {...this.state} connectWallet={() => this._connectWallet()} />}
+            />
+
+            <Route
+              path="/spirals/marketplace"
+              element={<Marketplace {...this.state} connectWallet={() => this._connectWallet()} />}
             />
 
             <Route

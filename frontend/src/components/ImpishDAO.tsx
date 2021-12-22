@@ -539,7 +539,10 @@ export function ImpishDAO(props: ImpishDAOProps) {
               <Nav.Link>Spirals</Nav.Link>
             </LinkContainer>
             <LinkContainer to="/spirals/top10">
-              <Nav.Link>Winning Spirals</Nav.Link>
+              <Nav.Link>Leaderboard</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/spirals/marketplace">
+              <Nav.Link>Marketplace</Nav.Link>
             </LinkContainer>
           </Nav>
           {!props.selectedAddress && (
