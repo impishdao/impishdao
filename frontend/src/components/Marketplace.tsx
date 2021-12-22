@@ -151,6 +151,13 @@ export function Marketplace(props: MarketplaceProps) {
               );
             })}
           </Row>
+          {spirals.length === 0 && (
+            <Row>
+              <Col xs={{span: 4, offset: 4}}>
+                <h5>There are currently no Spirals available for Sale on the Marketplace</h5>
+              </Col>
+            </Row>
+          )}
           <PageList />
         </Container>
       </div>

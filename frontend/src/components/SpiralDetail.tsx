@@ -220,9 +220,10 @@ export function SpiralDetail(props: SpiralDetailProps) {
     let tx: ContractTransaction = await props.spiralmarket.cancelListing(BigNumber.from(id));
     await tx.wait();
 
-    props.showModal("Listing Cancelled", <div>The Listing has been cancelled!</div>, () => {
+    props.showModal("Listing Cancelled", <div>Your Spiral has be delisted from the marketplace and is no longer available for sale.</div>, () => {
       // Refresh the data
       setRefreshDataCounter(refreshDataCounter + 1);
+      setListingPrice(BigNumber.from(0));
     });
   };
 
@@ -299,6 +300,11 @@ export function SpiralDetail(props: SpiralDetailProps) {
       () => {
         // Refresh the data
         setRefreshDataCounter(refreshDataCounter + 1);
+        // Update the owner immediately in the UI to make it clear the user bought it
+
+        if (props.selectedAddress) {
+          setOwner(props.selectedAddress);
+        }
       }
     );
   };
