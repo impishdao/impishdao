@@ -1,6 +1,6 @@
 /* eslint-disable node/no-missing-import */
 import { expect } from "chai";
-import { ethers, network, waffle } from "hardhat";
+import { ethers, waffle } from "hardhat";
 
 import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
