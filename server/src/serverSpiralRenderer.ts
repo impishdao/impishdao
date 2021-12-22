@@ -11,6 +11,7 @@ const fromHexString = (hexString: string): Uint8Array => {
 
   return new Uint8Array(m.map((byte) => parseInt(byte, 16)));
 };
+
 export const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
 
@@ -203,7 +204,7 @@ function get_scaled_cart_path(cart_path: number[][], C: number[][], canvasWidth:
   const scaled_cart_path = [];
   for (let x = min_x; x <= max_x; x++) {
     for (let y = min_y; y <= max_y; y++) {
-      if (scaled_cart_points[x][y] !== undefined) {
+      if (scaled_cart_points[x] !== undefined && scaled_cart_points[x][y] !== undefined) {
         scaled_cart_path.push({ x, y, ...scaled_cart_points[x][y] });
       }
     }
@@ -296,7 +297,7 @@ function cart_ranges(path: number[][]) {
   return { min_x, max_x, min_y, max_y };
 }
 
-export function get_image(seed: string, size: number): Buffer {
+function get_image(seed: string, size: number): Buffer {
   const canvasWidth = size;
   const canvasHeight = size;
   const canvas = createCanvas(size, size);
@@ -317,3 +318,20 @@ export function get_image(seed: string, size: number): Buffer {
   const png = canvas.toBuffer("image/png");
   return png;
 }
+
+function start_worker(workerData: any) {
+  // console.log("Worker Started");
+  // console.log(workerData);
+  return get_image(workerData.seed, workerData.size);
+}
+
+process.on("message", (m) => {
+  const r = start_worker(m);
+
+  process.send(r);
+
+  // For some reason, it doesn't cleanly exit, so we wait 60 seconds 
+  // after returning the data to exit. 
+  setTimeout(() => process.exit(0), 60 * 1000);
+});
+

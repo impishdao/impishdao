@@ -7,14 +7,13 @@ import path from "path";
 import lineReader from "line-reader";
 import { BigNumber, ethers } from "ethers";
 
-import { get_image } from "./serverSpiralRenderer";
-
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 import ImpishDAOConfig from "./impishdao-config.json";
 import { setupSpiralMarket } from "./marketServer";
+import { fork } from "child_process";
 
 const app = express();
 
@@ -365,17 +364,35 @@ app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
   }
 
   try {
-    const pngBuf = get_image(seed, size);
-    res.contentType("png");
-    res.send(pngBuf);
+    // const worker = new Worker("./dist/serverSpiralRenderer.js", {workerData: {seed, size}});
+    const child = fork("./dist/serverSpiralRenderer.js");
+    child.send({seed, size});
 
-    setTimeout(() => {
-      if (!fs.existsSync(path.join(__dirname, "data"))) {
-        fs.mkdirSync(path.join(__dirname, "data"));
-      }
+    child.once("message", (r) => {
+      // console.log("Message recieved from child");
+      // console.log(r);
 
-      fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
+      const pngBuf = Buffer.from(r as Buffer);
+      res.contentType("png");
+      res.send(pngBuf);
+  
+      setTimeout(() => {
+        if (!fs.existsSync(path.join(__dirname, "data"))) {
+          fs.mkdirSync(path.join(__dirname, "data"));
+        }
+  
+        fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
+      });
     });
+
+    child.on("error", error => {
+      console.log(`Fork error: ${error}`);
+    });
+
+    child.on("exit", exitCode => {
+      console.log(`For exitcode ${exitCode}`);
+    });
+    
   } catch (e) {
     console.log(e);
     res.status(500).send(`Server error generating image for ${seed} x ${size}`);
