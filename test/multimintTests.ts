@@ -15,7 +15,7 @@ type FixtureType = {
   multimint: MultiMint;
 };
 
-describe.only("MultiMint", function () {
+describe("MultiMint", function () {
   async function loadContracts(): Promise<FixtureType> {
     const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
     const RandomWalkNFT = await ethers.getContractFactory("RandomWalkNFT");
