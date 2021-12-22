@@ -66,5 +66,35 @@ describe("MultiMint", function () {
 
     // Not more than 10
     await expect(multimint.multiMint(20, { value: 1 })).to.be.revertedWith("AtMost10");
+
+    // Didn't send enough money
+    await expect(multimint.multiMint(5, { value: 1 })).to.be.reverted;
+  });
+
+  it("Should refund excess ETH", async function () {
+    const { impishSpiral, multimint } = await loadContracts();
+    const provider = waffle.provider;
+    const [wallet] = provider.getWallets();
+
+    // Start the mints
+    await impishSpiral.startMints();
+    // Mint 10 random
+    let amountNeeded = BigNumber.from(0);
+    let mintPrice = await impishSpiral.getMintPrice();
+    for (let i = 0; i < 10; i++) {
+      amountNeeded = amountNeeded.add(mintPrice);
+      // Mint price increases 0.5% everytime
+      mintPrice = mintPrice.mul(1005).div(1000);
+    }
+
+    // Sending too much money should refund, and the contract should have 0 balance
+    await multimint.multiMint(10, { value: amountNeeded.mul(2) });
+
+    // Make sure we have all 10 Spirals
+    for (let i = 0; i < 10; i++) {
+      expect(await impishSpiral.ownerOf(i)).to.be.equal(wallet.address);
+    }
+
+    expect(await provider.getBalance(multimint.address)).to.be.equal(0);
   });
 });

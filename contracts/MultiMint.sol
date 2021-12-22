@@ -13,7 +13,7 @@ abstract contract IImpishSpiral is IERC721 {
 }
 
 contract MultiMint is ReentrancyGuard, IERC721Receiver {
-
+  // The ImpishSpiral contract
   IImpishSpiral public impishspiral;
 
   constructor(address _impishspiral) {
