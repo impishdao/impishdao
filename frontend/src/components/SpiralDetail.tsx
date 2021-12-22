@@ -60,7 +60,7 @@ const MarketPriceModal = ({
   return (
     <Modal show={show} onHide={close}>
       <Modal.Header closeButton>
-        <Modal.Title>Set Spiral Price</Modal.Title>
+        <Modal.Title>Set Spiral #{tokenId.toString()} Price</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {message}
@@ -68,6 +68,7 @@ const MarketPriceModal = ({
           <Form.Label>Price (ETH)</Form.Label>
           <Form.Control
             type="number"
+            step={0.01}
             placeholder="Price In ETH"
             value={price}
             onChange={(e) => setPrice(e.currentTarget.value)}
@@ -239,7 +240,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
     ));
 
     setPrice(ethers.utils.formatEther(listingPrice));
-    setModalMessage(<div>Set the Buy Now Price for this Spiral</div>);
+    setModalMessage(<div>Set the Buy Now price for this Spiral</div>);
     setModalNeedsApproval(isApprovalNeeded);
     setMarketPriceModalShowing(true);
   };
@@ -255,7 +256,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
       props.spiralmarket.address
     ));
 
-    setModalMessage(<div>Set the Buy Now Price for this Spiral</div>);
+    setModalMessage(<div>Set the Buy Now price for this Spiral</div>);
     setModalNeedsApproval(isApprovalNeeded);
     setMarketPriceModalShowing(true);
   };
@@ -304,6 +305,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
 
         if (props.selectedAddress) {
           setOwner(props.selectedAddress);
+          setListingPrice(BigNumber.from(0));
         }
       }
     );
@@ -411,9 +413,16 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     <div>
                       <h3 style={{ color: "#ffd454" }}>Buy Now Price: ETH {format4Decimals(listingPrice)}</h3>
                       <h5>{formatUSD(listingPrice, props.lastETHPrice)}</h5>
-                      <Button variant="warning" disabled={!props.selectedAddress} onClick={() => buyNow()}>
+                      {props.selectedAddress && (
+                      <Button variant="warning" onClick={() => buyNow()}>
                         Buy Now
+                      </Button>  
+                      )}
+                      {!props.selectedAddress && (
+                      <Button className="connect" variant="warning" onClick={props.connectWallet}>
+                        Connect Wallet
                       </Button>
+                      )}
                     </div>
                   </div>
                 )}
