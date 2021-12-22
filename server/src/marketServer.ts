@@ -53,6 +53,7 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
           // eslint-disable-next-line max-len
           `New Market Event. Type: ${eventType} tokenId: ${tokenId.toString()} price: ${price.toString()} address: ${address}`
         );
+        processMarketEvent(eventType, tokenId, address, price);
 
         if (!fs.existsSync("data")) {
           fs.mkdirSync("data");
@@ -83,7 +84,7 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
     const tokenId = parseInt(req.params.id);
     if (spiralsForSale.has(tokenId)) {
       res.contentType("application/json");
-    res.send(JSON.stringify(spiralsForSale.get(tokenId)));
+      res.send(JSON.stringify(spiralsForSale.get(tokenId)));
     } else {
       res.send({});
     }

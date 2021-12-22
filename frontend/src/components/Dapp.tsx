@@ -344,6 +344,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   {...this.state}
                   showModal={this.showModal}
                   spiralmarket={this.spiralmarket}
+                  impishspiral={this.impspiral}
                   connectWallet={() => this._connectWallet()}
                 />
               }
