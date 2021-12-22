@@ -79,7 +79,7 @@ const MarketPriceModal = ({
           {modalNeedsApproval && (
             <ListGroup.Item>
               <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                <div>Approve the Spiral Market</div>
+                <div>Approve the Spiral Marketplace</div>
                 {!approved && (
                   <Button variant="warning" onClick={() => approveMarketplace()}>
                     Approve
@@ -287,7 +287,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
       return;
     }
 
-    let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id));
+    let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id), {value: listingPrice});
     await tx.wait();
 
     props.showModal(
@@ -315,7 +315,11 @@ export function SpiralDetail(props: SpiralDetailProps) {
         price={price}
         setPrice={setPrice}
         close={() => setMarketPriceModalShowing(false)}
-        success={() => setRefreshDataCounter(refreshDataCounter + 1)}
+        success={() => {
+          // Wait for 3 seconds for server to catch up, then refresh
+          setListingPrice(ethers.utils.parseEther(price));
+          setTimeout(() => setRefreshDataCounter(refreshDataCounter + 1), 5 * 1000);
+        }}
       />
 
       <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">

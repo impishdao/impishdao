@@ -70,6 +70,11 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
     );
   };
 
+  const spiralTransferListner = async (from: string, to: string, tokenId: BigNumber, event: any) => {
+    // Remove this tokenID from sale list as it was transfered.
+    spiralsForSale.delete(tokenId.toNumber());
+  };
+
   // Read everything at startup
   processMarketEventsAtStartup();
 
@@ -111,4 +116,6 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
       res.send({});
     }
   });
+
+  return [spiralTransferListner];
 }

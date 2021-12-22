@@ -2,7 +2,7 @@ import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Button, Card, Col, Container, ListGroup, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { DappState } from "../AppState";
 import { format4Decimals, formatUSD, range } from "./utils";
 
