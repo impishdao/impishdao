@@ -156,7 +156,7 @@ export function ImpishSpiral(props: SpiralProps) {
           let tx = await props.multimint.multiMint(numSpirals, { value: price });
           await tx.wait();
 
-          props.showModal("Yay!", <div>You successfully minted {numSpirals} Original Spirals. You can now view then in your wallet.</div>, () => {
+          props.showModal("Yay!", <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>, () => {
             nav(`/spirals/wallet/${props.selectedAddress}`);
           });
         }        
