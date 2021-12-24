@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Badge, Button, Col, Container, Form, ListGroup, Modal, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { DappState, SpiralsState } from "../AppState";
+import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
 import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
 
@@ -32,6 +32,7 @@ const MarketPriceModal = ({
   success,
 }: MarketPriceModalProps) => {
   const [approved, setApproved] = useState(false);
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const approveMarketplace = async () => {
     if (!impishspiral || !spiralmarket) {
@@ -39,7 +40,10 @@ const MarketPriceModal = ({
     }
 
     const tx = await impishspiral.setApprovalForAll(spiralmarket.address, true);
+    setIsWaiting(true);
     await tx.wait();
+    setIsWaiting(false);
+
     setApproved(true);
   };
 
@@ -50,7 +54,9 @@ const MarketPriceModal = ({
 
     const priceEth = ethers.utils.parseEther(price);
     const tx = await spiralmarket.listSpiral(tokenId, priceEth);
+    setIsWaiting(true);
     await tx.wait();
+    setIsWaiting(false);
 
     // And then close it
     close();
@@ -60,7 +66,7 @@ const MarketPriceModal = ({
   return (
     <Modal show={show} onHide={close}>
       <Modal.Header closeButton>
-        <Modal.Title>Set Spiral Price</Modal.Title>
+        <Modal.Title>Set Spiral #{tokenId.toString()} Price</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {message}
@@ -68,6 +74,7 @@ const MarketPriceModal = ({
           <Form.Label>Price (ETH)</Form.Label>
           <Form.Control
             type="number"
+            step={0.01}
             placeholder="Price In ETH"
             value={price}
             onChange={(e) => setPrice(e.currentTarget.value)}
@@ -87,6 +94,11 @@ const MarketPriceModal = ({
                 )}
                 {approved && <Badge bg="success">Done</Badge>}
               </div>
+            </ListGroup.Item>
+          )}
+          {isWaiting && (
+            <ListGroup.Item>
+              <div>Waiting for confirmation...</div>
             </ListGroup.Item>
           )}
           <ListGroup.Item>
@@ -239,7 +251,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
     ));
 
     setPrice(ethers.utils.formatEther(listingPrice));
-    setModalMessage(<div>Set the Buy Now Price for this Spiral</div>);
+    setModalMessage(<div>Set the Buy Now price for this Spiral</div>);
     setModalNeedsApproval(isApprovalNeeded);
     setMarketPriceModalShowing(true);
   };
@@ -255,7 +267,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
       props.spiralmarket.address
     ));
 
-    setModalMessage(<div>Set the Buy Now Price for this Spiral</div>);
+    setModalMessage(<div>Set the Buy Now price for this Spiral</div>);
     setModalNeedsApproval(isApprovalNeeded);
     setMarketPriceModalShowing(true);
   };
@@ -271,42 +283,59 @@ export function SpiralDetail(props: SpiralDetailProps) {
     }
 
     // First, make sure the listing is still available
-    const isValid = await props.spiralmarket.isListingValid(BigNumber.from(id));
-    if (!isValid) {
+    try {
+      const isValid = await props.spiralmarket.isListingValid(BigNumber.from(id));
+      if (!isValid) {
+        props.showModal(
+          "Listing Invalid",
+          <div>
+            The Listing is invalid!
+            <br />
+            It has been changed while you were viewing it.
+          </div>,
+          () => {
+            // Refresh the data
+            setRefreshDataCounter(refreshDataCounter + 1);
+          }
+        );
+        return;
+      }
+
+      let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id), {value: listingPrice});
+      await tx.wait();
+
       props.showModal(
-        "Listing Invalid",
+        `Bought Spiral #${id}`,
         <div>
-          The Listing is invalid!
-          <br />
-          It has been changed while you were viewing it.
+          Congratulations! You have successfully bought Spiral #{id} <br />
+          It should appear in your wallet shortly.
         </div>,
         () => {
           // Refresh the data
           setRefreshDataCounter(refreshDataCounter + 1);
+          // Update the owner immediately in the UI to make it clear the user bought it
+
+          if (props.selectedAddress) {
+            setOwner(props.selectedAddress);
+            setListingPrice(BigNumber.from(0));
+          }
         }
       );
-      return;
-    }
+    } catch (e: any) {
+      console.log(e);
 
-    let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id), {value: listingPrice});
-    await tx.wait();
-
-    props.showModal(
-      `Bought Spiral #${id}`,
-      <div>
-        Congratulations! You have successfully bought Spiral #{id} <br />
-        It should appear in your wallet shortly.
-      </div>,
-      () => {
-        // Refresh the data
-        setRefreshDataCounter(refreshDataCounter + 1);
-        // Update the owner immediately in the UI to make it clear the user bought it
-
-        if (props.selectedAddress) {
-          setOwner(props.selectedAddress);
-        }
+      let msg: string | undefined;
+      if (e?.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        // User cancelled, so do nothing
+        msg = undefined;
+      } else {
+        msg = `Error: ${e?.data?.message}`;
       }
-    );
+
+      if (msg) {
+        props.showModal("Error Buying Spiral!", <div>{msg}</div>);
+      }
+    }
   };
 
   return (
@@ -411,9 +440,16 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     <div>
                       <h3 style={{ color: "#ffd454" }}>Buy Now Price: ETH {format4Decimals(listingPrice)}</h3>
                       <h5>{formatUSD(listingPrice, props.lastETHPrice)}</h5>
-                      <Button variant="warning" disabled={!props.selectedAddress} onClick={() => buyNow()}>
+                      {props.selectedAddress && (
+                      <Button variant="warning" onClick={() => buyNow()}>
                         Buy Now
+                      </Button>  
+                      )}
+                      {!props.selectedAddress && (
+                      <Button className="connect" variant="warning" onClick={props.connectWallet}>
+                        Connect Wallet
                       </Button>
+                      )}
                     </div>
                   </div>
                 )}

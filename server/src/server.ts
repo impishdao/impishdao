@@ -223,18 +223,15 @@ app.get("/lastethprice", async (req, res) => {
   res.send({ lastETHPrice });
 });
 
-_impishspiral.on(
-  _impishspiral.filters.Transfer(),
-  async (from: string, to: string, tokenId: BigNumber, e: any) => {
-    console.log(`Spiral transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
+_impishspiral.on(_impishspiral.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
+  console.log(`Spiral transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
 
-    // For transfer events, we remove the spiral data cache
-    seedToIdCache.delete(tokenId.toNumber());
+  // For transfer events, we remove the spiral data cache
+  seedToIdCache.delete(tokenId.toNumber());
 
-    // Also send to marketplace listener
-    transferListener(from, to, tokenId, e);
-  }
-);
+  // Also send to marketplace listener
+  transferListener(from, to, tokenId, e);
+});
 
 app.get("/spiralapi/spiraldata", async (req, res) => {
   try {

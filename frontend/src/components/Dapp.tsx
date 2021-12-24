@@ -11,6 +11,7 @@ import RandomWalkNFTArtifact from "../contracts/rwnft.json";
 import ImpishSpiralArtifact from "../contracts/impishspiral.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
 import SpiralMarketArtifact from "../contracts/spiralmarket.json";
+import MultiMintArtifact from "../contracts/multimint.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
@@ -58,6 +59,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   rwnft?: Contract;
   impspiral?: Contract;
   spiralmarket?: Contract;
+  multimint?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -96,11 +98,19 @@ export class Dapp extends React.Component<DappProps, DappState> {
       this.provider.getSigner(0)
     );
 
+    // Spiral Market Contract
     this.spiralmarket = new ethers.Contract(
       contractAddresses.SpiralMarket,
       SpiralMarketArtifact.abi,
       this.provider.getSigner(0)
     );
+
+    // Multimint contract
+    this.multimint = new ethers.Contract(
+      contractAddresses.MultiMint,
+      MultiMintArtifact.abi,
+      this.provider.getSigner(0)
+    )
 
     this.readDappState();
     this.readUserData();
@@ -329,6 +339,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   impdao={this.impdao}
                   rwnft={this.rwnft}
                   impspiral={this.impspiral}
+                  multimint={this.multimint}
                 />
               }
             />

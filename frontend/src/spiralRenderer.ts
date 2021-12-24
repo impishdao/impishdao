@@ -362,13 +362,26 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
   cachedImage.src = `/spiral_image/seed/${seed}/300.png`;
 
   let rot = 0;
+  let firstClicked = false;
 
-  // Create the image and display it in a timeout, allowing any existing changes above to take effect and be shown to the user.
-  setTimeout(() => {
-    const { cart_path, C } = get_steps(seed);
-    const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth);
+  // The path and its extent. Generated only on the first click.
+  type SpiralRotateData = {
+    scaled_polar_path?: RGBPolarPoint[];
+    min_x?: number;
+    min_y?: number;
+    max_x?: number;
+    max_y?: number;
+  }
+  const spiralRotData: SpiralRotateData = {};
 
-    const drawFirstImage = (rot: number) => {
+  const clickHandler = () => {
+    console.log(`Clicked for id ${id}`);
+    if (!ctx) {
+      console.log("Couldn't get canvas context");
+      return;
+    }
+
+    const drawFirstImage = (srd: SpiralRotateData, rot: number) => {
       if (!ctx) {
         console.log("Couldn't get canvas context");
         return;
@@ -378,38 +391,49 @@ export function setup_image(canvas: HTMLCanvasElement, id: string, seed: string)
         clearCanvas(ctx);
       }
 
-      draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
-    };
-
-    drawFirstImage(0);
-    
-    const clickHandler = () => {
-      console.log(`Clicked for id ${id}`);
-      if (!ctx) {
-        console.log("Couldn't get canvas context");
-        return;
-      }
-
-      const rotateTimerId = rotateTimerIdMap.get(id);
-      if (rotateTimerId === undefined) {
-        const rotateTimerId = setInterval(() => {
-          rot += (2 * Math.PI) / (canvasWidth * 4 * 10);
-
-          draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, rot);
-        }, 1000 / 24);
-        rotateTimerIdMap.set(id, rotateTimerId);
+      if (srd.scaled_polar_path && srd.min_x && srd.min_y) {
+        draw_path_with_rot(ctx, canvasWidth, canvasHeight, srd.scaled_polar_path, srd.min_x, srd.min_y, rot);
       } else {
-        clearInterval(rotateTimerId);
-        rotateTimerIdMap.delete(id);
-
-        rot = 0;
-        drawFirstImage(0);
+        console.log("No data found to draw first image");
       }
     };
 
-    console.log("Adding click handler");
-    canvas.addEventListener("click", clickHandler);
-    clickHandlerMap.set(id, clickHandler);
-  }, 1000);
+    if (!firstClicked) {
+      firstClicked = true;
+
+      const { cart_path, C } = get_steps(seed);
+      const r = get_scaled_cart_path(cart_path, C, canvasWidth);
+
+      spiralRotData.scaled_polar_path = r.scaled_polar_path;
+      spiralRotData.min_x = r.min_x;
+      spiralRotData.min_y = r.min_y; 
+       
+      drawFirstImage(spiralRotData, 0);
+    }
+    
+
+    const rotateTimerId = rotateTimerIdMap.get(id);
+    if (rotateTimerId === undefined) {
+      const rotateTimerId = setInterval(() => {
+        rot += (2 * Math.PI) / (canvasWidth * 4 * 10);
+
+        if (spiralRotData.scaled_polar_path && spiralRotData.min_x && spiralRotData.min_y) {
+          draw_path_with_rot(ctx, canvasWidth, canvasHeight, spiralRotData.scaled_polar_path, spiralRotData.min_x, spiralRotData.min_y, rot);
+        } else {
+          console.log("No data found to draw first image");
+        }
+      }, 1000 / 24);
+      rotateTimerIdMap.set(id, rotateTimerId);
+    } else {
+      clearInterval(rotateTimerId);
+      rotateTimerIdMap.delete(id);
+
+      rot = 0;
+      drawFirstImage(spiralRotData, 0);
+    }
+  };
+
+  canvas.addEventListener("click", clickHandler);
+  clickHandlerMap.set(id, clickHandler);
 }
 

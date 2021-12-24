@@ -1,7 +1,7 @@
-import { Button, Col, Container, Form, Nav, Navbar, Row } from "react-bootstrap";
+import { Button, Col, Container, FloatingLabel, Form, Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
-import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
+import { format4Decimals, formatUSD, range, secondsToDhms, THREE_DAYS } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber, Contract } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ type SpiralProps = DappState & {
   impdao?: Contract;
   rwnft?: Contract;
   impspiral?: Contract;
+  multimint?: Contract;
 
   connectWallet: () => void;
 
@@ -27,7 +28,6 @@ export function ImpishSpiral(props: SpiralProps) {
   const canvasCompanionRef = useRef<HTMLCanvasElement>(null);
 
   // By default, 3days remain
-
   const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
 
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
@@ -35,6 +35,7 @@ export function ImpishSpiral(props: SpiralProps) {
 
   const [spiralType, setSpiralType] = useState("original");
   const [mintPrice, setMintPrice] = useState<BigNumber>(BigNumber.from(0));
+  const [numSpirals, setNumSpirals] = useState(1);
   const [previewURL, setPreviewURL] = useState("");
 
   const nav = useNavigate();
@@ -118,28 +119,47 @@ export function ImpishSpiral(props: SpiralProps) {
     })();
   }, [props.selectedAddress, props.rwnft, selectedUserRW]);
 
-  // const randomSpiral = async () => {
-  //   if (canvasPreviewRef.current) {
-  //     const r = new Uint8Array(32);
-  //     window.crypto.getRandomValues(r);
+  const calcMultiSpiralPrice = (numSpirals: number, basePrice: BigNumber): BigNumber => {
+    let amountNeeded = BigNumber.from(0);
+    let mintPrice = basePrice;
+    for (let i = 0; i < numSpirals; i++) {
+      amountNeeded = amountNeeded.add(mintPrice);
+      // Mint price increases 0.5% everytime
+      mintPrice = mintPrice.mul(1005).div(1000);
+    }
 
-  //     setup_image(canvasPreviewRef.current, "main", toHexString(r));
-  //   }
-  // };
+    return amountNeeded;
+  };
+
+  const multiMintPriceETH = calcMultiSpiralPrice(numSpirals, mintPrice);
 
   const mintSpiral = async () => {
-    if (!props.impspiral) {
+    if (!props.impspiral || !props.multimint) {
       return;
     }
 
     try {
       if (spiralType === "original") {
-        const id = await props.impspiral._tokenIdCounter();
-        let tx = await props.impspiral.mintSpiralRandom({ value: await props.impspiral.getMintPrice() });
-        await tx.wait();
-        props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
-          nav(`/spirals/detail/${id}`);
-        });
+        // See if we need a multi mint
+        if (numSpirals === 1) {
+          const id = await props.impspiral._tokenIdCounter();
+          let tx = await props.impspiral.mintSpiralRandom({ value: await props.impspiral.getMintPrice() });
+          await tx.wait();
+
+          props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
+            nav(`/spirals/detail/${id}`);
+          });
+        } else {
+          const id = (await props.impspiral._tokenIdCounter()).toNumber() + (numSpirals - 1);
+
+          const price = calcMultiSpiralPrice(numSpirals, await props.impspiral.getMintPrice());
+          let tx = await props.multimint.multiMint(numSpirals, { value: price });
+          await tx.wait();
+
+          props.showModal("Yay!", <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>, () => {
+            nav(`/spirals/wallet/${props.selectedAddress}`);
+          });
+        }        
       } else {
         if (selectedUserRW) {
           const id = await props.impspiral._tokenIdCounter();
@@ -174,6 +194,8 @@ export function ImpishSpiral(props: SpiralProps) {
       }
     }
   };
+
+  
 
   return (
     <>
@@ -329,11 +351,22 @@ export function ImpishSpiral(props: SpiralProps) {
                       <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
                     </h5>
                     <div>
-                      Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}
+                      Mint Price: ETH {format4Decimals(multiMintPriceETH)} {formatUSD(multiMintPriceETH, props.lastETHPrice)}
                     </div>
-                    <Button style={{ marginTop: "10px" }} variant="warning" onClick={mintSpiral}>
-                      Mint
-                    </Button>
+                    <div style={{display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: '10px'}}>
+                      <FloatingLabel label="Number of Spirals" style={{color: 'black', width: '200px'}}>
+                      <Form.Select value={numSpirals.toString()} onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}>
+                        {range(10, 1).map((n) => {
+                          return (
+                            <option key={n} value={n}>{n}</option>
+                          );
+                        })}
+                      </Form.Select>
+                      </FloatingLabel>
+                      <Button style={{ marginTop: "10px", height: '58px' }} variant="warning" onClick={mintSpiral}>
+                        Mint
+                      </Button>
+                    </div>
                   </Col>
                 </Row>
               )}
