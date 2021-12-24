@@ -195,6 +195,26 @@ export function SpiralDetail(props: SpiralDetailProps) {
       });
   }, [id]);
 
+  const downloadHires = () => {
+    //creating an invisible element
+    var element = document.createElement("a");
+    console.log(`/spiral_image/seed/${seed}/2000.png`);
+    element.setAttribute(
+      "href",
+      `/spiral_image/seed/${seed}/2000.png`
+    );
+    element.setAttribute("target", "_blank");
+    // element.setAttribute("download", `spiral_${id}_hires.png`);
+
+    document.body.appendChild(element);
+
+    //onClick property
+    console.log(element);
+    element.click();
+
+    document.body.removeChild(element);
+  };
+
   const nav = useNavigate();
 
   let isWinning = false;
@@ -232,11 +252,15 @@ export function SpiralDetail(props: SpiralDetailProps) {
     let tx: ContractTransaction = await props.spiralmarket.cancelListing(BigNumber.from(id));
     await tx.wait();
 
-    props.showModal("Listing Cancelled", <div>Your Spiral has be delisted from the marketplace and is no longer available for sale.</div>, () => {
-      // Refresh the data
-      setRefreshDataCounter(refreshDataCounter + 1);
-      setListingPrice(BigNumber.from(0));
-    });
+    props.showModal(
+      "Listing Cancelled",
+      <div>Your Spiral has be delisted from the marketplace and is no longer available for sale.</div>,
+      () => {
+        // Refresh the data
+        setRefreshDataCounter(refreshDataCounter + 1);
+        setListingPrice(BigNumber.from(0));
+      }
+    );
   };
 
   const updateSalePrice = async () => {
@@ -301,7 +325,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
         return;
       }
 
-      let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id), {value: listingPrice});
+      let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id), { value: listingPrice });
       await tx.wait();
 
       props.showModal(
@@ -441,14 +465,14 @@ export function SpiralDetail(props: SpiralDetailProps) {
                       <h3 style={{ color: "#ffd454" }}>Buy Now Price: ETH {format4Decimals(listingPrice)}</h3>
                       <h5>{formatUSD(listingPrice, props.lastETHPrice)}</h5>
                       {props.selectedAddress && (
-                      <Button variant="warning" onClick={() => buyNow()}>
-                        Buy Now
-                      </Button>  
+                        <Button variant="warning" onClick={() => buyNow()}>
+                          Buy Now
+                        </Button>
                       )}
                       {!props.selectedAddress && (
-                      <Button className="connect" variant="warning" onClick={props.connectWallet}>
-                        Connect Wallet
-                      </Button>
+                        <Button className="connect" variant="warning" onClick={props.connectWallet}>
+                          Connect Wallet
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -496,6 +520,19 @@ export function SpiralDetail(props: SpiralDetailProps) {
               <div>Spiral #{id}</div>
               <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
                 <canvas ref={canvasDetailRef} width="300px" height="300px" style={{ cursor: "pointer" }}></canvas>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "10px",
+                  marginTop: "10px",
+                  justifyContent: "center",
+                }}
+              >
+                <Button variant="dark" onClick={downloadHires}>
+                  View High Resolution
+                </Button>
               </div>
             </Col>
 

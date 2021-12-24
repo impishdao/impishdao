@@ -156,10 +156,14 @@ export function ImpishSpiral(props: SpiralProps) {
           let tx = await props.multimint.multiMint(numSpirals, { value: price });
           await tx.wait();
 
-          props.showModal("Yay!", <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>, () => {
-            nav(`/spirals/wallet/${props.selectedAddress}`);
-          });
-        }        
+          props.showModal(
+            "Yay!",
+            <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>,
+            () => {
+              nav(`/spirals/wallet/${props.selectedAddress}`);
+            }
+          );
+        }
       } else {
         if (selectedUserRW) {
           const id = await props.impspiral._tokenIdCounter();
@@ -194,8 +198,6 @@ export function ImpishSpiral(props: SpiralProps) {
       }
     }
   };
-
-  
 
   return (
     <>
@@ -351,19 +353,25 @@ export function ImpishSpiral(props: SpiralProps) {
                       <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
                     </h5>
                     <div>
-                      Mint Price: ETH {format4Decimals(multiMintPriceETH)} {formatUSD(multiMintPriceETH, props.lastETHPrice)}
+                      Mint Price: ETH {format4Decimals(multiMintPriceETH)}{" "}
+                      {formatUSD(multiMintPriceETH, props.lastETHPrice)}
                     </div>
-                    <div style={{display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: '10px'}}>
-                      <FloatingLabel label="Number of Spirals" style={{color: 'black', width: '200px'}}>
-                      <Form.Select value={numSpirals.toString()} onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}>
-                        {range(10, 1).map((n) => {
-                          return (
-                            <option key={n} value={n}>{n}</option>
-                          );
-                        })}
-                      </Form.Select>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
+                      <FloatingLabel label="Number of Spirals" style={{ color: "black", width: "200px" }}>
+                        <Form.Select
+                          value={numSpirals.toString()}
+                          onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}
+                        >
+                          {range(10, 1).map((n) => {
+                            return (
+                              <option key={n} value={n}>
+                                {n}
+                              </option>
+                            );
+                          })}
+                        </Form.Select>
                       </FloatingLabel>
-                      <Button style={{ marginTop: "10px", height: '58px' }} variant="warning" onClick={mintSpiral}>
+                      <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={mintSpiral}>
                         Mint
                       </Button>
                     </div>

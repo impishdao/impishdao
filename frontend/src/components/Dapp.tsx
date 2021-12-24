@@ -110,7 +110,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
       contractAddresses.MultiMint,
       MultiMintArtifact.abi,
       this.provider.getSigner(0)
-    )
+    );
 
     this.readDappState();
     this.readUserData();

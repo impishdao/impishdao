@@ -15,8 +15,6 @@ const fromHexString = (hexString: string): Uint8Array => {
 export const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
 
-const SCALE = 2;
-
 function* random_generator(init_seed: string) {
   if (init_seed.startsWith("0x")) {
     init_seed = init_seed.substring(2);
@@ -165,7 +163,7 @@ type ScaledPath = {
 };
 
 // Cartesian path, scaled to canvas width
-function get_scaled_cart_path(cart_path: number[][], C: number[][], canvasWidth: number): ScaledPath {
+function get_scaled_cart_path(cart_path: number[][], C: number[][], canvasWidth: number, SCALE: number): ScaledPath {
   // 3% border on each size, scaled * SCALE
   canvasWidth = canvasWidth * (1 - 0.03 * 2) * SCALE;
   let factor = 1;
@@ -231,7 +229,8 @@ function draw_path_with_rot(
   scaled_cart_path: RGBPolarPoint[],
   min_x: number,
   min_y: number,
-  rot: number
+  rot: number,
+  SCALE: number,
 ) {
   // const id = new ImageData(canvasWidth * SCALE, canvasHeight * SCALE);
   const id = ctx.createImageData(canvasWidth * SCALE, canvasHeight * SCALE);
@@ -253,11 +252,13 @@ function draw_path_with_rot(
     xx = Math.round(xx + border);
     yy = Math.round(yy + border);
 
+    const alpha = (canvasWidth < 2000) ? 192 : 255; // 75% if SCALE is 2x
+
     const off = (yy * id.width + xx) * 4;
     pixels[off] = r;
     pixels[off + 1] = g;
     pixels[off + 2] = b;
-    pixels[off + 3] = 192; // 75%, to account for a 2x SCALE
+    pixels[off + 3] = alpha; 
   }
 
   //ctx.putImageData(id, 0, 0);
@@ -303,6 +304,8 @@ function get_image(seed: string, size: number): Buffer {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext("2d");
 
+  const SCALE = (canvasWidth < 2000) ? 2 : 1;
+
   ctx?.scale(1 / SCALE, 1 / SCALE);
 
   ctx.clearRect(0, 0, canvasWidth * SCALE, canvasHeight * SCALE);
@@ -311,9 +314,9 @@ function get_image(seed: string, size: number): Buffer {
   ctx.fill();
 
   const { cart_path, C } = get_steps(seed);
-  const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth);
+  const { scaled_polar_path, min_x, min_y } = get_scaled_cart_path(cart_path, C, canvasWidth, SCALE);
 
-  draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, 0);
+  draw_path_with_rot(ctx, canvasWidth, canvasHeight, scaled_polar_path, min_x, min_y, 0, SCALE);
 
   const png = canvas.toBuffer("image/png");
   return png;
