@@ -44,6 +44,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     }
 
     function stakeSpirals(uint32[] calldata tokenIds) external nonReentrant {
+        require(tokenIds.length > 0, "NoTokens");
         // Update the staked spirals
         if (stakedSpirals[msg.sender].numSpirals > 0) {
             // User already has some Spirals staked
@@ -53,7 +54,6 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
         for (uint32 i; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
             require(impishspiral.ownerOf(tokenId) == msg.sender, "DontOwnToken");
-            require(isSpiralStaked[tokenId] == address(0), "Already Staked");
 
             // Add the spiral to staked owner list to keep track of staked tokens
             transferSpiralIn(tokenId, msg.sender);
@@ -62,10 +62,12 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
 
     // Unstake a spiral
     function unstakeSpirals(uint32[] calldata tokenIds, bool withdraw) external nonReentrant {
+        require(tokenIds.length > 0, "NoTokens");
         _claimSpiralBits(msg.sender);
         
         for (uint32 i; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
+            require(impishspiral.ownerOf(tokenId) == address(this), "NotStaked");
             require(isSpiralStaked[tokenId] == msg.sender, "NotYours");
 
             // Add the spiral to staked owner list to keep track of staked tokens
@@ -122,6 +124,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     // Keep track of staked spirals
     // =========
     // Mapping from owner to list of owned token IDs
+    // origina owned address => (index => tokenId)
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
 
     // Mapping from token ID to index of the owner tokens list

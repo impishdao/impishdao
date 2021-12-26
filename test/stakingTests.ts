@@ -108,11 +108,14 @@ describe.only("SpiralStaking", function () {
     // This one will work
     await spiralstaking.stakeSpirals([tokenId]);
 
+    // Try to stake again
+    await expect(spiralstaking.stakeSpirals([tokenId])).to.be.revertedWith("DontOwnToken");
+
     // Try to unstake wrong token
-    await expect(spiralstaking.unstakeSpirals([otherTokenId], false)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.unstakeSpirals([otherTokenId], false)).to.be.revertedWith("NotStaked");
 
     // Non existant token
-    await expect(spiralstaking.unstakeSpirals([otherTokenId.add(1)], false)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.unstakeSpirals([otherTokenId.add(1)], false)).to.be.revertedWith("ERC721: owner query for nonexistent token");
 
     // Stake the other token
     await impishSpiral.connect(otherSigner).approve(spiralstaking.address, otherTokenId);
@@ -125,5 +128,8 @@ describe.only("SpiralStaking", function () {
     // Finally this will work for both
     await spiralstaking.unstakeSpirals([tokenId], false);
     await spiralstaking.connect(otherSigner).unstakeSpirals([otherTokenId], false);
+
+    // Unstake again
+    await expect(spiralstaking.unstakeSpirals([tokenId], false)).to.be.revertedWith("NotStaked");
   });
 });
