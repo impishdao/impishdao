@@ -13,7 +13,6 @@ abstract contract ISpiralBits is IERC20 {
 }
 
 contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
-
     // How many spiral bits per second are awarded to a staked spiral
     uint256 constant public SPIRALBITS_PER_SECOND = 100;
 

@@ -363,7 +363,7 @@ app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
   try {
     // const worker = new Worker("./dist/serverSpiralRenderer.js", {workerData: {seed, size}});
     const child = fork("./dist/serverSpiralRenderer.js");
-    child.send({seed, size});
+    child.send({ seed, size });
 
     child.once("message", (r) => {
       // console.log("Message recieved from child");
@@ -372,24 +372,23 @@ app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
       const pngBuf = Buffer.from(r as Buffer);
       res.contentType("png");
       res.send(pngBuf);
-  
+
       setTimeout(() => {
         if (!fs.existsSync(path.join(__dirname, "data"))) {
           fs.mkdirSync(path.join(__dirname, "data"));
         }
-  
+
         fs.writeFileSync(path.join(__dirname, fileName), pngBuf);
       });
     });
 
-    child.on("error", error => {
+    child.on("error", (error) => {
       console.log(`Fork error: ${error}`);
     });
 
-    child.on("exit", exitCode => {
+    child.on("exit", (exitCode) => {
       console.log(`For exitcode ${exitCode}`);
     });
-    
   } catch (e) {
     console.log(e);
     res.status(500).send(`Server error generating image for ${seed} x ${size}`);

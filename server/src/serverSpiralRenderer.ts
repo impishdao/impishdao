@@ -230,7 +230,7 @@ function draw_path_with_rot(
   min_x: number,
   min_y: number,
   rot: number,
-  SCALE: number,
+  SCALE: number
 ) {
   // const id = new ImageData(canvasWidth * SCALE, canvasHeight * SCALE);
   const id = ctx.createImageData(canvasWidth * SCALE, canvasHeight * SCALE);
@@ -252,13 +252,13 @@ function draw_path_with_rot(
     xx = Math.round(xx + border);
     yy = Math.round(yy + border);
 
-    const alpha = (canvasWidth < 2000) ? 192 : 255; // 75% if SCALE is 2x
+    const alpha = canvasWidth < 2000 ? 192 : 255; // 75% if SCALE is 2x
 
     const off = (yy * id.width + xx) * 4;
     pixels[off] = r;
     pixels[off + 1] = g;
     pixels[off + 2] = b;
-    pixels[off + 3] = alpha; 
+    pixels[off + 3] = alpha;
   }
 
   //ctx.putImageData(id, 0, 0);
@@ -304,7 +304,7 @@ function get_image(seed: string, size: number): Buffer {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext("2d");
 
-  const SCALE = (canvasWidth < 2000) ? 2 : 1;
+  const SCALE = canvasWidth < 2000 ? 2 : 1;
 
   ctx?.scale(1 / SCALE, 1 / SCALE);
 
@@ -333,8 +333,7 @@ process.on("message", (m) => {
 
   process.send(r);
 
-  // For some reason, it doesn't cleanly exit, so we wait 60 seconds 
-  // after returning the data to exit. 
+  // For some reason, it doesn't cleanly exit, so we wait 60 seconds
+  // after returning the data to exit.
   setTimeout(() => process.exit(0), 60 * 1000);
 });
-

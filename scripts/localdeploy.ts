@@ -6,6 +6,7 @@
 import { Contract } from "@ethersproject/contracts";
 import { artifacts, ethers } from "hardhat";
 import path from "path";
+import { SpiralBits } from "../typechain";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -21,6 +22,8 @@ async function main() {
   const ImpishSpiral = await ethers.getContractFactory("ImpishSpiral");
   const SpiralMarket = await ethers.getContractFactory("SpiralMarket");
   const MultiMint = await ethers.getContractFactory("MultiMint");
+  const SpiralBits = await ethers.getContractFactory("SpiralBits");
+  const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
 
   const rwnft = await RandomWalkNFT.deploy();
   await rwnft.deployed();
@@ -37,6 +40,15 @@ async function main() {
   const multimint = await MultiMint.deploy(impishspiral.address);
   await multimint.deployed();
 
+  const spiralbits = await SpiralBits.deploy();
+  await spiralbits.deployed();
+
+  const spiralstaking = await SpiralStaking.deploy(impishspiral.address, spiralbits.address);
+  await spiralstaking.deployed();
+
+  // Allow spiral staking to mint spiralbits
+  spiralbits.addAllowedMinter(spiralstaking.address);
+
   // Mint a new NFT to reset the last mint time
   await rwnft.mint({ value: await rwnft.getMintPrice() });
 
@@ -45,12 +57,14 @@ async function main() {
   console.log("ImpishSpiral deployed to:", impishspiral.address);
   console.log("SpiralMarket deployed to:", spiralmarket.address);
   console.log("MultiMint deployed to:", multimint.address);
+  console.log("SpiralBiys deployed to:", spiralbits.address);
+  console.log("SpiralStaking deployed to:", spiralstaking.address);
 
   // Start the ImpishSpiral for ease
   await impishspiral.startMints();
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(rwnft, impdao, impishspiral, spiralmarket, multimint);
+  saveFrontendFiles(rwnft, impdao, impishspiral, spiralmarket, multimint, spiralbits, spiralstaking);
 
   const [signer, otherSigner] = await ethers.getSigners();
 
@@ -78,7 +92,7 @@ async function main() {
   }, 10 * 1000);
 }
 
-function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract, spiralmarket: Contract, multimint: Contract) {
+function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract, spiralmarket: Contract, multimint: Contract, spiralbits: Contract, spiralstaking: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -97,7 +111,9 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
       ImpishDAO: impdao.address,
       ImpishSpiral: impishspiral.address,
       SpiralMarket: spiralmarket.address,
-      MultiMint: multimint.address
+      MultiMint: multimint.address,
+      SpiralBits: spiralbits.address,
+      SpiralStaking: spiralstaking.address,
     },
     undefined,
     2
@@ -125,6 +141,14 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
   const multiMintArtifact = artifacts.readArtifactSync("MultiMint");
   fs.writeFileSync(contractsDir + "/multimint.json", JSON.stringify(multiMintArtifact, null, 2));
   fs.writeFileSync(serverDir + "/multimint.json", JSON.stringify(multiMintArtifact, null, 2));
+
+  const spiralBitsArtifact = artifacts.readArtifactSync("SpiralBits");
+  fs.writeFileSync(contractsDir + "/spiralbits.json", JSON.stringify(spiralBitsArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/spiralbits.json", JSON.stringify(spiralBitsArtifact, null, 2));
+
+  const spiralStakingArtifact = artifacts.readArtifactSync("SpiralStaking");
+  fs.writeFileSync(contractsDir + "/spiralstaking.json", JSON.stringify(spiralStakingArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/spiralstaking.json", JSON.stringify(spiralStakingArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
