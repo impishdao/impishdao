@@ -66,13 +66,91 @@ describe.only("SpiralStaking", function () {
     await spiralstaking.stakeSpirals([tokenId]);
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-    expect(await spiralstaking.isSpiralStaked(tokenId)).to.be.equals(wallet.address);
-    expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(0)]); // TokenId is correctly owned
+    expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+    expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(tokenId)]); // TokenId is correctly owned
 
     // Unstake
     await spiralstaking.unstakeSpirals([tokenId], false);
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
-    expect(BigNumber.from(await spiralstaking.isSpiralStaked(tokenId))).to.be.equals(0);
+    expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+    expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
+  });
+
+
+  it("Staking 1-by-1 - Unstaking all", async function () {
+    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const provider = waffle.provider;
+    const [wallet] = provider.getWallets();
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+
+    // Mint 10 and stake them one-by-one
+    const stakedTokenIds = [];
+    for (let i = 0; i < 10; i++) {
+      // Mint random
+      const tokenId = await impishSpiral._tokenIdCounter();
+      stakedTokenIds.push(tokenId);
+      await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+
+      // Stake
+      await spiralstaking.stakeSpirals([tokenId]);
+
+      expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
+      expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds); // TokenId is correctly owned
+    }
+     
+    // Unstake all at once.
+    await spiralstaking.unstakeSpirals(stakedTokenIds, false);
+    for (let i = 0; i < 10; i++) {
+      const tokenId = stakedTokenIds[i];
+
+      expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
+      expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+    }
+    expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
+  });
+
+
+  it("Staking all - Unstaking 1-by-1", async function () {
+    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const provider = waffle.provider;
+    const [wallet] = provider.getWallets();
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+
+    // Mint 10 and stake them all at once
+    const stakedTokenIds = [];
+    for (let i = 0; i < 10; i++) {
+      // Mint random
+      const tokenId = await impishSpiral._tokenIdCounter();
+      stakedTokenIds.push(tokenId);
+      await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    }
+
+    // Stake all 10
+    await spiralstaking.stakeSpirals(stakedTokenIds);
+
+    // Assert they got staked.
+    for (let i = 0; i < 10; i++) {
+      const tokenId = stakedTokenIds[i];
+
+      expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
+      expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds); // TokenId is correctly owned
+    }
+     
+    // Unstake one-by-one
+    for (let i = 0; i < 10; i++) {
+      const tokenId = stakedTokenIds[i];
+      await spiralstaking.unstakeSpirals([tokenId], false);
+
+      expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
+      expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+      expect(new Set(await spiralstaking.walletOfOwner(wallet.address))).to.be.deep.equals(new Set(stakedTokenIds.slice(i+1, 10)));
+    }
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
@@ -120,6 +198,9 @@ describe.only("SpiralStaking", function () {
     // Stake the other token
     await impishSpiral.connect(otherSigner).approve(spiralstaking.address, otherTokenId);
     await spiralstaking.connect(otherSigner).stakeSpirals([otherTokenId]);
+
+    // Unstake from the wrong address shouldn't work
+    await expect(spiralstaking.connect(otherSigner).unstakeSpirals([tokenId], false)).to.be.revertedWith("NotYours");
 
     // Unstake the non-owned token can't work
     await expect(spiralstaking.unstakeSpirals([otherTokenId], false)).to.be.revertedWith("NotYours");

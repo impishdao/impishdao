@@ -14,22 +14,20 @@ abstract contract ISpiralBits is IERC20 {
 
 contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     // How many spiral bits per second are awarded to a staked spiral
-    uint256 constant public SPIRALBITS_PER_SECOND = 100;
+    // 0.001 SPIRALBITS per second. (1 SPIRALBIT per 1000 seconds)
+    uint256 constant public SPIRALBITS_PER_SECOND = 10 ** 15; 
 
     IImpishSpiral public impishspiral;
     ISpiralBits public spiralbits;
 
     struct StakedSpirals {
-        uint32 numSpirals;
-        uint64 lastClaimTime;
-        uint128 claimedSpiralBits;
+        uint32 numSpirals;          // Number of spirals staked by this owner
+        uint64 lastClaimTime;       // Last timestamp that the rewards were accumulated into claimedSpiralBits
+        uint128 claimedSpiralBits;  // Already claimed (but not withdrawn) spiralBits before lastClaimTime
     }
 
     mapping(address => StakedSpirals) public stakedSpirals;
     
-    // Mapping of Spiral TokenID => Address that staked it.
-    mapping(uint256 => address) public isSpiralStaked;
-
     constructor(address _impishspiral, address _spiralbits) {
         impishspiral = IImpishSpiral(_impishspiral);
         spiralbits = ISpiralBits(_spiralbits);
@@ -65,10 +63,10 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
         require(tokenIds.length > 0, "NoTokens");
         _claimSpiralBits(msg.sender);
         
-        for (uint32 i; i < tokenIds.length; i++) {
+        for (uint32 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
             require(impishspiral.ownerOf(tokenId) == address(this), "NotStaked");
-            require(isSpiralStaked[tokenId] == msg.sender, "NotYours");
+            require(stakedTokenOwners[tokenId] == msg.sender, "NotYours");
 
             // Add the spiral to staked owner list to keep track of staked tokens
             transferSpiralOut(tokenId, msg.sender);
@@ -97,7 +95,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
 
     function transferSpiralIn(uint256 tokenId, address owner) internal {
         _addTokenToOwnerEnumeration(owner, tokenId);
-        isSpiralStaked[tokenId] = owner;
+        stakedTokenOwners[tokenId] = owner;
 
         // Add this spiral to the staked struct
         stakedSpirals[msg.sender].numSpirals += 1;
@@ -110,7 +108,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     function transferSpiralOut(uint256 tokenId, address owner) internal {
         _removeTokenFromOwnerEnumeration(owner, tokenId);
 
-        delete isSpiralStaked[tokenId];
+        delete stakedTokenOwners[tokenId];
 
         // Remove this spiral from the staked struct
         stakedSpirals[msg.sender].numSpirals -= 1;
@@ -129,6 +127,9 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
 
     // Mapping from token ID to index of the owner tokens list
     mapping(uint256 => uint256) private _ownedTokensIndex;
+
+    // Mapping of Spiral TokenID => Address that staked it.
+    mapping(uint256 => address) public stakedTokenOwners;
 
     // Returns a list of token Ids owned by _owner.
     function walletOfOwner(address _owner) public view
