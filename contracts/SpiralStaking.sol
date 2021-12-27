@@ -15,18 +15,10 @@ abstract contract ISpiralBits is IERC20 {
 contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     // How many spiral bits per second are awarded to a staked spiral
     // 0.001 SPIRALBITS per second. (1 SPIRALBIT per 1000 seconds)
-    uint256 constant public SPIRALBITS_PER_SECOND = 10 ** 15; 
+    uint256 constant public SPIRALBITS_PER_SECOND = 1 ether / 1000; 
 
     IImpishSpiral public impishspiral;
     ISpiralBits public spiralbits;
-
-    struct StakedSpirals {
-        uint32 numSpirals;          // Number of spirals staked by this owner
-        uint64 lastClaimTime;       // Last timestamp that the rewards were accumulated into claimedSpiralBits
-        uint128 claimedSpiralBits;  // Already claimed (but not withdrawn) spiralBits before lastClaimTime
-    }
-
-    mapping(address => StakedSpirals) public stakedSpirals;
     
     constructor(address _impishspiral, address _spiralbits) {
         impishspiral = IImpishSpiral(_impishspiral);
@@ -121,6 +113,12 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     // =========
     // Keep track of staked spirals
     // =========
+    struct StakedSpirals {
+        uint32 numSpirals;          // Number of spirals staked by this owner
+        uint64 lastClaimTime;       // Last timestamp that the rewards were accumulated into claimedSpiralBits
+        uint128 claimedSpiralBits;  // Already claimed (but not withdrawn) spiralBits before lastClaimTime
+    }
+
     // Mapping from owner to list of owned token IDs
     // origina owned address => (index => tokenId)
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
@@ -131,6 +129,9 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     // Mapping of Spiral TokenID => Address that staked it.
     mapping(uint256 => address) public stakedTokenOwners;
 
+    // Address that staked the token => Token Accounting
+    mapping(address => StakedSpirals) public stakedSpirals;
+    
     // Returns a list of token Ids owned by _owner.
     function walletOfOwner(address _owner) public view
         returns (uint256[] memory) {
