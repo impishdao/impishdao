@@ -218,6 +218,10 @@ export function ImpishSpiral(props: SpiralProps) {
             <LinkContainer to="/spirals/marketplace">
               <Nav.Link>Marketplace</Nav.Link>
             </LinkContainer>
+            <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
+            <LinkContainer to="/spiralstaking">
+              <Nav.Link>Staking</Nav.Link>
+            </LinkContainer>
             {props.selectedAddress && (
               <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
                 <Nav.Link>Wallet</Nav.Link>
