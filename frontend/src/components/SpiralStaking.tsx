@@ -1,12 +1,10 @@
-import { Button, Col, Container, FloatingLabel, Form, Nav, Navbar, Row } from "react-bootstrap";
+import { Button, Col, Container,  Nav, Navbar, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
-import { format4Decimals, formatUSD, range, secondsToDhms, THREE_DAYS } from "./utils";
+import { DappState } from "../AppState";
+import { format4Decimals, secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
-import { BigNumber, Contract } from "ethers";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { setup_image } from "../spiralRenderer";
-import { SelectableNFT } from "./NFTcard";
+import { Contract } from "ethers";
+import { useEffect,  useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 type SpiralStakingProps = DappState & {
