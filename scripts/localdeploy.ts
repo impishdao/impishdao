@@ -57,7 +57,7 @@ async function main() {
   console.log("ImpishSpiral deployed to:", impishspiral.address);
   console.log("SpiralMarket deployed to:", spiralmarket.address);
   console.log("MultiMint deployed to:", multimint.address);
-  console.log("SpiralBiys deployed to:", spiralbits.address);
+  console.log("SpiralBits deployed to:", spiralbits.address);
   console.log("SpiralStaking deployed to:", spiralstaking.address);
 
   // Start the ImpishSpiral for ease

@@ -42,10 +42,11 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
 
     function _claimSpiralBits(address owner) internal {
         // Claim all the spiralbits so far
-        uint256 spiralBitsToClaim = stakedSpirals[owner].numNFTsStaked * uint256(uint64(block.timestamp) - stakedSpirals[owner].lastClaimTime) * SPIRALBITS_PER_SECOND;
+        uint256 spiralBitsToClaim = stakedNFTs[owner].numNFTsStaked * uint256(
+            uint64(block.timestamp) - stakedNFTs[owner].lastClaimTime) * SPIRALBITS_PER_SECOND;
         
-        stakedSpirals[owner].claimedSpiralBits += uint128(spiralBitsToClaim);
-        stakedSpirals[owner].lastClaimTime = uint64(block.timestamp);
+        stakedNFTs[owner].claimedSpiralBits += uint128(spiralBitsToClaim);
+        stakedNFTs[owner].lastClaimTime = uint64(block.timestamp);
     }
 
     // Stake a list of Spiral tokenIDs. The msg.sender needs to own the tokenIds, and the tokens
@@ -59,12 +60,10 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     // This is used by aggregator contracts.
     function stakeNFTsForOwner(uint32[] calldata tokenIds, address owner) public nonReentrant {
         require(tokenIds.length > 0, "NoTokens");
-        // Update the staked spirals
-        if (stakedSpirals[owner].numNFTsStaked > 0) {
-            // User already has some Spirals staked
-            _claimSpiralBits(owner);
-        }
-        
+        // Claim any SPIRALBITS outstanding for this owner
+        _claimSpiralBits(owner);
+
+        totalStaked += tokenIds.length;
         for (uint32 i; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
             require(impishspiral.ownerOf(tokenId) == msg.sender, "DontOwnToken");
@@ -74,19 +73,18 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
             stakedTokenOwners[tokenId] = owner;
 
             // Add this spiral to the staked struct
-            stakedSpirals[owner].numNFTsStaked += 1;
-            stakedSpirals[owner].lastClaimTime = uint64(block.timestamp);
+            stakedNFTs[owner].numNFTsStaked += 1;
 
-            // Transfer the actual Spiral NFT to ourself.
+            // Transfer the actual Spiral NFT to this staking contract.
             impishspiral.safeTransferFrom(msg.sender, address(this), tokenId);
         }
-        totalStaked += tokenIds.length;
     }
 
     // Unstake a spiral. If withdraw is true, then SPIRALBITS are also claimed and sent
     function unstakeNFTs(uint32[] calldata tokenIds, bool withdraw) external nonReentrant {
+        // Claim any SPIRALBITS outstanding for this owner
         _claimSpiralBits(msg.sender);
-        
+
         for (uint32 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
             require(impishspiral.ownerOf(tokenId) == address(this), "NotStaked");
@@ -94,21 +92,19 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
 
             // Remove the spiral -> staked owner list to keep track of staked tokens
              _removeTokenFromOwnerEnumeration(msg.sender, tokenId);
-
             delete stakedTokenOwners[tokenId];
 
             // Remove this spiral from the staked struct
-            stakedSpirals[msg.sender].numNFTsStaked -= 1;
-            stakedSpirals[msg.sender].lastClaimTime = uint64(block.timestamp);
-
+            stakedNFTs[msg.sender].numNFTsStaked -= 1;
+            
             // Transfer the spiral out
             impishspiral.safeTransferFrom(address(this), msg.sender, tokenId);
         }
         totalStaked -= tokenIds.length;
 
         if (withdraw) {
-            uint256 spiralBitsToMint = stakedSpirals[msg.sender].claimedSpiralBits;
-            stakedSpirals[msg.sender].claimedSpiralBits = 0;
+            uint256 spiralBitsToMint = stakedNFTs[msg.sender].claimedSpiralBits;
+            stakedNFTs[msg.sender].claimedSpiralBits = 0;
 
             // TODO: Calculate bonus
 
@@ -137,12 +133,12 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
     mapping(uint256 => address) public stakedTokenOwners;
 
     // Address that staked the token => Token Accounting
-    mapping(address => StakedNFTs) public stakedSpirals;
+    mapping(address => StakedNFTs) public stakedNFTs;
     
     // Returns a list of token Ids owned by _owner.
     function walletOfOwner(address _owner) public view
         returns (uint256[] memory) {
-        uint256 tokenCount = stakedSpirals[_owner].numNFTsStaked;
+        uint256 tokenCount = stakedNFTs[_owner].numNFTsStaked;
 
         if (tokenCount == 0) {
             // Return an empty array
@@ -160,7 +156,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
      */
     function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
-        require(index < stakedSpirals[owner].numNFTsStaked, "ERC721Enumerable: owner index out of bounds");
+        require(index < stakedNFTs[owner].numNFTsStaked, "ERC721Enumerable: owner index out of bounds");
         return _ownedTokens[owner][index];
     }
 
@@ -170,7 +166,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
      * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
      */
     function _addTokenToOwnerEnumeration(address owner, uint256 tokenId) private {
-        uint256 length = stakedSpirals[owner].numNFTsStaked;
+        uint256 length = stakedNFTs[owner].numNFTsStaked;
         _ownedTokens[owner][length] = tokenId;
         _ownedTokensIndex[tokenId] = length;
     }
@@ -187,7 +183,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
         // then delete the last slot (swap and pop).
 
-        uint256 lastTokenIndex = stakedSpirals[from].numNFTsStaked - 1;
+        uint256 lastTokenIndex = stakedNFTs[from].numNFTsStaked - 1;
         uint256 tokenIndex = _ownedTokensIndex[tokenId];
 
         // When the token to delete is the last token, the swap operation is unnecessary
