@@ -43,7 +43,7 @@ async function main() {
   const spiralbits = await SpiralBits.deploy();
   await spiralbits.deployed();
 
-  const spiralstaking = await SpiralStaking.deploy(impishspiral.address, spiralbits.address);
+  const spiralstaking = await SpiralStaking.deploy(impishspiral.address, spiralbits.address, rwnft.address);
   await spiralstaking.deployed();
 
   // Allow spiral staking to mint spiralbits

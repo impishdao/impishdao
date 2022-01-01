@@ -21,10 +21,17 @@ contract SpiralBits is ERC20, ERC20Burnable, Ownable {
         delete allowedMinters[_minter];
     }
 
-    function mintSpiralBits(address to, uint256 amount) public onlyOwner {
+    function mintSpiralBits(address to, uint256 amount) external onlyOwner {
         require(allowedMinters[msg.sender], "NotAllowed");
         require(totalSupply() + amount < MAX_SUPPLY, "WouldExceedMax");
 
         _mint(to, amount);
+    }
+
+    // Anybody can burn any amount of SpiralBits as long as they own it
+    function burnSpiralBits(uint256 amount) external {
+        require(balanceOf(msg.sender) >= amount, "NotEnough");
+
+        _burn(msg.sender, amount);
     }
 }

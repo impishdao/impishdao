@@ -18,7 +18,7 @@ type FixtureType = {
   spiralstaking: SpiralStaking;
 };
 
-describe.only("SpiralStaking", function () {
+describe("SpiralStaking", function () {
   async function loadContracts(): Promise<FixtureType> {
     const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
     const RandomWalkNFT = await ethers.getContractFactory("RandomWalkNFT");
@@ -38,7 +38,7 @@ describe.only("SpiralStaking", function () {
     await spiralbits.deployed();
 
     const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
-    const spiralstaking = await SpiralStaking.deploy(impishSpiral.address, spiralbits.address);
+    const spiralstaking = await SpiralStaking.deploy(impishSpiral.address, spiralbits.address, rwnft.address);
     await spiralstaking.deployed();
 
     // Allow spiral staking to mint spiralbits
@@ -63,19 +63,48 @@ describe.only("SpiralStaking", function () {
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
     // Stake
-    await spiralstaking.stakeSpirals([tokenId]);
+    await spiralstaking.stakeNFTs([tokenId]);
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
     expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
     expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(tokenId)]); // TokenId is correctly owned
 
     // Unstake
-    await spiralstaking.unstakeSpirals([tokenId], false);
+    await spiralstaking.unstakeNFTs([tokenId], false);
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
     expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
+
+  it("Simple Staking - Different owner", async function () {
+    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const [signer, otherSigner] = await ethers.getSigners();
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+
+    // Mint random
+    const tokenId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+
+    // Stake on behalf of otherSigner
+    await spiralstaking.stakeNFTsForOwner([tokenId], otherSigner.address);
+
+    expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
+    expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(otherSigner.address);
+    expect(await spiralstaking.walletOfOwner(otherSigner.address)).to.be.deep.equals([BigNumber.from(tokenId)]); // TokenId is correctly owned
+
+    // Only the otherSigner can unstake or withdraw
+    await expect(spiralstaking.unstakeNFTs([tokenId], false)).to.be.revertedWith("NotYours");
+
+    // Unstake
+    await spiralstaking.connect(otherSigner).unstakeNFTs([tokenId], false);
+
+    expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(otherSigner.address);
+    expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+    expect((await spiralstaking.walletOfOwner(otherSigner.address)).length).to.be.deep.equals(0);
+  });
 
   it("Staking 1-by-1 - Unstaking all", async function () {
     const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
@@ -94,7 +123,7 @@ describe.only("SpiralStaking", function () {
       await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
       // Stake
-      await spiralstaking.stakeSpirals([tokenId]);
+      await spiralstaking.stakeNFTs([tokenId]);
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
       expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
@@ -102,7 +131,7 @@ describe.only("SpiralStaking", function () {
     }
      
     // Unstake all at once.
-    await spiralstaking.unstakeSpirals(stakedTokenIds, false);
+    await spiralstaking.unstakeNFTs(stakedTokenIds, false);
     for (let i = 0; i < 10; i++) {
       const tokenId = stakedTokenIds[i];
 
@@ -131,7 +160,7 @@ describe.only("SpiralStaking", function () {
     }
 
     // Stake all 10
-    await spiralstaking.stakeSpirals(stakedTokenIds);
+    await spiralstaking.stakeNFTs(stakedTokenIds);
 
     // Assert they got staked.
     for (let i = 0; i < 10; i++) {
@@ -145,7 +174,7 @@ describe.only("SpiralStaking", function () {
     // Unstake one-by-one
     for (let i = 0; i < 10; i++) {
       const tokenId = stakedTokenIds[i];
-      await spiralstaking.unstakeSpirals([tokenId], false);
+      await spiralstaking.unstakeNFTs([tokenId], false);
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
       expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
@@ -174,7 +203,7 @@ describe.only("SpiralStaking", function () {
     }
 
     // To start, Stake all 10
-    await spiralstaking.stakeSpirals(stakedTokenIds);
+    await spiralstaking.stakeNFTs(stakedTokenIds);
 
     // Assert they got staked.
     for (let i = 0; i < 10; i++) {
@@ -193,14 +222,14 @@ describe.only("SpiralStaking", function () {
       await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
       // And stake it
-      await spiralstaking.stakeSpirals([tokenId]);
+      await spiralstaking.stakeNFTs([tokenId]);
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
       expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
       expect(new Set(await spiralstaking.walletOfOwner(wallet.address)), "post stake").to.be.deep.equals(new Set(stakedTokenIds)); 
 
       // Unstake every even one
       const unstakedTokenId = BigNumber.from(i).mul(2);
-      await spiralstaking.unstakeSpirals([unstakedTokenId], false);
+      await spiralstaking.unstakeNFTs([unstakedTokenId], false);
       expect(await impishSpiral.ownerOf(unstakedTokenId)).to.be.equals(wallet.address);
       expect(BigNumber.from(await spiralstaking.stakedTokenOwners(unstakedTokenId))).to.be.equals(0);
 
@@ -219,7 +248,7 @@ describe.only("SpiralStaking", function () {
 
     // Now, only the odd numbered tokens are staked. 
     // Unstake them all at once.
-    await spiralstaking.unstakeSpirals(stakedTokenIds, false);
+    await spiralstaking.unstakeNFTs(stakedTokenIds, false);
     for (let i = 0; i < 10; i++) {
       const tokenId = stakedTokenIds[i];
 
@@ -239,7 +268,7 @@ describe.only("SpiralStaking", function () {
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
     // Can't stake without approving first
-    await expect(spiralstaking.stakeSpirals([tokenId])).to.be.revertedWith(
+    await expect(spiralstaking.stakeNFTs([tokenId])).to.be.revertedWith(
       "ERC721: transfer caller is not owner nor approved"
     );
 
@@ -250,42 +279,42 @@ describe.only("SpiralStaking", function () {
     await impishSpiral.connect(otherSigner).mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
     // Try to stake a wrong token.
-    await expect(spiralstaking.stakeSpirals([otherTokenId])).to.be.revertedWith("DontOwnToken");
-    await expect(spiralstaking.stakeSpirals([tokenId, otherTokenId])).to.be.revertedWith("DontOwnToken");
+    await expect(spiralstaking.stakeNFTs([otherTokenId])).to.be.revertedWith("DontOwnToken");
+    await expect(spiralstaking.stakeNFTs([tokenId, otherTokenId])).to.be.revertedWith("DontOwnToken");
 
     // Non existant token
-    await expect(spiralstaking.stakeSpirals([otherTokenId.add(1)])).to.be.revertedWith(
+    await expect(spiralstaking.stakeNFTs([otherTokenId.add(1)])).to.be.revertedWith(
       "ERC721: owner query for nonexistent token"
     );
 
     // This one will work
-    await spiralstaking.stakeSpirals([tokenId]);
+    await spiralstaking.stakeNFTs([tokenId]);
 
     // Try to stake again
-    await expect(spiralstaking.stakeSpirals([tokenId])).to.be.revertedWith("DontOwnToken");
+    await expect(spiralstaking.stakeNFTs([tokenId])).to.be.revertedWith("DontOwnToken");
 
     // Try to unstake wrong token
-    await expect(spiralstaking.unstakeSpirals([otherTokenId], false)).to.be.revertedWith("NotStaked");
+    await expect(spiralstaking.unstakeNFTs([otherTokenId], false)).to.be.revertedWith("NotStaked");
 
     // Non existant token
-    await expect(spiralstaking.unstakeSpirals([otherTokenId.add(1)], false)).to.be.revertedWith("ERC721: owner query for nonexistent token");
+    await expect(spiralstaking.unstakeNFTs([otherTokenId.add(1)], false)).to.be.revertedWith("ERC721: owner query for nonexistent token");
 
     // Stake the other token
     await impishSpiral.connect(otherSigner).approve(spiralstaking.address, otherTokenId);
-    await spiralstaking.connect(otherSigner).stakeSpirals([otherTokenId]);
+    await spiralstaking.connect(otherSigner).stakeNFTs([otherTokenId]);
 
     // Unstake from the wrong address shouldn't work
-    await expect(spiralstaking.connect(otherSigner).unstakeSpirals([tokenId], false)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.connect(otherSigner).unstakeNFTs([tokenId], false)).to.be.revertedWith("NotYours");
 
     // Unstake the non-owned token can't work
-    await expect(spiralstaking.unstakeSpirals([otherTokenId], false)).to.be.revertedWith("NotYours");
-    await expect(spiralstaking.unstakeSpirals([tokenId, otherTokenId], false)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.unstakeNFTs([otherTokenId], false)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.unstakeNFTs([tokenId, otherTokenId], false)).to.be.revertedWith("NotYours");
 
     // Finally this will work for both
-    await spiralstaking.unstakeSpirals([tokenId], false);
-    await spiralstaking.connect(otherSigner).unstakeSpirals([otherTokenId], false);
+    await spiralstaking.unstakeNFTs([tokenId], false);
+    await spiralstaking.connect(otherSigner).unstakeNFTs([otherTokenId], false);
 
     // Unstake again
-    await expect(spiralstaking.unstakeSpirals([tokenId], false)).to.be.revertedWith("NotStaked");
+    await expect(spiralstaking.unstakeNFTs([tokenId], false)).to.be.revertedWith("NotStaked");
   });
 });
