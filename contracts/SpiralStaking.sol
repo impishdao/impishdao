@@ -33,12 +33,21 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
         stakedSpirals[owner].lastClaimTime = uint64(block.timestamp);
     }
 
-    function stakeSpirals(uint32[] calldata tokenIds) external nonReentrant {
+    // Stake a list of Spiral tokenIDs. The msg.sender needs to own the tokenIds, and the tokens
+    // are staked with msg.sender as the owner
+    function stakeSpirals(uint32[] calldata tokenIds) external {
+        stakeSpiralsForOwner(tokenIds, msg.sender);
+    }
+
+    // Stake the spirals and make them withdrawable by the owner. The msg.sender still needs to own
+    // the spirals that are being staked.
+    // This is used by aggregator contracts.
+    function stakeSpiralsForOwner(uint32[] calldata tokenIds, address owner) public nonReentrant {
         require(tokenIds.length > 0, "NoTokens");
         // Update the staked spirals
-        if (stakedSpirals[msg.sender].numSpirals > 0) {
+        if (stakedSpirals[owner].numSpirals > 0) {
             // User already has some Spirals staked
-            _claimSpiralBits(msg.sender);
+            _claimSpiralBits(owner);
         }
         
         for (uint32 i; i < tokenIds.length; i++) {
@@ -46,7 +55,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
             require(impishspiral.ownerOf(tokenId) == msg.sender, "DontOwnToken");
 
             // Add the spiral to staked owner list to keep track of staked tokens
-            transferSpiralIn(tokenId, msg.sender);
+            transferSpiralIn(tokenId, owner);
         }        
     }
 
@@ -90,8 +99,8 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard {
         stakedTokenOwners[tokenId] = owner;
 
         // Add this spiral to the staked struct
-        stakedSpirals[msg.sender].numSpirals += 1;
-        stakedSpirals[msg.sender].lastClaimTime = uint64(block.timestamp);
+        stakedSpirals[owner].numSpirals += 1;
+        stakedSpirals[owner].lastClaimTime = uint64(block.timestamp);
 
         // Transfer the actual Spiral NFT to ourself.
         impishspiral.safeTransferFrom(msg.sender, address(this), tokenId);

@@ -25,8 +25,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
   // By default, 3days remain
   const [timeRemaining, setTimeRemaining] = useState(1641315600 - Date.now() / 1000);
 
-  const nav = useNavigate();
-
   // Countdown timer.
   useEffect(() => {
     const timerID = setInterval(() => {
