@@ -348,16 +348,18 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route
               path="/spiralstaking"
               element={
-                <SpiralStaking {...this.state}
-                connectWallet={() => this._connectWallet()}
-                readDappState={() => this.readDappState()}
-                readUserData={() => this.readUserData()}
-                showModal={this.showModal}
-                provider={this.provider}
-                impdao={this.impdao}
-                rwnft={this.rwnft}
-                impspiral={this.impspiral}
-                multimint={this.multimint} />
+                <SpiralStaking
+                  {...this.state}
+                  connectWallet={() => this._connectWallet()}
+                  readDappState={() => this.readDappState()}
+                  readUserData={() => this.readUserData()}
+                  showModal={this.showModal}
+                  provider={this.provider}
+                  impdao={this.impdao}
+                  rwnft={this.rwnft}
+                  impspiral={this.impspiral}
+                  multimint={this.multimint}
+                />
               }
             />
 

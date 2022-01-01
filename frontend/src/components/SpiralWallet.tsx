@@ -1,9 +1,9 @@
 import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
-import { Button, Card, Col, Container, Nav, Navbar, Row } from "react-bootstrap";
-import { LinkContainer } from "react-router-bootstrap";
+import { Card, Col, Container, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState } from "../AppState";
+import { Navigation } from "./Navigation";
 import { format4Decimals, range } from "./utils";
 
 type SpiraWalletProps = DappState & {
@@ -75,44 +75,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
 
   return (
     <>
-      <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
-        <Container>
-          <Navbar.Brand href="/">ImpishDAO</Navbar.Brand>
-          <Nav className="me-auto">
-            <LinkContainer to="/">
-              <Nav.Link>Home</Nav.Link>
-            </LinkContainer>
-            <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-            <LinkContainer to="/spirals">
-              <Nav.Link>Spirals</Nav.Link>
-            </LinkContainer>
-            <LinkContainer to="/spirals/top10">
-              <Nav.Link>Leaderboard</Nav.Link>
-            </LinkContainer>
-            <LinkContainer to="/spirals/marketplace">
-              <Nav.Link>Marketplace</Nav.Link>
-            </LinkContainer>
-            {props.selectedAddress && (
-              <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
-                <Nav.Link>Wallet</Nav.Link>
-              </LinkContainer>
-            )}
-          </Nav>
-          {!props.selectedAddress && (
-            <Button className="connect" variant="warning" onClick={props.connectWallet}>
-              Connect Wallet
-            </Button>
-          )}
-          {props.selectedAddress && (
-            <>
-              <div style={{ marginRight: "10px" }}>Wallet: {format4Decimals(props.tokenBalance)} IMPISH</div>
-              <Button className="address" variant="warning">
-                {props.selectedAddress}
-              </Button>
-            </>
-          )}
-        </Container>
-      </Navbar>
+      <Navigation {...props} />
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Spirals owned by</h1>
