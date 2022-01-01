@@ -1,10 +1,10 @@
 import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Badge, Button, Col, Container, Form, ListGroup, Modal, Nav, Navbar, Row } from "react-bootstrap";
-import { LinkContainer } from "react-router-bootstrap";
+import { Badge, Button, Col, Container, Form, ListGroup, Modal,  Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
+import { Navigation } from "./Navigation";
 import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
 
 type MarketPriceModalProps = {
@@ -199,10 +199,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
     //creating an invisible element
     var element = document.createElement("a");
     console.log(`/spiral_image/seed/${seed}/2000.png`);
-    element.setAttribute(
-      "href",
-      `/spiral_image/seed/${seed}/2000.png`
-    );
+    element.setAttribute("href", `/spiral_image/seed/${seed}/2000.png`);
     element.setAttribute("target", "_blank");
     // element.setAttribute("download", `spiral_${id}_hires.png`);
 
@@ -381,44 +378,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
         }}
       />
 
-      <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
-        <Container>
-          <Navbar.Brand href="/">ImpishDAO</Navbar.Brand>
-          <Nav className="me-auto">
-            <LinkContainer to="/">
-              <Nav.Link>Home</Nav.Link>
-            </LinkContainer>
-            <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-            <LinkContainer to="/spirals">
-              <Nav.Link>Spirals</Nav.Link>
-            </LinkContainer>
-            <LinkContainer to="/spirals/top10">
-              <Nav.Link>Leaderboard</Nav.Link>
-            </LinkContainer>
-            <LinkContainer to="/spirals/marketplace">
-              <Nav.Link>Marketplace</Nav.Link>
-            </LinkContainer>
-            {props.selectedAddress && (
-              <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
-                <Nav.Link>Wallet</Nav.Link>
-              </LinkContainer>
-            )}
-          </Nav>
-          {!props.selectedAddress && (
-            <Button className="connect" variant="warning" onClick={props.connectWallet}>
-              Connect Wallet
-            </Button>
-          )}
-          {props.selectedAddress && (
-            <>
-              <div style={{ marginRight: "10px" }}>Wallet: {format4Decimals(props.tokenBalance)} IMPISH</div>
-              <Button className="address" variant="warning">
-                {props.selectedAddress}
-              </Button>
-            </>
-          )}
-        </Container>
-      </Navbar>
+      <Navigation {...props} />
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Spiral #{id}</h1>
