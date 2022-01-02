@@ -1,6 +1,6 @@
 import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Badge, Button, Col, Container, Form, ListGroup, Modal,  Row } from "react-bootstrap";
+import { Alert, Badge, Button, Col, Container, Form, ListGroup, Modal, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
@@ -114,6 +114,80 @@ const MarketPriceModal = ({
             </div>
           </ListGroup.Item>
         </ListGroup>
+      </Modal.Footer>
+    </Modal>
+  );
+};
+
+type TransferAddressModalProps = {
+  show: boolean;
+  impishspiral?: Contract;
+  tokenId: BigNumber;
+  close: () => void;
+  selectedAddress?: string;
+};
+
+const TransferAddressModal = ({ show, tokenId, impishspiral, selectedAddress, close }: TransferAddressModalProps) => {
+  const [address, setAddress] = useState("");
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+
+  // Clear error when showing
+  useEffect(() => {
+    setError("");
+    setInfo("");
+    setAddress("");
+  }, [show]);
+
+  const doTransfer = async () => {
+    if (impishspiral && selectedAddress) {
+      try {
+        const validAddress = ethers.utils.getAddress(address);
+        console.log(`Transfering to ${validAddress}`);
+
+        const tx = await impishspiral["safeTransferFrom(address,address,uint256)"](
+          selectedAddress,
+          validAddress,
+          tokenId
+        );
+        setInfo("Transfering....");
+        await tx.wait();
+
+        close();
+      } catch (e: any) {
+        console.log(e);
+        setError(e.reason);
+      }
+    }
+  };
+
+  return (
+    <Modal show={show} onHide={close}>
+      <Modal.Header closeButton>
+        <Modal.Title>Transfer Spiral #{tokenId.toString()} Price</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        Please enter the ETH address to transfer the Spiral to.
+        <Form.Group className="mb-3">
+          <Form.Control
+            placeholder="ETH Address"
+            value={address}
+            onChange={(e) => {
+              setAddress(e.currentTarget.value);
+              setError("");
+            }}
+          />
+        </Form.Group>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {info && <Alert variant="info">{info}</Alert>}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="primary" onClick={() => close()}>
+          Cancel
+        </Button>
+        <Button variant="warning" onClick={() => doTransfer()}>
+          Transfer
+        </Button>
       </Modal.Footer>
     </Modal>
   );
@@ -294,6 +368,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
   };
 
   const [marketPriceModalShowing, setMarketPriceModalShowing] = useState(false);
+  const [transferAddressModalShowing, setTransferAddressModalShowing] = useState(false);
   const [modalMessage, setModalMessage] = useState<JSX.Element>(<></>);
   const [modalNeedsApproval, setModalNeedsApproval] = useState(false);
   const [price, setPrice] = useState("0.05");
@@ -376,6 +451,17 @@ export function SpiralDetail(props: SpiralDetailProps) {
           setListingPrice(ethers.utils.parseEther(price));
           setTimeout(() => setRefreshDataCounter(refreshDataCounter + 1), 5 * 1000);
         }}
+      />
+
+      <TransferAddressModal
+        show={transferAddressModalShowing}
+        impishspiral={props.impishspiral}
+        tokenId={BigNumber.from(id)}
+        close={() => {
+          setTransferAddressModalShowing(false);
+          setTimeout(() => setRefreshDataCounter(refreshDataCounter+1), 3 * 1000);
+        }}
+        selectedAddress={props.selectedAddress}
       />
 
       <Navigation {...props} />
@@ -493,6 +579,11 @@ export function SpiralDetail(props: SpiralDetailProps) {
                 <Button variant="dark" onClick={downloadHires}>
                   View High Resolution
                 </Button>
+                {props.selectedAddress && owner.toLowerCase() === props.selectedAddress?.toLowerCase() && (
+                  <Button variant="dark" onClick={() => setTransferAddressModalShowing(true)}>
+                    Transfer
+                  </Button>
+                )}
               </div>
             </Col>
 
