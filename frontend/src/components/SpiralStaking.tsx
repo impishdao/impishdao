@@ -1,11 +1,85 @@
-import { Col, Row } from "react-bootstrap";
+import { Button, Card, Col, Row } from "react-bootstrap";
 import { DappState } from "../AppState";
-import { secondsToDhms } from "./utils";
+import { range } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
-import { Contract } from "ethers";
+import { Contract, BigNumber } from "ethers";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
+import { cloneDeep } from "lodash";
+
+type StakingPageDisplayProps = {
+  pageSize: number;
+  spirals: Array<SpiralDetail>;
+  buttonName: string;
+  onButtonClick: (selection: Set<number>) => void;
+};
+const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: StakingPageDisplayProps) => {
+  const [startPage, setStartPage] = useState(0);
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+
+  const toggleInSelection = (tokenNumber: number) => {
+    if (selection.has(tokenNumber)) {
+      const newSelection = cloneDeep(selection);
+      newSelection.delete(tokenNumber);
+      setSelection(newSelection);
+    } else {
+      const newSelection = cloneDeep(selection);
+      newSelection.add(tokenNumber);
+      setSelection(newSelection);
+    }
+  }
+
+  const numPages = Math.floor(spirals.length / pageSize) + 1;
+
+  const PageList = () => {
+    return (
+      <Row className="mb-2">
+        {numPages > 1 && (
+          <Col xs={{ span: 6, offset: 3 }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "center" }}>
+              Pages
+              {range(numPages).map((p) => {
+                const textDecoration = p === startPage ? "underline" : "";
+                return (
+                  <div key={p} style={{ cursor: "pointer" }} onClick={() => setStartPage(p)}>
+                    <span style={{ textDecoration }}>{p}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Col>
+        )}
+      </Row>
+    );
+  };
+
+  return (
+    <>
+      <PageList />
+      <Row>
+        {spirals.slice(startPage * pageSize, startPage * pageSize + pageSize).map((s) => {
+          const imgurl = `/spiral_image/seed/${s.seed}/75.png`;
+          const border = selection.has(s.tokenId.toNumber()) ? "solid 1px red" : "solid 1px white";
+
+          return (
+            <Col md={2} key={s.seed} className="mb-3">
+              <Card style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
+                onClick={() => toggleInSelection(s.tokenId.toNumber())}
+              >
+                <Card.Img variant="top" src={imgurl} style={{ width: "75px", height: "75px" }} />#{s.tokenId.toString()}
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
+      <Row>
+        <div style={{display: 'flex', alignItems: 'end'}}>
+          <Button onClick={() => onButtonClick(selection)}>{buttonName}</Button>
+        </div>
+      </Row>
+    </>
+  );
+};
 
 type SpiralStakingProps = DappState & {
   provider?: Web3Provider;
@@ -13,6 +87,7 @@ type SpiralStakingProps = DappState & {
   rwnft?: Contract;
   impspiral?: Contract;
   multimint?: Contract;
+  spiralstaking?: Contract;
 
   connectWallet: () => void;
 
@@ -21,20 +96,77 @@ type SpiralStakingProps = DappState & {
   showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
 };
 
+type SpiralDetail = {
+  tokenId: BigNumber;
+  seed: string;
+};
+
 export function SpiralStaking(props: SpiralStakingProps) {
-  // By default, 3days remain
-  const [timeRemaining, setTimeRemaining] = useState(1641315600 - Date.now() / 1000);
+  const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>([]);
+  const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>([]);
 
-  // Countdown timer.
+  const getSeedsForSpiralTokenIds = async (data: Array<BigNumber>): Promise<Array<SpiralDetail>> => {
+    // Map all the data to get the seeds
+    const spiralDetails = await Promise.all(
+      (data as Array<BigNumber>).map(async (t) => {
+        try {
+          const tokenId = BigNumber.from(t);
+          const url = `/spiralapi/seedforid/${tokenId.toString()}`;
+          const { seed } = await (await fetch(url)).json();
+
+          return { tokenId, seed };
+        } catch (err) {
+          console.log(err);
+          return {};
+        }
+      })
+    );
+
+    const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
+    return filtered;
+  };
+
   useEffect(() => {
-    const timerID = setInterval(() => {
-      setTimeRemaining(timeRemaining - 1);
-    }, 1000);
+    fetch(`/spiralapi/wallet/${props.selectedAddress}`)
+      .then((r) => r.json())
+      .then(async (data) => {
+          setWalletSpirals(await getSeedsForSpiralTokenIds(data));
+      });
 
-    return function cleanup() {
-      clearInterval(timerID);
-    };
-  }, [timeRemaining]);
+    (async () => {
+      // Get the list of staked spirals for the address directly.
+      if (props.selectedAddress && props.spiralstaking) {
+        const stakedTokenIds = await props.spiralstaking.walletOfOwner(props.selectedAddress) as Array<BigNumber>;
+        console.log("Staked Spirals: ");
+        console.log(stakedTokenIds);
+        setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
+      }
+    })();
+  }, [props.selectedAddress, props.spiralstaking]);
+
+  const stakeSpirals = async (spiralTokenIds: Set<number>) => {
+    if (props.spiralstaking && props.impspiral) {
+      // First, check if approved
+      if (! await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address)) {
+        const tx = await props.impspiral.setApprovalForAll(props.spiralstaking.address, true);
+        await tx.wait();
+      }
+
+      const tokenIds = Array.from(spiralTokenIds).map(t => BigNumber.from(t));
+      const tx = await props.spiralstaking.stakeNFTs(tokenIds);
+      await tx.wait();
+    }
+  };
+
+  const unstakeSpirals = async(spiralTokenIds: Set<number>) => {
+    console.log(`Un Staking ${Array.from(spiralTokenIds)}`);
+
+    if (props.spiralstaking) {
+      const tokenIds = Array.from(spiralTokenIds).map(t => BigNumber.from(t));
+      const tx = await props.spiralstaking.unstakeNFTs(tokenIds, true);
+      await tx.wait();
+    }
+  };
 
   return (
     <>
@@ -46,15 +178,21 @@ export function SpiralStaking(props: SpiralStakingProps) {
       >
         <h1>Chapter 2: SpiralBits Staking</h1>
         <Row className="mt-5">
-          <div style={{ fontSize: "+1.5 rem" }}>Staking of Spirals and RandomWalkNFTs will start in</div>
+          <div style={{ fontSize: "+1.5 rem" }}>Stake Spirals and RandomWalkNFTs</div>
         </Row>
         <Row>
           <a href="#faq" className="mb-5" style={{ color: "#ffc106" }}>
             What is Spiral Staking?
           </a>
         </Row>
-        <Row className="mt-5">
-          <h2 style={{ color: "#ffd454" }}>{secondsToDhms(timeRemaining)}</h2>
+        <Row>
+          <Col md={6} style={{ border: "solid 1px white", textAlign: 'left' }}>
+            <h2 style={{textAlign: 'center'}}>Stake Spirals</h2>
+            <h5>Spirals available to stake</h5>
+            {props.selectedAddress && <StakingPageDisplay buttonName="Stake" pageSize={6} spirals={walletSpirals} onButtonClick={stakeSpirals} />}
+            <h5 className="mt-4">Staked Spirals</h5>
+            {props.selectedAddress && <StakingPageDisplay buttonName="UnStake" pageSize={6} spirals={walletStakedSpirals} onButtonClick={unstakeSpirals} />}
+          </Col>
         </Row>
       </div>
 

@@ -459,7 +459,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
         tokenId={BigNumber.from(id)}
         close={() => {
           setTransferAddressModalShowing(false);
-          setTimeout(() => setRefreshDataCounter(refreshDataCounter+1), 3 * 1000);
+          setTimeout(() => setRefreshDataCounter(refreshDataCounter + 1), 3 * 1000);
         }}
         selectedAddress={props.selectedAddress}
       />
