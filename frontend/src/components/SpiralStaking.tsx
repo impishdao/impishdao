@@ -10,12 +10,23 @@ import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
 
 type StakingPageDisplayProps = {
+  title: string;
   pageSize: number;
   spirals: Array<SpiralDetail | BigNumber>;
   buttonName: string;
   onButtonClick: (selection: Set<number>) => void;
+  secondButtonName?: string;
+  onSecondButtonClick?: (selection: Set<number>) => void;
 };
-const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: StakingPageDisplayProps) => {
+const StakingPageDisplay = ({
+  pageSize,
+  spirals,
+  buttonName,
+  title,
+  onButtonClick,
+  secondButtonName,
+  onSecondButtonClick,
+}: StakingPageDisplayProps) => {
   const [startPage, setStartPage] = useState(0);
   const [selection, setSelection] = useState<Set<number>>(new Set());
 
@@ -35,30 +46,45 @@ const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: St
 
   const PageList = () => {
     return (
-      <Row className="mb-2">
-        {numPages > 1 && (
-          <Col xs={{ span: 6, offset: 3 }}>
-            <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "center" }}>
-              Pages
-              {range(numPages).map((p) => {
-                const textDecoration = p === startPage ? "underline" : "";
-                return (
-                  <div key={p} style={{ cursor: "pointer" }} onClick={() => setStartPage(p)}>
-                    <span style={{ textDecoration }}>{p}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </Col>
-        )}
-      </Row>
+      <>
+        <Row style={{marginTop: '20px'}}>
+          
+            <h5>{title}</h5>            
+        </Row>
+        <Row className="mb-2">
+          {numPages > 1 && (
+            <Col xs={{ span: 6, offset: 3 }}>
+              <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "center" }}>
+                Pages
+                {range(numPages).map((p) => {
+                  const textDecoration = p === startPage ? "underline" : "";
+                  return (
+                    <div key={p} style={{ cursor: "pointer" }} onClick={() => setStartPage(p)}>
+                      <span style={{ textDecoration }}>{p}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Col>
+          )}
+        </Row>
+      </>
     );
   };
+
+  const disabled = spirals.length === 0;
 
   return (
     <>
       <PageList />
-      <Row style={{ minHeight: "150px", backgroundColor: "black", alignItems: "center" }}>
+      <Row
+        style={{
+          minHeight: "150px",
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         {spirals.slice(startPage * pageSize, startPage * pageSize + pageSize).map((s: any) => {
           let imgurl;
           let tokenId: BigNumber;
@@ -75,7 +101,7 @@ const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: St
             height = "50px";
           }
 
-          const border = selection.has(tokenId.toNumber()) ? "solid 1px red" : "solid 1px white";
+          const border = selection.has(tokenId.toNumber()) ? "solid 2px #ffd454" : "solid 1px white";
 
           return (
             <Col md={2} key={tokenId.toNumber()} className="mb-3">
@@ -88,10 +114,23 @@ const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: St
             </Col>
           );
         })}
+        {spirals.length === 0 && <span style={{ color: "#aaa", textAlign: "center" }}>Nothing Staked</span>}
       </Row>
       <Row>
-        <div style={{ display: "flex", alignItems: "end" }}>
-          <Button onClick={() => onButtonClick(selection)}>{buttonName}</Button>
+        <div style={{display: 'flex', justifyContent: 'end', flexDirection: 'row'}}>
+          <div>(Selected: {selection.size} / {spirals.length})</div>
+        </div>
+      </Row>
+      <Row>
+        <div style={{ display: "flex", justifyContent: "end", padding: "10px", gap: "10px" }}>
+          {secondButtonName && onSecondButtonClick && (
+            <Button variant="info" onClick={() => onSecondButtonClick(selection)} disabled={disabled}>
+              {secondButtonName}
+            </Button>
+          )}
+          <Button variant="info" onClick={() => onButtonClick(selection)} disabled={disabled || selection.size === 0}>
+            {buttonName}
+          </Button>
         </div>
       </Row>
     </>
@@ -182,7 +221,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   }, [props.selectedAddress, props.rwnft, props.rwnftstaking]);
 
   const stakeSpirals = async (spiralTokenIds: Set<number>) => {
-    if (props.spiralstaking && props.impspiral) {
+    if (props.spiralstaking && props.impspiral && spiralTokenIds.size > 0) {
       // First, check if approved
       if (!(await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address))) {
         const tx = await props.impspiral.setApprovalForAll(props.spiralstaking.address, true);
@@ -209,7 +248,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
     console.log(`Staking ${Array.from(rwTokenIds)}`);
     console.log(props.rwnft);
 
-    if (props.rwnftstaking && props.rwnft) {
+    if (props.rwnftstaking && props.rwnft && rwTokenIds.size > 0) {
       // First, check if approved
       if (!(await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address))) {
         const tx = await props.rwnft.setApprovalForAll(props.rwnftstaking.address, true);
@@ -232,6 +271,16 @@ export function SpiralStaking(props: SpiralStakingProps) {
     }
   };
 
+  const claimSpiralbits = async (contractNum: number) => {
+    if (props.rwnftstaking && contractNum === 1) {
+      const tx = await props.rwnftstaking.unstakeNFTs([], true);
+      await tx.wait();
+    } else if (props.spiralstaking && contractNum === 0) {
+      const tx = await props.spiralstaking.unstakeNFTs([], true);
+      await tx.wait();
+    }
+  };
+
   return (
     <>
       <Navigation {...props} />
@@ -240,59 +289,97 @@ export function SpiralStaking(props: SpiralStakingProps) {
         className="withSpiralBackgroundMultiSpiral"
         style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}
       >
-        <h1>Chapter 2: SpiralBits Staking</h1>
-        <Row className="mt-5">
-          <div style={{ fontSize: "+1.5 rem" }}>Stake Spirals and RandomWalkNFTs</div>
-        </Row>
-        <Row>
-          <a href="#faq" className="mb-5" style={{ color: "#ffc106" }}>
-            What is Spiral Staking?
-          </a>
-        </Row>
-        <Row>
-          <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
-            <h2 style={{ textAlign: "center" }}>Stake Spirals</h2>
-            <h5>Available to stake</h5>
-            {props.selectedAddress && (
-              <StakingPageDisplay
-                buttonName="Stake"
-                pageSize={6}
-                spirals={walletSpirals}
-                onButtonClick={stakeSpirals}
-              />
-            )}
-            <h5 className="mt-4">Staked Spirals</h5>
-            {props.selectedAddress && (
-              <StakingPageDisplay
-                buttonName="UnStake"
-                pageSize={6}
-                spirals={walletStakedSpirals}
-                onButtonClick={unstakeSpirals}
-              />
-            )}
-          </Col>
+        <h1 className="mb-5">Chapter 2: SpiralBits Staking</h1>
 
-          <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
-            <h2 style={{ textAlign: "center" }}>Stake RandomWalkNFTs</h2>
-            <h5>Available to stake</h5>
-            {props.selectedAddress && (
-              <StakingPageDisplay buttonName="Stake" pageSize={6} spirals={walletRWNFTs} onButtonClick={stakeRWNFTs} />
-            )}
-            <h5 className="mt-4">Staked RandomWalkNFTs</h5>
-            {props.selectedAddress && (
-              <StakingPageDisplay
-                buttonName="UnStake"
-                pageSize={6}
-                spirals={walletStakedRWNFTs}
-                onButtonClick={unstakeRWNFTs}
-              />
-            )}
-          </Col>
-        </Row>
+        {props.selectedAddress && (
+          <Row>
+            <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
+              <h2
+                style={{
+                  textAlign: "center",
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  padding: "10px",
+                  color: "#ffd454",
+                }}
+              >
+                Stake Spirals
+              </h2>
+              {props.selectedAddress && (
+                <StakingPageDisplay
+                  title="Available To Stake"
+                  buttonName="Stake"
+                  pageSize={6}
+                  spirals={walletSpirals}
+                  onButtonClick={stakeSpirals}
+                />
+              )}
+              {props.selectedAddress && (
+                <StakingPageDisplay
+                  title="Staked Spirals"
+                  buttonName="UnStake"
+                  pageSize={6}
+                  spirals={walletStakedSpirals}
+                  onButtonClick={unstakeSpirals}
+                  secondButtonName="Claim SPIRALBITS"
+                  onSecondButtonClick={() => claimSpiralbits(0)}
+                />
+              )}
+            </Col>
+
+            <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
+              <h2
+                style={{
+                  textAlign: "center",
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  padding: "10px",
+                  color: "#ffd454",
+                }}
+              >
+                Stake RandomWalkNFTs
+              </h2>
+              {props.selectedAddress && (
+                <StakingPageDisplay
+                  title="Available To Stake"
+                  buttonName="Stake"
+                  pageSize={6}
+                  spirals={walletRWNFTs}
+                  onButtonClick={stakeRWNFTs}
+                />
+              )}
+              {props.selectedAddress && (
+                <StakingPageDisplay
+                  title="Staked RandomWalkNFTs"
+                  buttonName="UnStake"
+                  pageSize={6}
+                  spirals={walletStakedRWNFTs}
+                  onButtonClick={unstakeRWNFTs}
+                  secondButtonName="Claim SPIRALBITS"
+                  onSecondButtonClick={() => claimSpiralbits(1)}
+                />
+              )}
+            </Col>
+          </Row>
+        )}
+        {!props.selectedAddress && (
+          <div style={{ marginTop: "50px", marginBottom: "100px" }}>
+            <div>
+              Connect your Metamask wallet
+              <br />
+              to start staking Spirals and RandomWalkNFTs
+            </div>
+            <a href="#faq" className="mb-5" style={{ color: "#ffc106" }}>
+              What is Spiral Staking?
+            </a>
+            <br />
+            <Button className="connect mt-4" variant="warning" onClick={props.connectWallet}>
+              Connect Wallet
+            </Button>
+          </div>
+        )}
       </div>
 
       <a id="faq"></a>
-      <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
+      <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
         <h1>Staking FAQ</h1>
       </Row>
       <Row className="justify-content-md-center">
@@ -347,18 +434,19 @@ export function SpiralStaking(props: SpiralStakingProps) {
           </div>
 
           <div className="mb-3">
-            <span style={{ fontWeight: "bold", color: "#ffd454" }}>
-              How many SPIRALBITS tokens will be issued?
-            </span>
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How many SPIRALBITS tokens will be issued?</span>
             <br />
-            There will only be 2 Billion SPIRALBITS tokens. 
+            There will only be 2 Billion SPIRALBITS tokens.
             <br />
             <br />
             <ul>
               <li>100M tokens(5%) will be minted at start and put into a Uniswap V3 liquidity pool on Arbitrum</li>
               <li>~14k tokens per day will be issued per Staked Impish Spiral</li>
               <li>~1.4k tokens per day will be issued per Staked RandomWalkNFT</li>
-              <li>Staking of SPIRALBITS itself will be enabled in the coming days, allowing you to compound your SPIRALBITS</li>
+              <li>
+                Staking of SPIRALBITS itself will be enabled in the coming days, allowing you to compound your
+                SPIRALBITS
+              </li>
             </ul>
           </div>
 
