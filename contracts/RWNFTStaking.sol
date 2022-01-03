@@ -92,7 +92,7 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
 
             // Add the spiral to staked owner list to keep track of staked tokens
             _addTokenToOwnerEnumeration(owner, tokenId);
-            stakedTokenOwners[tokenId] = owner;
+            stakedTokenOwners[tokenId].owner = owner;
 
             // Add this spiral to the staked struct
             stakedNFTs[owner].numNFTsStaked += 1;
@@ -110,11 +110,10 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
         for (uint32 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
             require(randomWalkNFT.ownerOf(tokenId) == address(this), "NotStaked");
-            require(stakedTokenOwners[tokenId] == msg.sender, "NotYours");
+            require(stakedTokenOwners[tokenId].owner == msg.sender, "NotYours");
 
             // Remove the spiral -> staked owner list to keep track of staked tokens
              _removeTokenFromOwnerEnumeration(msg.sender, tokenId);
-            delete stakedTokenOwners[tokenId];
 
             // Remove this spiral from the staked struct
             stakedNFTs[msg.sender].numNFTsStaked -= 1;
@@ -142,17 +141,16 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
         uint32 numNFTsStaked;       // Number of NFTs staked by this owner
         uint64 lastClaimTime;       // Last timestamp that the rewards were accumulated into claimedSpiralBits
         uint128 claimedSpiralBits;  // Already claimed (but not withdrawn) spiralBits before lastClaimTime
+        mapping(uint256 => uint256) ownedTokens; // index => tokenId
     }
 
-    // Mapping from owner to list of owned token IDs
-    // origina owned address => (index => tokenId)
-    mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
-
-    // Mapping from token ID to index of the owner tokens list
-    mapping(uint256 => uint256) private _ownedTokensIndex;
+    struct TokenIdInfo {
+        uint256 ownedTokensIndex;
+        address owner;
+    }
 
     // Mapping of Spiral TokenID => Address that staked it.
-    mapping(uint256 => address) public stakedTokenOwners;
+    mapping(uint256 => TokenIdInfo) public stakedTokenOwners;
 
     // Address that staked the token => Token Accounting
     mapping(address => StakedNFTs) public stakedNFTs;
@@ -179,7 +177,7 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
      */
     function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
         require(index < stakedNFTs[owner].numNFTsStaked, "ERC721Enumerable: owner index out of bounds");
-        return _ownedTokens[owner][index];
+        return stakedNFTs[owner].ownedTokens[index];
     }
 
     /**
@@ -189,8 +187,8 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
      */
     function _addTokenToOwnerEnumeration(address owner, uint256 tokenId) private {
         uint256 length = stakedNFTs[owner].numNFTsStaked;
-        _ownedTokens[owner][length] = tokenId;
-        _ownedTokensIndex[tokenId] = length;
+        stakedNFTs[owner].ownedTokens[length] = tokenId;
+        stakedTokenOwners[tokenId].ownedTokensIndex = length;
     }
 
     /**
@@ -206,19 +204,19 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
         // then delete the last slot (swap and pop).
 
         uint256 lastTokenIndex = stakedNFTs[from].numNFTsStaked - 1;
-        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+        uint256 tokenIndex = stakedTokenOwners[tokenId].ownedTokensIndex;
 
         // When the token to delete is the last token, the swap operation is unnecessary
         if (tokenIndex != lastTokenIndex) {
-            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+            uint256 lastTokenId = stakedNFTs[from].ownedTokens[lastTokenIndex];
 
-            _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-            _ownedTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+            stakedNFTs[from].ownedTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+            stakedTokenOwners[lastTokenId].ownedTokensIndex = tokenIndex; // Update the moved token's index
         }
 
         // This also deletes the contents at the last position of the array
-        delete _ownedTokensIndex[tokenId];
-        delete _ownedTokens[from][lastTokenIndex];
+        delete stakedTokenOwners[tokenId];
+        delete stakedNFTs[from].ownedTokens[lastTokenIndex];
     }
 
     // Function that marks this contract can accept incoming NFT transfers

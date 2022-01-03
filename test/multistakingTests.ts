@@ -76,7 +76,7 @@ describe("MultiStaking", function () {
     await spiralstaking.stakeNFTs([tokenId]);
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-    expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+    expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
 
     // TokenId is correctly owned
     expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(tokenId)]);
@@ -84,7 +84,7 @@ describe("MultiStaking", function () {
     // Unstake
     await spiralstaking.unstakeNFTs([tokenId], false);
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
-    expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+    expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
 
     // Stake RandomWalkNFT
@@ -96,7 +96,7 @@ describe("MultiStaking", function () {
     await rwnftstaking.stakeNFTs([rwnftID]);
 
     expect(await rwnft.ownerOf(tokenId)).to.be.equals(rwnftstaking.address);
-    expect(await rwnftstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+    expect((await rwnftstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
 
     // TokenId is correctly owned
     expect(await rwnftstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(rwnftID)]);
@@ -104,7 +104,7 @@ describe("MultiStaking", function () {
     // Unstake
     await rwnftstaking.unstakeNFTs([rwnftID], false);
     expect(await rwnft.ownerOf(tokenId)).to.be.equals(wallet.address);
-    expect(BigNumber.from(await rwnftstaking.stakedTokenOwners(rwnftID))).to.be.equals(0);
+    expect(BigNumber.from((await rwnftstaking.stakedTokenOwners(rwnftID)).owner)).to.be.equals(0);
     expect((await rwnftstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 

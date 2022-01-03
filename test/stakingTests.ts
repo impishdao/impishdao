@@ -66,13 +66,13 @@ describe("SpiralStaking", function () {
     await spiralstaking.stakeNFTs([tokenId]);
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-    expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+    expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
     expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(tokenId)]);
 
     // Unstake
     await spiralstaking.unstakeNFTs([tokenId], false);
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
-    expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+    expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
@@ -92,7 +92,7 @@ describe("SpiralStaking", function () {
     await spiralstaking.stakeNFTsForOwner([tokenId], otherSigner.address);
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-    expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(otherSigner.address);
+    expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(otherSigner.address);
     expect(await spiralstaking.walletOfOwner(otherSigner.address)).to.be.deep.equals([BigNumber.from(tokenId)]);
 
     // Only the otherSigner can unstake or withdraw
@@ -102,7 +102,7 @@ describe("SpiralStaking", function () {
     await spiralstaking.connect(otherSigner).unstakeNFTs([tokenId], false);
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(otherSigner.address);
-    expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+    expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
     expect((await spiralstaking.walletOfOwner(otherSigner.address)).length).to.be.deep.equals(0);
   });
 
@@ -126,7 +126,7 @@ describe("SpiralStaking", function () {
       await spiralstaking.stakeNFTs([tokenId]);
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-      expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+      expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
       expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds);
     }
 
@@ -136,7 +136,7 @@ describe("SpiralStaking", function () {
       const tokenId = stakedTokenIds[i];
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
-      expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+      expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
     }
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
@@ -166,7 +166,7 @@ describe("SpiralStaking", function () {
       const tokenId = stakedTokenIds[i];
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-      expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+      expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
       expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds);
     }
 
@@ -176,7 +176,7 @@ describe("SpiralStaking", function () {
       await spiralstaking.unstakeNFTs([tokenId], false);
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
-      expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+      expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
       expect(new Set(await spiralstaking.walletOfOwner(wallet.address))).to.be.deep.equals(
         new Set(stakedTokenIds.slice(i + 1, 10))
       );
@@ -209,7 +209,7 @@ describe("SpiralStaking", function () {
       const tokenId = stakedTokenIds[i];
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-      expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+      expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
       expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds);
     }
 
@@ -223,7 +223,7 @@ describe("SpiralStaking", function () {
       // And stake it
       await spiralstaking.stakeNFTs([tokenId]);
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
-      expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
+      expect((await spiralstaking.stakedTokenOwners(tokenId)).owner).to.be.equals(wallet.address);
       expect(new Set(await spiralstaking.walletOfOwner(wallet.address)), "post stake").to.be.deep.equals(
         new Set(stakedTokenIds)
       );
@@ -232,7 +232,10 @@ describe("SpiralStaking", function () {
       const unstakedTokenId = BigNumber.from(i).mul(2);
       await spiralstaking.unstakeNFTs([unstakedTokenId], false);
       expect(await impishSpiral.ownerOf(unstakedTokenId)).to.be.equals(wallet.address);
-      expect(BigNumber.from(await spiralstaking.stakedTokenOwners(unstakedTokenId))).to.be.equals(0);
+      expect(
+        BigNumber.from(
+          (await spiralstaking.stakedTokenOwners(unstakedTokenId)).owner
+      )).to.be.equals(0);
 
       const expectedStakedWallet = new Set(stakedTokenIds.map((n) => n.toNumber()));
       // remove all even ones so far
@@ -254,7 +257,7 @@ describe("SpiralStaking", function () {
       const tokenId = stakedTokenIds[i];
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
-      expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
+      expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
     }
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
