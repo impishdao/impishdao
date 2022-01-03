@@ -39,11 +39,4 @@ contract SpiralBits is ERC20, ERC20Burnable, Ownable {
 
         _mint(to, amount);
     }
-
-    // Anybody can burn any amount of SpiralBits as long as they own it
-    function burnSpiralBits(uint256 amount) external {
-        require(balanceOf(msg.sender) >= amount, "NotEnough");
-
-        _burn(msg.sender, amount);
-    }
 }

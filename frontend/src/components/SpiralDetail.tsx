@@ -217,8 +217,6 @@ export function SpiralDetail(props: SpiralDetailProps) {
   const [timeRemaining, setTimeRemaining] = useState(THREE_DAYS);
 
   useEffect(() => {
-    console.log("Fetching details");
-
     // Fetch the spiral's details
     fetch("/spiralapi/spiraldata")
       .then((data) => data.json())

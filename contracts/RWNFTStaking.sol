@@ -68,7 +68,7 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
     }
 
     function currentBonusInBips() public view returns (uint256) {
-        return 100 * 10 * spiralStaking.totalStaked() / impishspiral._tokenIdCounter();
+        return 100 * 100 * spiralStaking.totalStaked() / impishspiral._tokenIdCounter();
     }
 
     // Stake a list of Spiral tokenIDs. The msg.sender needs to own the tokenIds, and the tokens
@@ -128,7 +128,7 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
             uint256 spiralBitsToMint = stakedNFTs[msg.sender].claimedSpiralBits;
             stakedNFTs[msg.sender].claimedSpiralBits = 0;
 
-            uint256 bonus = spiralBitsToMint * spiralStaking.totalStaked() / impishspiral._tokenIdCounter();
+            uint256 bonus = spiralBitsToMint * currentBonusInBips() / 10000;
 
             // Mint and send the new spiral bits to the owners
             spiralbits.mintSpiralBits(msg.sender, spiralBitsToMint + bonus);

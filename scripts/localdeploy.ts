@@ -6,7 +6,6 @@
 import { Contract } from "@ethersproject/contracts";
 import { artifacts, ethers } from "hardhat";
 import path from "path";
-import { SpiralBits } from "../typechain";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -51,7 +50,6 @@ async function main() {
   await rwnftstaking.deployed();
 
   await spiralstaking.setRwNFTStakingContract(rwnftstaking.address);
-
   await rwnftstaking.setSpiralStakingContract(spiralstaking.address);
 
   // Allow spiral staking to mint spiralbits

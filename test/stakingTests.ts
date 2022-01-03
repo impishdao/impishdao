@@ -1,6 +1,6 @@
 /* eslint-disable node/no-missing-import */
 import { expect } from "chai";
-import { ethers, network, waffle } from "hardhat";
+import { ethers, waffle } from "hardhat";
 
 import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
@@ -51,7 +51,7 @@ describe("SpiralStaking", function () {
   }
 
   it("Simple Staking - Unstaking", async function () {
-    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const { impishSpiral, spiralstaking } = await loadContracts();
     const provider = waffle.provider;
     const [wallet] = provider.getWallets();
 
@@ -67,7 +67,7 @@ describe("SpiralStaking", function () {
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
     expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
-    expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(tokenId)]); // TokenId is correctly owned
+    expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals([BigNumber.from(tokenId)]);
 
     // Unstake
     await spiralstaking.unstakeNFTs([tokenId], false);
@@ -76,9 +76,9 @@ describe("SpiralStaking", function () {
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
-
   it("Simple Staking - Different owner", async function () {
-    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const { impishSpiral, spiralstaking } = await loadContracts();
+    // eslint-disable-next-line no-unused-vars
     const [signer, otherSigner] = await ethers.getSigners();
 
     // Approve staking
@@ -93,7 +93,7 @@ describe("SpiralStaking", function () {
 
     expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
     expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(otherSigner.address);
-    expect(await spiralstaking.walletOfOwner(otherSigner.address)).to.be.deep.equals([BigNumber.from(tokenId)]); // TokenId is correctly owned
+    expect(await spiralstaking.walletOfOwner(otherSigner.address)).to.be.deep.equals([BigNumber.from(tokenId)]);
 
     // Only the otherSigner can unstake or withdraw
     await expect(spiralstaking.unstakeNFTs([tokenId], false)).to.be.revertedWith("NotYours");
@@ -107,7 +107,7 @@ describe("SpiralStaking", function () {
   });
 
   it("Staking 1-by-1 - Unstaking all", async function () {
-    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const { impishSpiral, spiralstaking } = await loadContracts();
     const provider = waffle.provider;
     const [wallet] = provider.getWallets();
 
@@ -127,9 +127,9 @@ describe("SpiralStaking", function () {
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
       expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
-      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds); // TokenId is correctly owned
+      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds);
     }
-     
+
     // Unstake all at once.
     await spiralstaking.unstakeNFTs(stakedTokenIds, false);
     for (let i = 0; i < 10; i++) {
@@ -141,9 +141,8 @@ describe("SpiralStaking", function () {
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
-
   it("Staking all - Unstaking 1-by-1", async function () {
-    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const { impishSpiral, spiralstaking } = await loadContracts();
     const provider = waffle.provider;
     const [wallet] = provider.getWallets();
 
@@ -168,9 +167,9 @@ describe("SpiralStaking", function () {
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
       expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
-      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds); // TokenId is correctly owned
+      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds);
     }
-     
+
     // Unstake one-by-one
     for (let i = 0; i < 10; i++) {
       const tokenId = stakedTokenIds[i];
@@ -178,15 +177,15 @@ describe("SpiralStaking", function () {
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(wallet.address);
       expect(BigNumber.from(await spiralstaking.stakedTokenOwners(tokenId))).to.be.equals(0);
-      expect(new Set(await spiralstaking.walletOfOwner(wallet.address))).to.be.deep.equals(new Set(stakedTokenIds.slice(i+1, 10)));
+      expect(new Set(await spiralstaking.walletOfOwner(wallet.address))).to.be.deep.equals(
+        new Set(stakedTokenIds.slice(i + 1, 10))
+      );
     }
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
-
-
   it("Staking Unstaking Complex", async function () {
-    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
+    const { impishSpiral, spiralstaking } = await loadContracts();
     const provider = waffle.provider;
     const [wallet] = provider.getWallets();
 
@@ -211,7 +210,7 @@ describe("SpiralStaking", function () {
 
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
       expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
-      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds); // TokenId is correctly owned
+      expect(await spiralstaking.walletOfOwner(wallet.address)).to.be.deep.equals(stakedTokenIds);
     }
 
     // Now, stake 1, unstake 1
@@ -225,7 +224,9 @@ describe("SpiralStaking", function () {
       await spiralstaking.stakeNFTs([tokenId]);
       expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(spiralstaking.address);
       expect(await spiralstaking.stakedTokenOwners(tokenId)).to.be.equals(wallet.address);
-      expect(new Set(await spiralstaking.walletOfOwner(wallet.address)), "post stake").to.be.deep.equals(new Set(stakedTokenIds)); 
+      expect(new Set(await spiralstaking.walletOfOwner(wallet.address)), "post stake").to.be.deep.equals(
+        new Set(stakedTokenIds)
+      );
 
       // Unstake every even one
       const unstakedTokenId = BigNumber.from(i).mul(2);
@@ -233,20 +234,20 @@ describe("SpiralStaking", function () {
       expect(await impishSpiral.ownerOf(unstakedTokenId)).to.be.equals(wallet.address);
       expect(BigNumber.from(await spiralstaking.stakedTokenOwners(unstakedTokenId))).to.be.equals(0);
 
-      const expectedStakedWallet = new Set(stakedTokenIds.map(n => n.toNumber()));
+      const expectedStakedWallet = new Set(stakedTokenIds.map((n) => n.toNumber()));
       // remove all even ones so far
-      for (let j = 0; j < i+1; j++) {
+      for (let j = 0; j < i + 1; j++) {
         expectedStakedWallet.delete(j * 2);
       }
-      
-      const actualStakedWallet = new Set((await spiralstaking.walletOfOwner(wallet.address)).map(n => n.toNumber()));
+
+      const actualStakedWallet = new Set((await spiralstaking.walletOfOwner(wallet.address)).map((n) => n.toNumber()));
       expect(actualStakedWallet).to.be.deep.equals(expectedStakedWallet);
 
       // Update the stakedTokenIds array to remove the unstaked one
-      stakedTokenIds = [...expectedStakedWallet].map(n => BigNumber.from(n));
+      stakedTokenIds = [...expectedStakedWallet].map((n) => BigNumber.from(n));
     }
 
-    // Now, only the odd numbered tokens are staked. 
+    // Now, only the odd numbered tokens are staked.
     // Unstake them all at once.
     await spiralstaking.unstakeNFTs(stakedTokenIds, false);
     for (let i = 0; i < 10; i++) {
@@ -259,8 +260,8 @@ describe("SpiralStaking", function () {
   });
 
   it("Staking - Negative tests", async function () {
-    const { impishSpiral, impdao, rwnft, spiralbits, spiralstaking } = await loadContracts();
-    const provider = waffle.provider;
+    const { impishSpiral, spiralstaking } = await loadContracts();
+    // eslint-disable-next-line no-unused-vars
     const [signer, otherSigner] = await ethers.getSigners();
 
     // Mint random
@@ -297,7 +298,9 @@ describe("SpiralStaking", function () {
     await expect(spiralstaking.unstakeNFTs([otherTokenId], false)).to.be.revertedWith("NotStaked");
 
     // Non existant token
-    await expect(spiralstaking.unstakeNFTs([otherTokenId.add(1)], false)).to.be.revertedWith("ERC721: owner query for nonexistent token");
+    await expect(spiralstaking.unstakeNFTs([otherTokenId.add(1)], false)).to.be.revertedWith(
+      "ERC721: owner query for nonexistent token"
+    );
 
     // Stake the other token
     await impishSpiral.connect(otherSigner).approve(spiralstaking.address, otherTokenId);
