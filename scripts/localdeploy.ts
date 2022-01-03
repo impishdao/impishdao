@@ -51,9 +51,9 @@ async function main() {
   await rwnftstaking.deployed();
 
   await spiralstaking.setRwNFTStakingContract(rwnftstaking.address);
-  
+
   await rwnftstaking.setSpiralStakingContract(spiralstaking.address);
-  
+
   // Allow spiral staking to mint spiralbits
   await spiralbits.addAllowedMinter(spiralstaking.address);
   await spiralbits.addAllowedMinter(rwnftstaking.address);
@@ -93,16 +93,26 @@ async function main() {
     await impishspiral.connect(otherSigner).setApprovalForAll(spiralmarket.address, true);
     for (let i = 0; i < 5; i++) {
       const tokenId = await impishspiral._tokenIdCounter();
-      const tx2 = await impishspiral.connect(otherSigner).mintSpiralRandom({ value: await impishspiral.getMintPrice()});
-      
+      const tx2 = await impishspiral
+        .connect(otherSigner)
+        .mintSpiralRandom({ value: await impishspiral.getMintPrice() });
+
       // And list it for sale
       spiralmarket.connect(otherSigner).listSpiral(tokenId, ethers.utils.parseEther("0.005"));
     }
-
   }, 10 * 1000);
 }
 
-function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract, spiralmarket: Contract, multimint: Contract, spiralbits: Contract, spiralstaking: Contract, rwnftstaking: Contract) {
+function saveFrontendFiles(
+  rwnft: Contract,
+  impdao: Contract,
+  impishspiral: Contract,
+  spiralmarket: Contract,
+  multimint: Contract,
+  spiralbits: Contract,
+  spiralstaking: Contract,
+  rwnftstaking: Contract
+) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");

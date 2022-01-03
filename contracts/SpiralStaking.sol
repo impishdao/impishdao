@@ -53,11 +53,21 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
 
     function _claimSpiralBits(address owner) internal {
         // Claim all the spiralbits so far
-        uint256 spiralBitsToClaim = stakedNFTs[owner].numNFTsStaked * uint256(
-            uint64(block.timestamp) - stakedNFTs[owner].lastClaimTime) * SPIRALBITS_PER_SECOND;
+        uint256 spiralBitsToClaim = claimsPending(owner);
         
         stakedNFTs[owner].claimedSpiralBits += uint128(spiralBitsToClaim);
         stakedNFTs[owner].lastClaimTime = uint64(block.timestamp);
+    }
+
+    function claimsPending(address owner) public view returns (uint256) {
+        uint256 spiralBitsToClaim = stakedNFTs[owner].numNFTsStaked * uint256(
+            uint64(block.timestamp) - stakedNFTs[owner].lastClaimTime) * SPIRALBITS_PER_SECOND;
+
+        return spiralBitsToClaim;
+    }
+
+    function currentBonusInBips() public view returns (uint256) {
+        return 100 * 10 * rwnftStaking.totalStaked() / rwnft.nextTokenId();
     }
 
     // Stake a list of Spiral tokenIDs. The msg.sender needs to own the tokenIds, and the tokens

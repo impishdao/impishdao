@@ -40,7 +40,13 @@ async function main() {
   saveFrontendFiles(RandomWalkNFT_address, IMPISHDAO_address, IMPISHSPIRALS_address, IMPISHMARKET_address, multimint);
 }
 
-function saveFrontendFiles(rwnft: string, impdao: string, impishspiral: string, spiralmarket: string, multimint: Contract) {
+function saveFrontendFiles(
+  rwnft: string,
+  impdao: string,
+  impishspiral: string,
+  spiralmarket: string,
+  multimint: Contract
+) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -54,7 +60,13 @@ function saveFrontendFiles(rwnft: string, impdao: string, impishspiral: string, 
   }
 
   const contractAddress = JSON.stringify(
-    { RandomWalkNFT: rwnft, ImpishDAO: impdao, ImpishSpiral: impishspiral, SpiralMarket: spiralmarket, MultiMint: multimint.address },
+    {
+      RandomWalkNFT: rwnft,
+      ImpishDAO: impdao,
+      ImpishSpiral: impishspiral,
+      SpiralMarket: spiralmarket,
+      MultiMint: multimint.address,
+    },
     undefined,
     2
   );

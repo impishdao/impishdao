@@ -27,7 +27,7 @@ const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: St
       newSelection.add(tokenNumber);
       setSelection(newSelection);
     }
-  }
+  };
 
   const numPages = Math.floor(spirals.length / pageSize) + 1;
 
@@ -56,35 +56,39 @@ const StakingPageDisplay = ({ pageSize, spirals, buttonName, onButtonClick }: St
   return (
     <>
       <PageList />
-      <Row style={{minHeight: '150px', backgroundColor: 'black', alignItems: 'center'}}>
+      <Row style={{ minHeight: "150px", backgroundColor: "black", alignItems: "center" }}>
         {spirals.slice(startPage * pageSize, startPage * pageSize + pageSize).map((s: any) => {
           let imgurl;
           let tokenId: BigNumber;
+          let height;
 
           if (s.tokenId !== undefined) {
             imgurl = `/spiral_image/seed/${s.seed}/75.png`;
             tokenId = s.tokenId;
+            height = "75px";
           } else {
             const paddedTokenId = pad(s.toString(), 6);
             imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
             tokenId = s;
+            height = "50px";
           }
-          
+
           const border = selection.has(tokenId.toNumber()) ? "solid 1px red" : "solid 1px white";
 
           return (
             <Col md={2} key={tokenId.toNumber()} className="mb-3">
-              <Card style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
+              <Card
+                style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
                 onClick={() => toggleInSelection(tokenId.toNumber())}
               >
-                <Card.Img variant="top" src={imgurl} style={{ width: "75px", height: "75px" }} />#{tokenId.toString()}
+                <Card.Img variant="top" src={imgurl} style={{ width: "75px", height }} />#{tokenId.toString()}
               </Card>
             </Col>
           );
         })}
       </Row>
       <Row>
-        <div style={{display: 'flex', alignItems: 'end'}}>
+        <div style={{ display: "flex", alignItems: "end" }}>
           <Button onClick={() => onButtonClick(selection)}>{buttonName}</Button>
         </div>
       </Row>
@@ -146,28 +150,28 @@ export function SpiralStaking(props: SpiralStakingProps) {
       fetch(`/spiralapi/wallet/${props.selectedAddress}`)
         .then((r) => r.json())
         .then(async (data) => {
-            setWalletSpirals(await getSeedsForSpiralTokenIds(data));
+          setWalletSpirals(await getSeedsForSpiralTokenIds(data));
         });
     }
 
     (async () => {
       // Get the list of staked spirals for the address directly.
       if (props.selectedAddress && props.spiralstaking) {
-        const stakedTokenIds = await props.spiralstaking.walletOfOwner(props.selectedAddress) as Array<BigNumber>;
+        const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
         setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
       }
     })();
   }, [props.selectedAddress, props.spiralstaking]);
-  
+
   useEffect(() => {
     (async () => {
       if (props.selectedAddress && props.rwnftstaking && props.rwnft) {
-        const stakedTokenIds = await props.rwnftstaking.walletOfOwner(props.selectedAddress) as Array<BigNumber>;
+        const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
         console.log("Staked RWNFTs: ");
         console.log(stakedTokenIds);
         setWalletStakedRWNFTs(stakedTokenIds);
 
-        const walletTokenIds = await props.rwnft.walletOfOwner(props.selectedAddress) as Array<BigNumber>;
+        const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
         console.log("Wallet RWNFTS:");
         console.log(walletTokenIds);
         setWalletRWNFTs(walletTokenIds);
@@ -178,22 +182,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const stakeSpirals = async (spiralTokenIds: Set<number>) => {
     if (props.spiralstaking && props.impspiral) {
       // First, check if approved
-      if (! await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address)) {
+      if (!(await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address))) {
         const tx = await props.impspiral.setApprovalForAll(props.spiralstaking.address, true);
         await tx.wait();
       }
 
-      const tokenIds = Array.from(spiralTokenIds).map(t => BigNumber.from(t));
+      const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.spiralstaking.stakeNFTs(tokenIds);
       await tx.wait();
     }
   };
 
-  const unstakeSpirals = async(spiralTokenIds: Set<number>) => {
+  const unstakeSpirals = async (spiralTokenIds: Set<number>) => {
     console.log(`Un Staking ${Array.from(spiralTokenIds)}`);
 
     if (props.spiralstaking) {
-      const tokenIds = Array.from(spiralTokenIds).map(t => BigNumber.from(t));
+      const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.spiralstaking.unstakeNFTs(tokenIds, true);
       await tx.wait();
     }
@@ -205,22 +209,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
     if (props.rwnftstaking && props.rwnft) {
       // First, check if approved
-      if (! await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address)) {
+      if (!(await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address))) {
         const tx = await props.rwnft.setApprovalForAll(props.rwnftstaking.address, true);
         await tx.wait();
       }
 
-      const tokenIds = Array.from(rwTokenIds).map(t => BigNumber.from(t));
+      const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.rwnftstaking.stakeNFTs(tokenIds);
       await tx.wait();
     }
   };
 
-  const unstakeRWNFTs = async(rwTokenIds: Set<number>) => {
+  const unstakeRWNFTs = async (rwTokenIds: Set<number>) => {
     console.log(`Un Staking ${Array.from(rwTokenIds)}`);
 
     if (props.rwnftstaking) {
-      const tokenIds = Array.from(rwTokenIds).map(t => BigNumber.from(t));
+      const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.rwnftstaking.unstakeNFTs(tokenIds, true);
       await tx.wait();
     }
@@ -244,20 +248,43 @@ export function SpiralStaking(props: SpiralStakingProps) {
           </a>
         </Row>
         <Row>
-          <Col md={6} style={{ border: "solid 1px white", textAlign: 'left' }}>
-            <h2 style={{textAlign: 'center'}}>Stake Spirals</h2>
-            <h5>Spirals available to stake</h5>
-            {props.selectedAddress && <StakingPageDisplay buttonName="Stake" pageSize={6} spirals={walletSpirals} onButtonClick={stakeSpirals} />}
+          <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
+            <h2 style={{ textAlign: "center" }}>Stake Spirals</h2>
+            <h5>Available to stake</h5>
+            {props.selectedAddress && (
+              <StakingPageDisplay
+                buttonName="Stake"
+                pageSize={6}
+                spirals={walletSpirals}
+                onButtonClick={stakeSpirals}
+              />
+            )}
             <h5 className="mt-4">Staked Spirals</h5>
-            {props.selectedAddress && <StakingPageDisplay buttonName="UnStake" pageSize={6} spirals={walletStakedSpirals} onButtonClick={unstakeSpirals} />}
+            {props.selectedAddress && (
+              <StakingPageDisplay
+                buttonName="UnStake"
+                pageSize={6}
+                spirals={walletStakedSpirals}
+                onButtonClick={unstakeSpirals}
+              />
+            )}
           </Col>
 
-          <Col md={6} style={{ border: "solid 1px white", textAlign: 'left' }}>
-            <h2 style={{textAlign: 'center'}}>Stake RandomWalkNFTs</h2>
-            <h5>RandomWalkNFTs available to stake</h5>
-            {props.selectedAddress && <StakingPageDisplay buttonName="Stake" pageSize={6} spirals={walletRWNFTs} onButtonClick={stakeRWNFTs} />}
+          <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
+            <h2 style={{ textAlign: "center" }}>Stake RandomWalkNFTs</h2>
+            <h5>Available to stake</h5>
+            {props.selectedAddress && (
+              <StakingPageDisplay buttonName="Stake" pageSize={6} spirals={walletRWNFTs} onButtonClick={stakeRWNFTs} />
+            )}
             <h5 className="mt-4">Staked RandomWalkNFTs</h5>
-            {props.selectedAddress && <StakingPageDisplay buttonName="UnStake" pageSize={6} spirals={walletStakedRWNFTs} onButtonClick={unstakeRWNFTs} />}
+            {props.selectedAddress && (
+              <StakingPageDisplay
+                buttonName="UnStake"
+                pageSize={6}
+                spirals={walletStakedRWNFTs}
+                onButtonClick={unstakeRWNFTs}
+              />
+            )}
           </Col>
         </Row>
       </div>

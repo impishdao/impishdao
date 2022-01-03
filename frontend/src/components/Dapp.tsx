@@ -94,7 +94,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, this.provider.getSigner(0));
 
     // Interface to RWNFT
-    this.rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, this.provider.getSigner(0));
+    this.rwnft = new ethers.Contract(
+      contractAddresses.RandomWalkNFT,
+      RandomWalkNFTArtifact.abi,
+      this.provider.getSigner(0)
+    );
 
     // Interface to ImpishSpiral contract
     this.impspiral = new ethers.Contract(
@@ -122,14 +126,14 @@ export class Dapp extends React.Component<DappProps, DappState> {
       contractAddresses.SpiralStaking,
       SpiralStakingArtifact.abi,
       this.provider.getSigner(0)
-    )
+    );
 
     // RWNFT staking
     this.rwnftstaking = new ethers.Contract(
       contractAddresses.RWNFTStaking,
       RWNFTStakingArtifact.abi,
       this.provider.getSigner(0)
-    )
+    );
     console.log(this.rwnftstaking);
 
     this.readDappState();
