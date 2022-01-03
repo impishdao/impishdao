@@ -346,6 +346,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>
+              How many SPIRALBITS tokens will be issued?
+            </span>
+            <br />
+            There will only be 2 Billion SPIRALBITS tokens. 
+            <br />
+            <br />
+            <ul>
+              <li>100M tokens(5%) will be minted at start and put into a Uniswap V3 liquidity pool on Arbitrum</li>
+              <li>~14k tokens per day will be issued per Staked Impish Spiral</li>
+              <li>~1.4k tokens per day will be issued per Staked RandomWalkNFT</li>
+              <li>Staking of SPIRALBITS itself will be enabled in the coming days, allowing you to compound your SPIRALBITS</li>
+            </ul>
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>
               When should I withdraw my accumulated SPIRALBITS
             </span>
             <br />
