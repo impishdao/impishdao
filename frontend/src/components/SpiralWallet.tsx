@@ -4,7 +4,7 @@ import { Card, Col, Container, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { DappState } from "../AppState";
 import { Navigation } from "./Navigation";
-import { format4Decimals, range } from "./utils";
+import { range } from "./utils";
 
 type SpiraWalletProps = DappState & {
   connectWallet: () => void;
@@ -42,6 +42,7 @@ export function SpiralWallet(props: SpiraWalletProps) {
           );
 
           const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
+          filtered.sort((a, b) => b.tokenId.toNumber() - a.tokenId.toNumber());
           setSpirals(filtered);
         })();
       });
