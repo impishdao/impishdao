@@ -6,23 +6,35 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract SpiralBits is ERC20, ERC20Burnable, Ownable {
-    constructor() ERC20("SpiralBits", "SPIRALBITS") {}
+    constructor() ERC20("SpiralBits", "SPIRALBITS") {
+        // Mint 10 M SPIRALBITS into a Uniswap LP position
+        _mint(owner(), 10 * 10**6 * 1 ether);
+    }
 
     // List of allowed contracts allowed to stake
     mapping (address => bool) public allowedMinters;
 
-    uint256 public constant MAX_SUPPLY = 1000000 ether;
+    // Max supply is 2B SPIRALBITS
+    uint256 public constant MAX_SUPPLY = 2 * 10**9 * 1 ether;
 
+    // A way for Spirals and RandomWalkNFTs to mint directly to users
     function addAllowedMinter(address _minter) external onlyOwner {
         allowedMinters[_minter] = true;
     }
 
+    // Maintainance function, don't expect to be used unless something goes wrong
     function deleteAllowedMinter(address _minter) external onlyOwner {
         delete allowedMinters[_minter];
     }
 
-    function mintSpiralBits(address to, uint256 amount) external {
+    // Must be called by an approved minter
+    modifier onlyApprovedMinter() {
         require(allowedMinters[msg.sender], "NotAllowed");
+        _;
+    }
+
+    // Mint spiral bits directly into the given account. 
+    function mintSpiralBits(address to, uint256 amount) external onlyApprovedMinter {
         require(totalSupply() + amount < MAX_SUPPLY, "WouldExceedMax");
 
         _mint(to, amount);

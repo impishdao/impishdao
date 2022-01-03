@@ -24,8 +24,8 @@ abstract contract IStakingContract {
 
 contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
     // How many spiral bits per second are awarded to a staked spiral
-    // 0.001 SPIRALBITS per second. (1 SPIRALBIT per 1000 seconds)
-    uint256 constant public SPIRALBITS_PER_SECOND = 1 ether / 10000; 
+    // 0.0167 SPIRALBITS per second. (1 SPIRALBIT per 60 seconds)
+    uint256 constant public SPIRALBITS_PER_SECOND = 0.0167 ether;
 
     // We're staking this NFT in this contract
     IRandomWalkNFT public randomWalkNFT;
