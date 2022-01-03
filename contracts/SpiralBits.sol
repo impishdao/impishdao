@@ -7,11 +7,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract SpiralBits is ERC20, ERC20Burnable, Ownable {
     constructor() ERC20("SpiralBits", "SPIRALBITS") {
-        // Mint 10 M SPIRALBITS into a Uniswap LP position
-        _mint(owner(), 10 * 10**6 * 1 ether);
+        // Mint 100 M SPIRALBITS into a Uniswap LP position
+        _mint(owner(), 100 * 10**6 * 1 ether);
     }
 
-    // List of allowed contracts allowed to stake
+    // List of allowed contracts allowed to mint SPIRALBITS
     mapping (address => bool) public allowedMinters;
 
     // Max supply is 2B SPIRALBITS

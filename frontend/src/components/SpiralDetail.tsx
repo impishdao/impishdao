@@ -210,7 +210,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
   const [spiralState, setSpiralState] = useState<SpiralsState | undefined>();
 
   const [listingPrice, setListingPrice] = useState(BigNumber.from(0));
-  const [listingOwner, setListingOwner] = useState("");
+  // const [listingOwner, setListingOwner] = useState("");
 
   const [refreshDataCounter, setRefreshDataCounter] = useState(0);
 
@@ -236,10 +236,10 @@ export function SpiralDetail(props: SpiralDetailProps) {
       .then((data) => data.json())
       .then((j) => {
         console.log(`API returned ${JSON.stringify(j)}`);
-        const lstOwner = j.owner || "";
+        // const lstOwner = j.owner || "";
         const price = BigNumber.from(j.price || 0);
 
-        setListingOwner(lstOwner);
+        // setListingOwner(lstOwner);
         setListingPrice(price);
       });
   }, [id, refreshDataCounter]);

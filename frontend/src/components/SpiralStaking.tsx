@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
+/* eslint-disable jsx-a11y/anchor-has-content */
 import { Button, Card, Col, Row } from "react-bootstrap";
 import { DappState } from "../AppState";
 import { pad, range } from "./utils";

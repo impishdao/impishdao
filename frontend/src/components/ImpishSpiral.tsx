@@ -150,8 +150,6 @@ export function ImpishSpiral(props: SpiralProps) {
             nav(`/spirals/detail/${id}`);
           });
         } else {
-          const id = (await props.impspiral._tokenIdCounter()).toNumber() + (numSpirals - 1);
-
           const price = calcMultiSpiralPrice(numSpirals, await props.impspiral.getMintPrice());
           let tx = await props.multimint.multiMint(numSpirals, { value: price });
           await tx.wait();
