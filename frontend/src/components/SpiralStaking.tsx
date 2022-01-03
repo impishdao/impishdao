@@ -1,8 +1,8 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { Button, Card, Col, Row } from "react-bootstrap";
+import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { DappState } from "../AppState";
-import { pad, range } from "./utils";
+import { format4Decimals, pad, range } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { Contract, BigNumber } from "ethers";
 import { useEffect, useState } from "react";
@@ -17,6 +17,7 @@ type StakingPageDisplayProps = {
   onButtonClick: (selection: Set<number>) => void;
   secondButtonName?: string;
   onSecondButtonClick?: (selection: Set<number>) => void;
+  refreshCounter: number;
 };
 const StakingPageDisplay = ({
   pageSize,
@@ -26,9 +27,14 @@ const StakingPageDisplay = ({
   onButtonClick,
   secondButtonName,
   onSecondButtonClick,
+  refreshCounter,
 }: StakingPageDisplayProps) => {
   const [startPage, setStartPage] = useState(0);
   const [selection, setSelection] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    setSelection(new Set());
+  }, [refreshCounter]);
 
   const toggleInSelection = (tokenNumber: number) => {
     if (selection.has(tokenNumber)) {
@@ -158,12 +164,21 @@ type SpiralDetail = {
   seed: string;
 };
 
+type SpiralBitsDetails = {
+  pending: BigNumber;
+  bonusBips: number;
+}
+
 export function SpiralStaking(props: SpiralStakingProps) {
   const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>([]);
   const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>([]);
+  const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
 
   const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>([]);
   const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>([]);
+  const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
+
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   const getSeedsForSpiralTokenIds = async (data: Array<BigNumber>): Promise<Array<SpiralDetail>> => {
     // Map all the data to get the seeds
@@ -200,25 +215,29 @@ export function SpiralStaking(props: SpiralStakingProps) {
       if (props.selectedAddress && props.spiralstaking) {
         const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
         setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
+
+        const pending = BigNumber.from(await props.spiralstaking.claimsPendingTotal(props.selectedAddress));
+        const bonusBips = BigNumber.from(await props.spiralstaking.currentBonusInBips()).toNumber();
+        setSpiralsTokenInfo({pending, bonusBips});
       }
     })();
-  }, [props.selectedAddress, props.spiralstaking]);
+  }, [props.selectedAddress, props.spiralstaking, refreshCounter]);
 
   useEffect(() => {
     (async () => {
       if (props.selectedAddress && props.rwnftstaking && props.rwnft) {
         const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        console.log("Staked RWNFTs: ");
-        console.log(stakedTokenIds);
         setWalletStakedRWNFTs(stakedTokenIds);
 
         const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        console.log("Wallet RWNFTS:");
-        console.log(walletTokenIds);
         setWalletRWNFTs(walletTokenIds);
+
+        const pending = BigNumber.from(await props.rwnftstaking.claimsPendingTotal(props.selectedAddress));
+        const bonusBips = BigNumber.from(await props.rwnftstaking.currentBonusInBips()).toNumber();
+        setRWNFTTokenInfo({pending, bonusBips});
       }
     })();
-  }, [props.selectedAddress, props.rwnft, props.rwnftstaking]);
+  }, [props.selectedAddress, props.rwnft, props.rwnftstaking, refreshCounter]);
 
   const stakeSpirals = async (spiralTokenIds: Set<number>) => {
     if (props.spiralstaking && props.impspiral && spiralTokenIds.size > 0) {
@@ -231,6 +250,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.spiralstaking.stakeNFTs(tokenIds);
       await tx.wait();
+
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 
@@ -241,6 +262,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.spiralstaking.unstakeNFTs(tokenIds, true);
       await tx.wait();
+
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 
@@ -258,6 +281,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.rwnftstaking.stakeNFTs(tokenIds);
       await tx.wait();
+
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 
@@ -268,6 +293,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.rwnftstaking.unstakeNFTs(tokenIds, true);
       await tx.wait();
+
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 
@@ -279,7 +306,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const tx = await props.spiralstaking.unstakeNFTs([], true);
       await tx.wait();
     }
+
+    setRefreshCounter(refreshCounter + 1);
   };
+
+  
+  let totalSpiralWithdrawWithBonus;
+  if (spiralsTokenInfo?.pending) {
+    const p = spiralsTokenInfo.pending;
+    totalSpiralWithdrawWithBonus = format4Decimals(p.add(p.mul(spiralsTokenInfo.bonusBips).div(10000)));
+  }
+
+  let totalRWNFTWithdrawWithBonus;
+  if (rwnftTokenInfo?.pending) {
+    const p = rwnftTokenInfo.pending;
+    totalRWNFTWithdrawWithBonus = format4Decimals(p.add(p.mul(rwnftTokenInfo.bonusBips).div(10000)));
+  }
 
   return (
     <>
@@ -311,19 +353,39 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   pageSize={6}
                   spirals={walletSpirals}
                   onButtonClick={stakeSpirals}
+                  refreshCounter={refreshCounter}
                 />
               )}
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Staked Spirals"
-                  buttonName="UnStake"
+                  buttonName="UnStake &amp; Claim"
                   pageSize={6}
                   spirals={walletStakedSpirals}
                   onButtonClick={unstakeSpirals}
-                  secondButtonName="Claim SPIRALBITS"
+                  secondButtonName="Claim"
+                  refreshCounter={refreshCounter}
                   onSecondButtonClick={() => claimSpiralbits(0)}
                 />
               )}
+              <Table variant="dark">
+                <tbody>
+                  <tr>
+                    <td>SPIRALBITS earned:</td>
+                    <td style={{textAlign: 'right'}}>{format4Decimals(spiralsTokenInfo?.pending)} SPIRALBITS</td>
+                  </tr>
+                  <tr>
+                    <td>Current Bonus</td>
+                    <td style={{textAlign: 'right'}}>{(spiralsTokenInfo?.bonusBips || 0) / 100} %</td>
+                  </tr>
+                  <tr>
+                    <td>Total if withdrawn now:</td>
+                    <td style={{textAlign: 'right'}}>{
+                      totalSpiralWithdrawWithBonus
+                    } SPIRALBITS</td>
+                  </tr>
+                </tbody>
+              </Table>
             </Col>
 
             <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
@@ -343,20 +405,40 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   buttonName="Stake"
                   pageSize={6}
                   spirals={walletRWNFTs}
+                  refreshCounter={refreshCounter}
                   onButtonClick={stakeRWNFTs}
                 />
               )}
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Staked RandomWalkNFTs"
-                  buttonName="UnStake"
+                  buttonName="UnStake &amp; Claim"
                   pageSize={6}
                   spirals={walletStakedRWNFTs}
                   onButtonClick={unstakeRWNFTs}
-                  secondButtonName="Claim SPIRALBITS"
+                  secondButtonName="Claim"
+                  refreshCounter={refreshCounter}
                   onSecondButtonClick={() => claimSpiralbits(1)}
                 />
               )}
+              <Table variant="dark">
+                <tbody>
+                  <tr>
+                    <td>SPIRALBITS earned:</td>
+                    <td style={{textAlign: 'right'}}>{format4Decimals(rwnftTokenInfo?.pending)} SPIRALBITS</td>
+                  </tr>
+                  <tr>
+                    <td>Current Bonus</td>
+                    <td style={{textAlign: 'right'}}>{(rwnftTokenInfo?.bonusBips || 0) / 100} %</td>
+                  </tr>
+                  <tr>
+                    <td>Total if withdrawn now:</td>
+                    <td style={{textAlign: 'right'}}>{
+                      totalRWNFTWithdrawWithBonus
+                    } SPIRALBITS</td>
+                  </tr>
+                </tbody>
+              </Table>
             </Col>
           </Row>
         )}

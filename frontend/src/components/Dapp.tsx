@@ -11,6 +11,7 @@ import RandomWalkNFTArtifact from "../contracts/rwnft.json";
 import ImpishSpiralArtifact from "../contracts/impishspiral.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
 import SpiralMarketArtifact from "../contracts/spiralmarket.json";
+import SpiralBitsArtifact from "../contracts/spiralbits.json";
 import SpiralStakingArtifact from "../contracts/spiralstaking.json";
 import RWNFTStakingArtifact from "../contracts/rwnftstaking.json";
 import MultiMintArtifact from "../contracts/multimint.json";
@@ -65,6 +66,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   multimint?: Contract;
   spiralstaking?: Contract;
   rwnftstaking?: Contract;
+  spiralbits?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -120,6 +122,13 @@ export class Dapp extends React.Component<DappProps, DappState> {
       MultiMintArtifact.abi,
       this.provider.getSigner(0)
     );
+
+    // SPIRALBITS
+    this.spiralbits = new ethers.Contract(
+      contractAddresses.SpiralBits,
+      SpiralBitsArtifact.abi,
+      this.provider.getSigner(0)
+    )
 
     // Spiral Staking
     this.spiralstaking = new ethers.Contract(
@@ -293,7 +302,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
   readUserData = async () => {
     const tokenBalance = await this.impdao?.balanceOf(this.state.selectedAddress);
-    this.setState({ tokenBalance });
+    const spiralBitsBalance = await this.spiralbits?.balanceOf(this.state.selectedAddress);
+    this.setState({ tokenBalance, spiralBitsBalance });
   };
 
   componentDidMount() {

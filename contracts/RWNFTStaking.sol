@@ -66,6 +66,10 @@ contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
 
         return spiralBitsToClaim;
     }
+    
+    function claimsPendingTotal(address owner) public view returns (uint256) {
+        return claimsPending(owner) + stakedNFTs[owner].claimedSpiralBits;
+    }
 
     function currentBonusInBips() public view returns (uint256) {
         return 100 * 100 * spiralStaking.totalStaked() / impishspiral._tokenIdCounter();
