@@ -24,6 +24,7 @@ async function main() {
   const MultiMint = await ethers.getContractFactory("MultiMint");
   const SpiralBits = await ethers.getContractFactory("SpiralBits");
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
+  const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
 
   const rwnft = await RandomWalkNFT.deploy();
   await rwnft.deployed();
@@ -46,8 +47,16 @@ async function main() {
   const spiralstaking = await SpiralStaking.deploy(impishspiral.address, spiralbits.address, rwnft.address);
   await spiralstaking.deployed();
 
+  const rwnftstaking = await RwnftStaking.deploy(impishspiral.address, spiralbits.address, rwnft.address);
+  await rwnftstaking.deployed();
+
+  await spiralstaking.setRwNFTStakingContract(rwnftstaking.address);
+  
+  await rwnftstaking.setSpiralStakingContract(spiralstaking.address);
+  
   // Allow spiral staking to mint spiralbits
-  spiralbits.addAllowedMinter(spiralstaking.address);
+  await spiralbits.addAllowedMinter(spiralstaking.address);
+  await spiralbits.addAllowedMinter(rwnftstaking.address);
 
   // Mint a new NFT to reset the last mint time
   await rwnft.mint({ value: await rwnft.getMintPrice() });
@@ -59,12 +68,13 @@ async function main() {
   console.log("MultiMint deployed to:", multimint.address);
   console.log("SpiralBits deployed to:", spiralbits.address);
   console.log("SpiralStaking deployed to:", spiralstaking.address);
+  console.log("RWNFTStaking deployed to:", rwnftstaking.address);
 
   // Start the ImpishSpiral for ease
   await impishspiral.startMints();
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(rwnft, impdao, impishspiral, spiralmarket, multimint, spiralbits, spiralstaking);
+  saveFrontendFiles(rwnft, impdao, impishspiral, spiralmarket, multimint, spiralbits, spiralstaking, rwnftstaking);
 
   const [signer, otherSigner] = await ethers.getSigners();
 
@@ -92,7 +102,7 @@ async function main() {
   }, 10 * 1000);
 }
 
-function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract, spiralmarket: Contract, multimint: Contract, spiralbits: Contract, spiralstaking: Contract) {
+function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Contract, spiralmarket: Contract, multimint: Contract, spiralbits: Contract, spiralstaking: Contract, rwnftstaking: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -114,6 +124,7 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
       MultiMint: multimint.address,
       SpiralBits: spiralbits.address,
       SpiralStaking: spiralstaking.address,
+      RWNFTStaking: rwnftstaking.address,
     },
     undefined,
     2
@@ -149,6 +160,10 @@ function saveFrontendFiles(rwnft: Contract, impdao: Contract, impishspiral: Cont
   const spiralStakingArtifact = artifacts.readArtifactSync("SpiralStaking");
   fs.writeFileSync(contractsDir + "/spiralstaking.json", JSON.stringify(spiralStakingArtifact, null, 2));
   fs.writeFileSync(serverDir + "/spiralstaking.json", JSON.stringify(spiralStakingArtifact, null, 2));
+
+  const rwnftStakingArtifact = artifacts.readArtifactSync("RWNFTStaking");
+  fs.writeFileSync(contractsDir + "/rwnftstaking.json", JSON.stringify(rwnftStakingArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/rwnftstaking.json", JSON.stringify(rwnftStakingArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

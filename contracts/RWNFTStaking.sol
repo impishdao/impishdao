@@ -22,20 +22,20 @@ abstract contract IStakingContract {
     uint256 public totalStaked;
 }
 
-contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
+contract RWNFTStaking is IERC721Receiver, ReentrancyGuard, Ownable {
     // How many spiral bits per second are awarded to a staked spiral
     // 0.001 SPIRALBITS per second. (1 SPIRALBIT per 1000 seconds)
-    uint256 constant public SPIRALBITS_PER_SECOND = 1 ether / 1000; 
+    uint256 constant public SPIRALBITS_PER_SECOND = 1 ether / 10000; 
 
     // We're staking this NFT in this contract
-    IImpishSpiral public impishspiral;
+    IRandomWalkNFT public randomWalkNFT;
 
     // The token that is being issued for staking
     ISpiralBits public spiralbits;
 
     // The other NFT contract - To calculate bonuses
-    IRandomWalkNFT public rwnft;
-    IStakingContract public rwnftStaking;
+    IImpishSpiral public impishspiral;
+    IStakingContract public spiralStaking;
 
     // Total number of NFTs staked in this contract
     uint256 public totalStaked;
@@ -43,12 +43,13 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
     constructor(address _impishspiral, address _spiralbits, address _rwnft) {
         impishspiral = IImpishSpiral(_impishspiral);
         spiralbits = ISpiralBits(_spiralbits);
-        rwnft = IRandomWalkNFT(_rwnft);
+        
+        randomWalkNFT = IRandomWalkNFT(_rwnft);
     }
 
-    function setRwNFTStakingContract(address _rwnftStaking) external onlyOwner {
-        require(rwnftStaking == IStakingContract(address(0)), "alreadyset");
-        rwnftStaking = IStakingContract(_rwnftStaking);
+    function setSpiralStakingContract(address _spiralStaking) external onlyOwner {
+        require(spiralStaking == IStakingContract(address(0)), "alreadyset");
+        spiralStaking = IStakingContract(_spiralStaking);
     }
 
     function _claimSpiralBits(address owner) internal {
@@ -77,7 +78,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
         totalStaked += tokenIds.length;
         for (uint32 i; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
-            require(impishspiral.ownerOf(tokenId) == msg.sender, "DontOwnToken");
+            require(randomWalkNFT.ownerOf(tokenId) == msg.sender, "DontOwnToken");
 
             // Add the spiral to staked owner list to keep track of staked tokens
             _addTokenToOwnerEnumeration(owner, tokenId);
@@ -87,7 +88,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
             stakedNFTs[owner].numNFTsStaked += 1;
 
             // Transfer the actual NFT to this staking contract.
-            impishspiral.safeTransferFrom(msg.sender, address(this), tokenId);
+            randomWalkNFT.safeTransferFrom(msg.sender, address(this), tokenId);
         }
     }
 
@@ -98,7 +99,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
 
         for (uint32 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = uint256(tokenIds[i]);
-            require(impishspiral.ownerOf(tokenId) == address(this), "NotStaked");
+            require(randomWalkNFT.ownerOf(tokenId) == address(this), "NotStaked");
             require(stakedTokenOwners[tokenId] == msg.sender, "NotYours");
 
             // Remove the spiral -> staked owner list to keep track of staked tokens
@@ -109,7 +110,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
             stakedNFTs[msg.sender].numNFTsStaked -= 1;
             
             // Transfer the NFT out
-            impishspiral.safeTransferFrom(address(this), msg.sender, tokenId);
+            randomWalkNFT.safeTransferFrom(address(this), msg.sender, tokenId);
         }
         totalStaked -= tokenIds.length;
 
@@ -117,7 +118,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
             uint256 spiralBitsToMint = stakedNFTs[msg.sender].claimedSpiralBits;
             stakedNFTs[msg.sender].claimedSpiralBits = 0;
 
-            uint256 bonus = spiralBitsToMint * rwnftStaking.totalStaked() / rwnft.nextTokenId();
+            uint256 bonus = spiralBitsToMint * spiralStaking.totalStaked() / impishspiral._tokenIdCounter();
 
             // Mint and send the new spiral bits to the owners
             spiralbits.mintSpiralBits(msg.sender, spiralBitsToMint + bonus);
@@ -213,7 +214,7 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
     // Function that marks this contract can accept incoming NFT transfers
     function onERC721Received(address, address, uint256 , bytes calldata) public view returns(bytes4) {
         // Only accept NFT transfers from RandomWalkNFT
-        require(msg.sender == address(impishspiral), "NFT not recognized");
+        require(msg.sender == address(randomWalkNFT), "NFT not recognized");
 
         // Return this value to accept the NFT
         return IERC721Receiver.onERC721Received.selector;

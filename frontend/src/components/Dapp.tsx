@@ -12,6 +12,7 @@ import ImpishSpiralArtifact from "../contracts/impishspiral.json";
 import ImpishDAOArtifact from "../contracts/impdao.json";
 import SpiralMarketArtifact from "../contracts/spiralmarket.json";
 import SpiralStakingArtifact from "../contracts/spiralstaking.json";
+import RWNFTStakingArtifact from "../contracts/rwnftstaking.json";
 import MultiMintArtifact from "../contracts/multimint.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
@@ -63,6 +64,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   spiralmarket?: Contract;
   multimint?: Contract;
   spiralstaking?: Contract;
+  rwnftstaking?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -92,7 +94,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, this.provider.getSigner(0));
 
     // Interface to RWNFT
-    this.rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, this.provider);
+    this.rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, this.provider.getSigner(0));
 
     // Interface to ImpishSpiral contract
     this.impspiral = new ethers.Contract(
@@ -121,6 +123,14 @@ export class Dapp extends React.Component<DappProps, DappState> {
       SpiralStakingArtifact.abi,
       this.provider.getSigner(0)
     )
+
+    // RWNFT staking
+    this.rwnftstaking = new ethers.Contract(
+      contractAddresses.RWNFTStaking,
+      RWNFTStakingArtifact.abi,
+      this.provider.getSigner(0)
+    )
+    console.log(this.rwnftstaking);
 
     this.readDappState();
     this.readUserData();
@@ -369,6 +379,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   impspiral={this.impspiral}
                   multimint={this.multimint}
                   spiralstaking={this.spiralstaking}
+                  rwnftstaking={this.rwnftstaking}
                 />
               }
             />
