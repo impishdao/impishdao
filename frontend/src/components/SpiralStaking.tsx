@@ -120,7 +120,7 @@ const StakingPageDisplay = ({
             </Col>
           );
         })}
-        {spirals.length === 0 && <span style={{ color: "#aaa", textAlign: "center" }}>Nothing Staked</span>}
+        {spirals.length === 0 && <span style={{ color: "#aaa", textAlign: "center" }}>Nothing Here</span>}
       </Row>
       <Row>
         <div style={{display: 'flex', justifyContent: 'end', flexDirection: 'row'}}>
@@ -173,10 +173,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>([]);
   const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>([]);
   const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
+  const [spiralStakingApprovalNeeded, setSpiralStakingApprovalNeeded] = useState(false);
 
   const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>([]);
   const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>([]);
   const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
+  const [rwnftStakingApprovalNeeded, setRwnftStakingApprovalNeeded] = useState(false);
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -212,16 +214,18 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
     (async () => {
       // Get the list of staked spirals for the address directly.
-      if (props.selectedAddress && props.spiralstaking) {
+      if (props.selectedAddress && props.spiralstaking && props.impspiral) {
         const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
         setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
 
         const pending = BigNumber.from(await props.spiralstaking.claimsPendingTotal(props.selectedAddress));
         const bonusBips = BigNumber.from(await props.spiralstaking.currentBonusInBips()).toNumber();
         setSpiralsTokenInfo({pending, bonusBips});
+
+        setSpiralStakingApprovalNeeded(!await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address));
       }
     })();
-  }, [props.selectedAddress, props.spiralstaking, refreshCounter]);
+  }, [props.selectedAddress, props.impspiral, props.spiralstaking, refreshCounter]);
 
   useEffect(() => {
     (async () => {
@@ -235,6 +239,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const pending = BigNumber.from(await props.rwnftstaking.claimsPendingTotal(props.selectedAddress));
         const bonusBips = BigNumber.from(await props.rwnftstaking.currentBonusInBips()).toNumber();
         setRWNFTTokenInfo({pending, bonusBips});
+
+        setRwnftStakingApprovalNeeded(!await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address));
       }
     })();
   }, [props.selectedAddress, props.rwnft, props.rwnftstaking, refreshCounter]);
@@ -349,7 +355,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Available To Stake"
-                  buttonName="Stake"
+                  buttonName={spiralStakingApprovalNeeded ? "Approve & Stake": "Stake"}
                   pageSize={6}
                   spirals={walletSpirals}
                   onButtonClick={stakeSpirals}
@@ -402,7 +408,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Available To Stake"
-                  buttonName="Stake"
+                  buttonName={rwnftStakingApprovalNeeded ? "Approve & Stake": "Stake"}
                   pageSize={6}
                   spirals={walletRWNFTs}
                   refreshCounter={refreshCounter}
@@ -562,12 +568,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
               <li>Impish Crystal + SPIRALBITS ==&gt; grow your Crystal </li>
               <li>Impish Crystal ==shatter crystal==&gt; recover SPIRALBITS contained in the Crystal</li>
             </ul>
-          </div>
-
-          <div className="mb-3">
-            <span style={{ fontWeight: "bold", color: "#ffd454" }}>When does staking launch?</span>
-            <br />
-            Staking your Spirals and RandomWalkNFTs will both be available starting Jan 4th 2022, 9AM EST / 5PM UTC.
           </div>
         </Col>
       </Row>
