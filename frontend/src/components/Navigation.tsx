@@ -68,7 +68,12 @@ export function Navigation(props: NavigationProps) {
         )}
         {props.selectedAddress && (
           <>
-            <div style={{ marginRight: "10px" }}>Wallet: {format4Decimals(props.tokenBalance)} IMPISH</div>
+            <div style={{ marginRight: "10px" }}>
+              {(expandSection === 1 || expandSection === 2) &&
+              <span>{format4Decimals(props.spiralBitsBalance)} SPIRALBITS</span>
+              }
+              {expandSection === 0 && <span>{format4Decimals(props.tokenBalance)} IMPISH</span>}
+            </div>
             <Button className="address" variant="warning">
               {props.selectedAddress}
             </Button>

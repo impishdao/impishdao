@@ -24,6 +24,7 @@ export class DappState {
 
   // User specific state
   tokenBalance: BigNumber;
+  spiralBitsBalance: BigNumber;
   selectedAddress?: string;
 
   modalTitle?: string;
@@ -48,6 +49,7 @@ export class DappState {
 
   constructor() {
     this.tokenBalance = BigNumber.from(0);
+    this.spiralBitsBalance = BigNumber.from(0);
     this.modalShowing = false;
 
     this.areWeWinning = false;
