@@ -80,6 +80,7 @@ async function main() {
   setTimeout(async () => {
     // Approve the market for listing
     // await impishspiral.setApprovalForAll(spiralmarket.address, true);
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
 
     // Mint 5 spirals
     for (let i = 0; i < 5; i++) {

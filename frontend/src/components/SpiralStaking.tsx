@@ -8,6 +8,7 @@ import { Contract, BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
+import { Link } from "react-router-dom";
 
 type StakingPageDisplayProps = {
   title: string;
@@ -18,6 +19,7 @@ type StakingPageDisplayProps = {
   secondButtonName?: string;
   onSecondButtonClick?: (selection: Set<number>) => void;
   refreshCounter: number;
+  nothingMessage?: JSX.Element;
 };
 const StakingPageDisplay = ({
   pageSize,
@@ -28,6 +30,7 @@ const StakingPageDisplay = ({
   secondButtonName,
   onSecondButtonClick,
   refreshCounter,
+  nothingMessage,
 }: StakingPageDisplayProps) => {
   const [startPage, setStartPage] = useState(0);
   const [selection, setSelection] = useState<Set<number>>(new Set());
@@ -53,9 +56,8 @@ const StakingPageDisplay = ({
   const PageList = () => {
     return (
       <>
-        <Row style={{marginTop: '20px'}}>
-          
-            <h5>{title}</h5>            
+        <Row style={{ marginTop: "20px" }}>
+          <h5>{title}</h5>
         </Row>
         <Row className="mb-2">
           {numPages > 1 && (
@@ -120,11 +122,18 @@ const StakingPageDisplay = ({
             </Col>
           );
         })}
-        {spirals.length === 0 && <span style={{ color: "#aaa", textAlign: "center" }}>Nothing Here</span>}
+        {spirals.length === 0 && (
+          <span style={{ color: "#aaa", textAlign: "center" }}>
+            {nothingMessage !== undefined && <div>{nothingMessage}</div>}
+            {nothingMessage === undefined && <span>Nothing Here</span>}
+          </span>
+        )}
       </Row>
       <Row>
-        <div style={{display: 'flex', justifyContent: 'end', flexDirection: 'row'}}>
-          <div>(Selected: {selection.size} / {spirals.length})</div>
+        <div style={{ display: "flex", justifyContent: "end", flexDirection: "row" }}>
+          <div>
+            (Selected: {selection.size} / {spirals.length})
+          </div>
         </div>
       </Row>
       <Row>
@@ -167,7 +176,7 @@ type SpiralDetail = {
 type SpiralBitsDetails = {
   pending: BigNumber;
   bonusBips: number;
-}
+};
 
 export function SpiralStaking(props: SpiralStakingProps) {
   const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>([]);
@@ -215,15 +224,18 @@ export function SpiralStaking(props: SpiralStakingProps) {
     (async () => {
       // Get the list of staked spirals for the address directly.
       if (props.selectedAddress && props.spiralstaking && props.impspiral) {
+        console.log("Querying spiralstaking");
         try {
           const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
           setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
 
           const pending = BigNumber.from(await props.spiralstaking.claimsPendingTotal(props.selectedAddress));
           const bonusBips = BigNumber.from(await props.spiralstaking.currentBonusInBips()).toNumber();
-          setSpiralsTokenInfo({pending, bonusBips});
+          setSpiralsTokenInfo({ pending, bonusBips });
 
-          setSpiralStakingApprovalNeeded(!await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address));
+          setSpiralStakingApprovalNeeded(
+            !(await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address))
+          );
         } catch (e) {
           console.log(e);
           setTimeout(() => {
@@ -237,6 +249,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   useEffect(() => {
     (async () => {
       if (props.selectedAddress && props.rwnftstaking && props.rwnft) {
+        console.log("Querying rwnftstaking");
         try {
           const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
           setWalletStakedRWNFTs(stakedTokenIds);
@@ -246,9 +259,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
           const pending = BigNumber.from(await props.rwnftstaking.claimsPendingTotal(props.selectedAddress));
           const bonusBips = BigNumber.from(await props.rwnftstaking.currentBonusInBips()).toNumber();
-          setRWNFTTokenInfo({pending, bonusBips});
+          setRWNFTTokenInfo({ pending, bonusBips });
 
-          setRwnftStakingApprovalNeeded(!await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address));
+          setRwnftStakingApprovalNeeded(
+            !(await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address))
+          );
         } catch (e) {
           console.log(e);
           setTimeout(() => {
@@ -330,7 +345,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
     setRefreshCounter(refreshCounter + 1);
   };
 
-  
   let totalSpiralWithdrawWithBonus;
   if (spiralsTokenInfo?.pending) {
     const p = spiralsTokenInfo.pending;
@@ -369,11 +383,19 @@ export function SpiralStaking(props: SpiralStakingProps) {
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Available To Stake"
-                  buttonName={spiralStakingApprovalNeeded ? "Approve & Stake": "Stake"}
+                  buttonName={spiralStakingApprovalNeeded ? "Approve & Stake" : "Stake"}
                   pageSize={6}
                   spirals={walletSpirals}
                   onButtonClick={stakeSpirals}
                   refreshCounter={refreshCounter}
+                  nothingMessage={
+                    <div>
+                      No Spirals.{" "}
+                      <Link to="/spirals" style={{ color: "#ffd454" }}>
+                        Mint some to stake
+                      </Link>
+                    </div>
+                  }
                 />
               )}
               {props.selectedAddress && (
@@ -392,17 +414,15 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 <tbody>
                   <tr>
                     <td>SPIRALBITS earned:</td>
-                    <td style={{textAlign: 'right'}}>{format4Decimals(spiralsTokenInfo?.pending)} SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{format4Decimals(spiralsTokenInfo?.pending)} SPIRALBITS</td>
                   </tr>
                   <tr>
                     <td>Current Bonus</td>
-                    <td style={{textAlign: 'right'}}>{(spiralsTokenInfo?.bonusBips || 0) / 100} %</td>
+                    <td style={{ textAlign: "right" }}>{(spiralsTokenInfo?.bonusBips || 0) / 100} %</td>
                   </tr>
                   <tr>
                     <td>Total if withdrawn now:</td>
-                    <td style={{textAlign: 'right'}}>{
-                      totalSpiralWithdrawWithBonus
-                    } SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{totalSpiralWithdrawWithBonus} SPIRALBITS</td>
                   </tr>
                 </tbody>
               </Table>
@@ -422,11 +442,24 @@ export function SpiralStaking(props: SpiralStakingProps) {
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Available To Stake"
-                  buttonName={rwnftStakingApprovalNeeded ? "Approve & Stake": "Stake"}
+                  buttonName={rwnftStakingApprovalNeeded ? "Approve & Stake" : "Stake"}
                   pageSize={6}
                   spirals={walletRWNFTs}
                   refreshCounter={refreshCounter}
                   onButtonClick={stakeRWNFTs}
+                  nothingMessage={
+                    <div>
+                      No RandomWalkNFTs.{" "}
+                      <a
+                        href="https://www.randomwalknft.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "#ffd454" }}
+                      >
+                        Mint some to stake
+                      </a>
+                    </div>
+                  }
                 />
               )}
               {props.selectedAddress && (
@@ -445,17 +478,15 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 <tbody>
                   <tr>
                     <td>SPIRALBITS earned:</td>
-                    <td style={{textAlign: 'right'}}>{format4Decimals(rwnftTokenInfo?.pending)} SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{format4Decimals(rwnftTokenInfo?.pending)} SPIRALBITS</td>
                   </tr>
                   <tr>
                     <td>Current Bonus</td>
-                    <td style={{textAlign: 'right'}}>{(rwnftTokenInfo?.bonusBips || 0) / 100} %</td>
+                    <td style={{ textAlign: "right" }}>{(rwnftTokenInfo?.bonusBips || 0) / 100} %</td>
                   </tr>
                   <tr>
                     <td>Total if withdrawn now:</td>
-                    <td style={{textAlign: 'right'}}>{
-                      totalRWNFTWithdrawWithBonus
-                    } SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{totalRWNFTWithdrawWithBonus} SPIRALBITS</td>
                   </tr>
                 </tbody>
               </Table>
@@ -588,23 +619,36 @@ export function SpiralStaking(props: SpiralStakingProps) {
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>Where are the contracts Deployed?</span>
             <br />
             SPIRALBITS is deployed as a normal ERC-20 token at &nbsp;
-            <a href="https://arbiscan.io/address/0x650a9960673688ba924615a2d28c39a8e015fb19#code" rel='noreferrer' target="_blank" style={{color: 'white'}}>
+            <a
+              href="https://arbiscan.io/address/0x650a9960673688ba924615a2d28c39a8e015fb19#code"
+              rel="noreferrer"
+              target="_blank"
+              style={{ color: "white" }}
+            >
               0x650A9960673688Ba924615a2D28c39A8E015fB19
             </a>
             &nbsp;
-            <br/>
+            <br />
             The Staking contracts for &nbsp;
-            <a href="https://arbiscan.io/address/0xfa798e448db7987a5d7ab3620d7c3d5ecb18275e#code" rel='noreferrer' target="_blank" style={{color: 'white'}}>
+            <a
+              href="https://arbiscan.io/address/0xfa798e448db7987a5d7ab3620d7c3d5ecb18275e#code"
+              rel="noreferrer"
+              target="_blank"
+              style={{ color: "white" }}
+            >
               ImpishSpirals
-            </a> &nbsp;
-            and &nbsp;
-            <a href="https://arbiscan.io/address/0xd9403e7497051b317cf1ae88eeaf46ee4e8ead68#code" rel='noreferrer' target="_blank" style={{color: 'white'}}>
-              RandomWalkNFTs 
-            </a> &nbsp;
-            are also deployed and verified on arbiscan.
+            </a>{" "}
+            &nbsp; and &nbsp;
+            <a
+              href="https://arbiscan.io/address/0xd9403e7497051b317cf1ae88eeaf46ee4e8ead68#code"
+              rel="noreferrer"
+              target="_blank"
+              style={{ color: "white" }}
+            >
+              RandomWalkNFTs
+            </a>{" "}
+            &nbsp; are also deployed and verified on arbiscan.
           </div>
-
-          
         </Col>
       </Row>
     </>

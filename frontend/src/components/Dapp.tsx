@@ -128,7 +128,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
       contractAddresses.SpiralBits,
       SpiralBitsArtifact.abi,
       this.provider.getSigner(0)
-    )
+    );
 
     // Spiral Staking
     this.spiralstaking = new ethers.Contract(
