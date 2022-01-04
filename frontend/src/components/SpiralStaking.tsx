@@ -228,7 +228,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
           console.log(e);
           setTimeout(() => {
             setRefreshCounter(refreshCounter + 1);
-          }, 1000 * 5);
+          }, 1000 * 3);
         }
       }
     })();
@@ -253,7 +253,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
           console.log(e);
           setTimeout(() => {
             setRefreshCounter(refreshCounter + 1);
-          }, 1000 * 5);
+          }, 1000 * 3);
         }
       }
     })();
@@ -583,6 +583,28 @@ export function SpiralStaking(props: SpiralStakingProps) {
               <li>Impish Crystal ==shatter crystal==&gt; recover SPIRALBITS contained in the Crystal</li>
             </ul>
           </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>Where are the contracts Deployed?</span>
+            <br />
+            SPIRALBITS is deployed as a normal ERC-20 token at &nbsp;
+            <a href="https://arbiscan.io/address/0x650a9960673688ba924615a2d28c39a8e015fb19#code" rel='noreferrer' target="_blank" style={{color: 'white'}}>
+              0x650A9960673688Ba924615a2D28c39A8E015fB19
+            </a>
+            &nbsp;
+            <br/>
+            The Staking contracts for &nbsp;
+            <a href="https://arbiscan.io/address/0xfa798e448db7987a5d7ab3620d7c3d5ecb18275e#code" rel='noreferrer' target="_blank" style={{color: 'white'}}>
+              ImpishSpirals
+            </a> &nbsp;
+            and &nbsp;
+            <a href="https://arbiscan.io/address/0xd9403e7497051b317cf1ae88eeaf46ee4e8ead68#code" rel='noreferrer' target="_blank" style={{color: 'white'}}>
+              RandomWalkNFTs 
+            </a> &nbsp;
+            are also deployed and verified on arbiscan.
+          </div>
+
+          
         </Col>
       </Row>
     </>
