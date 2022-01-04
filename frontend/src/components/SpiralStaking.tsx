@@ -215,14 +215,21 @@ export function SpiralStaking(props: SpiralStakingProps) {
     (async () => {
       // Get the list of staked spirals for the address directly.
       if (props.selectedAddress && props.spiralstaking && props.impspiral) {
-        const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
+        try {
+          const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+          setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
 
-        const pending = BigNumber.from(await props.spiralstaking.claimsPendingTotal(props.selectedAddress));
-        const bonusBips = BigNumber.from(await props.spiralstaking.currentBonusInBips()).toNumber();
-        setSpiralsTokenInfo({pending, bonusBips});
+          const pending = BigNumber.from(await props.spiralstaking.claimsPendingTotal(props.selectedAddress));
+          const bonusBips = BigNumber.from(await props.spiralstaking.currentBonusInBips()).toNumber();
+          setSpiralsTokenInfo({pending, bonusBips});
 
-        setSpiralStakingApprovalNeeded(!await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address));
+          setSpiralStakingApprovalNeeded(!await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address));
+        } catch (e) {
+          console.log(e);
+          setTimeout(() => {
+            setRefreshCounter(refreshCounter + 1);
+          }, 1000 * 5);
+        }
       }
     })();
   }, [props.selectedAddress, props.impspiral, props.spiralstaking, refreshCounter]);
@@ -230,17 +237,24 @@ export function SpiralStaking(props: SpiralStakingProps) {
   useEffect(() => {
     (async () => {
       if (props.selectedAddress && props.rwnftstaking && props.rwnft) {
-        const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        setWalletStakedRWNFTs(stakedTokenIds);
+        try {
+          const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+          setWalletStakedRWNFTs(stakedTokenIds);
 
-        const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        setWalletRWNFTs(walletTokenIds);
+          const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+          setWalletRWNFTs(walletTokenIds);
 
-        const pending = BigNumber.from(await props.rwnftstaking.claimsPendingTotal(props.selectedAddress));
-        const bonusBips = BigNumber.from(await props.rwnftstaking.currentBonusInBips()).toNumber();
-        setRWNFTTokenInfo({pending, bonusBips});
+          const pending = BigNumber.from(await props.rwnftstaking.claimsPendingTotal(props.selectedAddress));
+          const bonusBips = BigNumber.from(await props.rwnftstaking.currentBonusInBips()).toNumber();
+          setRWNFTTokenInfo({pending, bonusBips});
 
-        setRwnftStakingApprovalNeeded(!await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address));
+          setRwnftStakingApprovalNeeded(!await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address));
+        } catch (e) {
+          console.log(e);
+          setTimeout(() => {
+            setRefreshCounter(refreshCounter + 1);
+          }, 1000 * 5);
+        }
       }
     })();
   }, [props.selectedAddress, props.rwnft, props.rwnftstaking, refreshCounter]);
