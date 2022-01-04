@@ -145,11 +145,11 @@ describe("MultiStaking", function () {
     // 100 * 0.167
     const expectedSpiralClaimsGwei = ethers.utils.parseEther("0.167").mul(100).div(Math.pow(10, 15));
     const actualSpiralClaimsGwei = (await spiralstaking.claimsPending(wallet.address)).div(Math.pow(10, 15));
-    expect(actualSpiralClaimsGwei).to.be.closeTo(expectedSpiralClaimsGwei, 168); // 168 is 1%
+    expect(actualSpiralClaimsGwei).to.be.closeTo(expectedSpiralClaimsGwei, 168 * 2); // 168 is 1%
 
     const expectedRwnftClaimsGwei = ethers.utils.parseEther("0.0167").mul(100).div(Math.pow(10, 15));
     const actualRwnftClaimsGwei = (await rwnftstaking.claimsPending(wallet.address)).div(Math.pow(10, 15));
-    expect(actualRwnftClaimsGwei).to.be.closeTo(expectedRwnftClaimsGwei, 17); // 17 is 1%
+    expect(actualRwnftClaimsGwei).to.be.closeTo(expectedRwnftClaimsGwei, 17 * 2); // 17 is 1%
 
     {
       // When we withdraw, we should get 50% more, because of the bonus
