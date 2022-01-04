@@ -78,7 +78,7 @@ async function main() {
 
   setTimeout(async () => {
     // Approve the market for listing
-    //await impishspiral.setApprovalForAll(spiralmarket.address, true);
+    // await impishspiral.setApprovalForAll(spiralmarket.address, true);
 
     // Mint 5 spirals
     for (let i = 0; i < 5; i++) {
@@ -94,6 +94,7 @@ async function main() {
       const tx2 = await impishspiral
         .connect(otherSigner)
         .mintSpiralRandom({ value: await impishspiral.getMintPrice() });
+      await tx2.wait();
 
       // And list it for sale
       spiralmarket.connect(otherSigner).listSpiral(tokenId, ethers.utils.parseEther("0.005"));

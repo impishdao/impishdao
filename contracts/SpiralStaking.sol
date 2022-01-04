@@ -46,6 +46,18 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
         rwnft = IRandomWalkNFT(_rwnft);
     }
 
+    bool public paused = false;
+
+    // Pause is a one-way function. Can't unpause it. 
+    function pause() public onlyOwner {
+        paused = true;
+    }
+
+    modifier notPaused() {
+        require(!paused, "Paused");
+        _;
+    }
+
     function setRwNFTStakingContract(address _rwnftStaking) external onlyOwner {
         require(rwnftStaking == IStakingContract(address(0)), "alreadyset");
         rwnftStaking = IStakingContract(_rwnftStaking);
@@ -60,8 +72,9 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
     }
 
     function claimsPending(address owner) public view returns (uint256) {
-        uint256 spiralBitsToClaim = stakedNFTs[owner].numNFTsStaked * uint256(
-            uint64(block.timestamp) - stakedNFTs[owner].lastClaimTime) * SPIRALBITS_PER_SECOND;
+        uint256 spiralBitsToClaim = stakedNFTs[owner].numNFTsStaked * 
+                    uint256(uint64(block.timestamp) - stakedNFTs[owner].lastClaimTime) * 
+                    SPIRALBITS_PER_SECOND;
 
         return spiralBitsToClaim;
     }
@@ -76,14 +89,14 @@ contract SpiralStaking is IERC721Receiver, ReentrancyGuard, Ownable {
 
     // Stake a list of Spiral tokenIDs. The msg.sender needs to own the tokenIds, and the tokens
     // are staked with msg.sender as the owner
-    function stakeNFTs(uint32[] calldata tokenIds) external {
+    function stakeNFTs(uint32[] calldata tokenIds) external notPaused {
         stakeNFTsForOwner(tokenIds, msg.sender);
     }
 
     // Stake the NFTs and make them withdrawable by the owner. The msg.sender still needs to own
     // the NFTs that are being staked.
     // This is used by aggregator contracts.
-    function stakeNFTsForOwner(uint32[] calldata tokenIds, address owner) public nonReentrant {
+    function stakeNFTsForOwner(uint32[] calldata tokenIds, address owner) public nonReentrant notPaused {
         require(tokenIds.length > 0, "NoTokens");
         // Claim any SPIRALBITS outstanding for this owner
         _claimSpiralBits(owner);

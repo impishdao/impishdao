@@ -233,4 +233,158 @@ describe("MultiStaking", function () {
     expect(await spiralstaking.currentBonusInBips()).to.be.equal(0);
     expect(await rwnftstaking.currentBonusInBips()).to.be.equal(0);
   });
+
+  it("Staking - Unstaking with transfers (rwnft)", async function () {
+    const { impishSpiral, rwnft, spiralstaking, spiralbits, rwnftstaking } = await loadContracts();
+    const [signer, signer2, signer3] = await ethers.getSigners();
+
+    // Assert the 100M has been minted to wallet, and burn it to make rest of the calculations easy in this
+    // test
+    expect(await spiralbits.balanceOf(signer.address)).to.be.equal(
+      BigNumber.from(100 * Math.pow(10, 6)).mul(BigNumber.from(10).pow(18)) // 100M
+    );
+    await spiralbits.burn(await spiralbits.balanceOf(signer.address));
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+    await rwnft.setApprovalForAll(rwnftstaking.address, true);
+
+    // Mint 2 each of RandomWalkNFT and Spirals
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
+    await impishSpiral.mintSpiralRandom({ value: impishSpiral.getMintPrice() });
+
+    // Transfer rwnft#0 to signer2
+    await rwnft["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, 0);
+
+    // Stake on behalf of signer3
+    await rwnft.connect(signer2).setApprovalForAll(rwnftstaking.address, true);
+    await expect(rwnftstaking.stakeNFTsForOwner([0], signer3.address)).to.be.revertedWith("DontOwnToken");
+    await rwnftstaking.connect(signer2).stakeNFTsForOwner([0], signer3.address);
+
+    // Now, neither signer nor signer2 can withdraw this
+    await expect(rwnftstaking.unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+    await expect(rwnftstaking.connect(signer2).unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+
+    // But signer3 can
+    await rwnftstaking.connect(signer3).unstakeNFTs([0], true);
+    expect(await spiralbits.balanceOf(signer3.address)).to.be.gt(0);
+
+    // Signer3 now transfers it to signer2, who can stake it
+    await rwnft.connect(signer3)["safeTransferFrom(address,address,uint256)"](signer3.address, signer2.address, 0);
+    await rwnftstaking.connect(signer2).stakeNFTs([0]);
+
+    // Now, neither signer nor signer3 can withdraw this
+    await expect(rwnftstaking.unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+    await expect(rwnftstaking.connect(signer3).unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+
+    // Make sure the wallets are reflected correctly.
+    expect(await rwnftstaking.walletOfOwner(signer.address)).to.be.deep.equals([]);
+    expect(await rwnftstaking.walletOfOwner(signer2.address)).to.be.deep.equals([BigNumber.from(0)]);
+    expect(await rwnftstaking.walletOfOwner(signer3.address)).to.be.deep.equals([]);
+
+    // Signer2 now stakes a second rwnft
+    await rwnft["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, 1);
+    await rwnftstaking.connect(signer2).stakeNFTs([1]);
+
+    expect(await rwnftstaking.walletOfOwner(signer.address)).to.be.deep.equals([]);
+    expect(await rwnftstaking.walletOfOwner(signer2.address)).to.be.deep.equals([BigNumber.from(0), BigNumber.from(1)]);
+    expect(await rwnftstaking.walletOfOwner(signer3.address)).to.be.deep.equals([]);
+
+    // Only Signer2 can withdraw
+    await spiralbits.connect(signer2).burn(await spiralbits.balanceOf(signer2.address));
+    await expect(rwnftstaking.unstakeNFTs([1], true)).to.be.revertedWith("NotYours");
+    await expect(rwnftstaking.connect(signer3).unstakeNFTs([1], true)).to.be.revertedWith("NotYours");
+    await rwnftstaking.connect(signer2).unstakeNFTs([1], true);
+    expect(await spiralbits.balanceOf(signer2.address)).to.be.gt(0);
+
+    expect(await rwnftstaking.walletOfOwner(signer.address)).to.be.deep.equals([]);
+    expect(await rwnftstaking.walletOfOwner(signer2.address)).to.be.deep.equals([BigNumber.from(0)]);
+    expect(await rwnftstaking.walletOfOwner(signer3.address)).to.be.deep.equals([]);
+
+    await rwnftstaking.connect(signer2).unstakeNFTs([0], true);
+    expect(await rwnftstaking.walletOfOwner(signer2.address)).to.be.deep.equals([]);
+
+    // Signer2 has no NFTs, so withdrawing spiralbits shouldn't change balance
+    await expect(() => rwnftstaking.unstakeNFTs([], true)).to.changeTokenBalance(spiralbits, signer2, 0);
+  });
+
+  it("Staking - Unstaking with transfers (spirals)", async function () {
+    const { impishSpiral, spiralstaking, spiralbits, rwnft } = await loadContracts();
+    const [signer, signer2, signer3] = await ethers.getSigners();
+
+    // Assert the 100M has been minted to wallet, and burn it to make rest of the calculations easy in this
+    // test
+    expect(await spiralbits.balanceOf(signer.address)).to.be.equal(
+      BigNumber.from(100 * Math.pow(10, 6)).mul(BigNumber.from(10).pow(18)) // 100M
+    );
+    await spiralbits.burn(await spiralbits.balanceOf(signer.address));
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+
+    // Mint 2 each of RandomWalkNFT and Spirals
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
+
+    // Transfer rwnft#0 to signer2
+    await impishSpiral["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, 0);
+
+    // Stake on behalf of signer3
+    await impishSpiral.connect(signer2).setApprovalForAll(spiralstaking.address, true);
+    await expect(spiralstaking.stakeNFTsForOwner([0], signer3.address)).to.be.revertedWith("DontOwnToken");
+    await spiralstaking.connect(signer2).stakeNFTsForOwner([0], signer3.address);
+
+    // Now, neither signer nor signer2 can withdraw this
+    await expect(spiralstaking.unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.connect(signer2).unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+
+    // But signer3 can
+    await spiralstaking.connect(signer3).unstakeNFTs([0], true);
+    expect(await spiralbits.balanceOf(signer3.address)).to.be.gt(0);
+
+    // Signer3 now transfers it to signer2, who can stake it
+    await impishSpiral
+      .connect(signer3)
+      ["safeTransferFrom(address,address,uint256)"](signer3.address, signer2.address, 0);
+    await spiralstaking.connect(signer2).stakeNFTs([0]);
+
+    // Now, neither signer nor signer3 can withdraw this
+    await expect(spiralstaking.unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.connect(signer3).unstakeNFTs([0], true)).to.be.revertedWith("NotYours");
+
+    // Make sure the wallets are reflected correctly.
+    expect(await spiralstaking.walletOfOwner(signer.address)).to.be.deep.equals([]);
+    expect(await spiralstaking.walletOfOwner(signer2.address)).to.be.deep.equals([BigNumber.from(0)]);
+    expect(await spiralstaking.walletOfOwner(signer3.address)).to.be.deep.equals([]);
+
+    // Signer2 now stakes a second rwnft
+    await impishSpiral["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, 1);
+    await spiralstaking.connect(signer2).stakeNFTs([1]);
+
+    expect(await spiralstaking.walletOfOwner(signer.address)).to.be.deep.equals([]);
+    expect(await spiralstaking.walletOfOwner(signer2.address)).to.be.deep.equals([
+      BigNumber.from(0),
+      BigNumber.from(1),
+    ]);
+    expect(await spiralstaking.walletOfOwner(signer3.address)).to.be.deep.equals([]);
+
+    // Only Signer2 can withdraw
+    await spiralbits.connect(signer2).burn(await spiralbits.balanceOf(signer2.address));
+    await expect(spiralstaking.unstakeNFTs([1], true)).to.be.revertedWith("NotYours");
+    await expect(spiralstaking.connect(signer3).unstakeNFTs([1], true)).to.be.revertedWith("NotYours");
+    await spiralstaking.connect(signer2).unstakeNFTs([1], true);
+    expect(await spiralbits.balanceOf(signer2.address)).to.be.gt(0);
+
+    expect(await spiralstaking.walletOfOwner(signer.address)).to.be.deep.equals([]);
+    expect(await spiralstaking.walletOfOwner(signer2.address)).to.be.deep.equals([BigNumber.from(0)]);
+    expect(await spiralstaking.walletOfOwner(signer3.address)).to.be.deep.equals([]);
+
+    await spiralstaking.connect(signer2).unstakeNFTs([0], true);
+    expect(await spiralstaking.walletOfOwner(signer2.address)).to.be.deep.equals([]);
+
+    // Signer2 has no NFTs, so withdrawing spiralbits shouldn't change balance
+    await expect(() => spiralstaking.unstakeNFTs([], true)).to.changeTokenBalance(spiralbits, signer2, 0);
+  });
 });

@@ -76,6 +76,41 @@ describe("SpiralStaking", function () {
     expect((await spiralstaking.walletOfOwner(wallet.address)).length).to.be.deep.equals(0);
   });
 
+  it("Should allow for pausing", async function () {
+    const { impishSpiral, spiralstaking } = await loadContracts();
+    // eslint-disable-next-line no-unused-vars
+    const [signer, otherSigner] = await ethers.getSigners();
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+
+    // Mint random and stake it
+    const tokenId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    await spiralstaking.stakeNFTsForOwner([tokenId], otherSigner.address);
+
+    // Pause the contract
+    // Only owner can pause
+    await expect(spiralstaking.connect(otherSigner).pause()).to.be.revertedWith("Ownable: caller is not the owner");
+    await spiralstaking.pause(); // This should succeed
+
+    // Mint second
+    // Mint random and stake it
+    const tokenId2 = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+
+    // Now staking should fail
+    await expect(spiralstaking.stakeNFTsForOwner([tokenId2], otherSigner.address)).to.be.revertedWith("Paused");
+
+    // But we should be able to withdraw it
+    await spiralstaking.connect(otherSigner).unstakeNFTs([tokenId], false);
+
+    expect(await spiralstaking.paused()).to.be.equals(true);
+    expect(await impishSpiral.ownerOf(tokenId)).to.be.equals(otherSigner.address);
+    expect(BigNumber.from((await spiralstaking.stakedTokenOwners(tokenId)).owner)).to.be.equals(0);
+    expect((await spiralstaking.walletOfOwner(otherSigner.address)).length).to.be.deep.equals(0);
+  });
+
   it("Simple Staking - Different owner", async function () {
     const { impishSpiral, spiralstaking } = await loadContracts();
     // eslint-disable-next-line no-unused-vars
@@ -232,10 +267,7 @@ describe("SpiralStaking", function () {
       const unstakedTokenId = BigNumber.from(i).mul(2);
       await spiralstaking.unstakeNFTs([unstakedTokenId], false);
       expect(await impishSpiral.ownerOf(unstakedTokenId)).to.be.equals(wallet.address);
-      expect(
-        BigNumber.from(
-          (await spiralstaking.stakedTokenOwners(unstakedTokenId)).owner
-      )).to.be.equals(0);
+      expect(BigNumber.from((await spiralstaking.stakedTokenOwners(unstakedTokenId)).owner)).to.be.equals(0);
 
       const expectedStakedWallet = new Set(stakedTokenIds.map((n) => n.toNumber()));
       // remove all even ones so far
