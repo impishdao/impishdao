@@ -4,7 +4,6 @@ import { secondsToDhms } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { Contract } from "ethers";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
 
 type SpiralStakingProps = DappState & {
@@ -24,8 +23,6 @@ type SpiralStakingProps = DappState & {
 export function SpiralStaking(props: SpiralStakingProps) {
   // By default, 3days remain
   const [timeRemaining, setTimeRemaining] = useState(1641325283 - Date.now() / 1000);
-
-  const nav = useNavigate();
 
   // Countdown timer.
   useEffect(() => {
@@ -56,7 +53,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
           </a>
         </Row>
         <Row className="mt-5">
-          <h2 style={{ color: "#ffd454" }}>{secondsToDhms(timeRemaining)}</h2>
+          {timeRemaining > 0 && <h2 style={{ color: "#ffd454" }}>{secondsToDhms(timeRemaining)}</h2>}
+          {timeRemaining <= 0 && <h2 style={{ color: "#ffd454" }}>Staking will open soon</h2>}
         </Row>
       </div>
 
@@ -113,6 +111,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
             Similarly, if you have staked RandomWalkNFTs and have accumulated SPIRALBITS, at the instant you withdraw,
             the contract calculates the number of Spirals staked, divided by the total number of Spirals in existance,
             calculates the percentage, and awards that percentage of SPIRALBITS as the bonus.
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>
+              How many SPIRALBITS tokens will be issued?
+            </span>
+            <br />
+            There will only be 2 Billion SPIRALBITS tokens. 
+            <br />
+            <br />
+            <ul>
+              <li>100M tokens(5%) will be minted at start and put into a Uniswap V3 liquidity pool on Arbitrum</li>
+              <li>~14k tokens per day will be issued per Staked Impish Spiral</li>
+              <li>~1.4k tokens per day will be issued per Staked RandomWalkNFT</li>
+              <li>Staking of SPIRALBITS itself will be enabled in the coming days, allowing you to compound your SPIRALBITS</li>
+            </ul>
           </div>
 
           <div className="mb-3">
