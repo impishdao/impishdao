@@ -33,12 +33,17 @@ async function main() {
   const rwnftstaking = await RwnftStaking.deploy(IMPISHSPIRALS_address, spiralbits.address, RandomWalkNFT_address);
   await rwnftstaking.deployed();
 
-  await spiralstaking.setRwNFTStakingContract(rwnftstaking.address);
-  await rwnftstaking.setSpiralStakingContract(spiralstaking.address);
+  const tx1 = await spiralstaking.setRwNFTStakingContract(rwnftstaking.address);
+  await tx1.wait();
+
+  const tx2 = await rwnftstaking.setSpiralStakingContract(spiralstaking.address);
+  await tx2.wait();
 
   // Allow spiral staking to mint spiralbits
-  await spiralbits.addAllowedMinter(spiralstaking.address);
-  await spiralbits.addAllowedMinter(rwnftstaking.address);
+  const tx3 = await spiralbits.addAllowedMinter(spiralstaking.address);
+  await tx3.wait();
+  const tx4 = await spiralbits.addAllowedMinter(rwnftstaking.address);
+  await tx4.wait();
 
   console.log("SpiralBits deployed to:", spiralbits.address);
   console.log("SpiralStaking deployed to:", spiralstaking.address);
