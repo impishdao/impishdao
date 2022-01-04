@@ -277,7 +277,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const stakeSpirals = async (spiralTokenIds: Set<number>) => {
     if (props.spiralstaking && props.impspiral && spiralTokenIds.size > 0) {
       // First, check if approved
-      if (!(await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address))) {
+      if (spiralStakingApprovalNeeded) {
         const tx = await props.impspiral.setApprovalForAll(props.spiralstaking.address, true);
         await tx.wait();
       }
@@ -308,7 +308,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
     if (props.rwnftstaking && props.rwnft && rwTokenIds.size > 0) {
       // First, check if approved
-      if (!(await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address))) {
+      if (rwnftStakingApprovalNeeded) {
         const tx = await props.rwnft.setApprovalForAll(props.rwnftstaking.address, true);
         await tx.wait();
       }
