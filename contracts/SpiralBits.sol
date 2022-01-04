@@ -35,7 +35,7 @@ contract SpiralBits is ERC20, ERC20Burnable, Ownable {
 
     // Mint spiral bits directly into the given account. 
     function mintSpiralBits(address to, uint256 amount) external onlyApprovedMinter {
-        require(totalSupply() + amount < MAX_SUPPLY, "WouldExceedMax");
+        require(totalSupply() + amount <= MAX_SUPPLY, "WouldExceedMax");
 
         _mint(to, amount);
     }
