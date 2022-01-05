@@ -1,6 +1,6 @@
 /* eslint-disable node/no-missing-import */
 import { expect } from "chai";
-import { ethers, waffle } from "hardhat";
+import { ethers, network, waffle } from "hardhat";
 
 import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
@@ -49,6 +49,37 @@ describe("SpiralStaking", function () {
 
     return { impishSpiral, impdao, rwnft, spiralbits, spiralstaking };
   }
+
+  it("Simple Staking - Win while staked", async function () {
+    const { impishSpiral, spiralstaking } = await loadContracts();
+    const provider = waffle.provider;
+    const [wallet] = provider.getWallets();
+
+    // Approve staking
+    await impishSpiral.setApprovalForAll(spiralstaking.address, true);
+
+    // Mint random
+    const tokenId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+
+    // Stake
+    await spiralstaking.stakeNFTs([tokenId]);
+
+    // Now, fast forward 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 4]); // 4 days
+    await network.provider.send("evm_mine");
+
+    // Now the spiral game is won. Try to claim the prize, this should fail
+    // because the staking contract will refuse to accept the prize money
+    await expect(impishSpiral.claimWin(tokenId)).to.be.revertedWith("Transfer failed.");
+
+    // Unstake it, and then claim the win, that should work
+    await spiralstaking.unstakeNFTs([tokenId], false);
+    await impishSpiral.claimWin(tokenId);
+
+    // And then afterall winnings should work
+    await impishSpiral.afterAllWinnings();
+  });
 
   it("Simple Staking - Unstaking", async function () {
     const { impishSpiral, spiralstaking } = await loadContracts();
