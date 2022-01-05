@@ -261,7 +261,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
         const { seed, owner, indirectOwner } = data;
         setSeed(seed);
         setOwner(owner);
-        setIndirectOwner(owner);
+        setIndirectOwner(indirectOwner);
 
         if (canvasDetailRef.current) {
           setup_image(canvasDetailRef.current, `detail${id}`, seed);
@@ -538,8 +538,8 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     nav(`/spirals/wallet/${indirectOwner || owner}`);
                   }}
                 >
-                  {indirectOwner || owner}
-                  {indirectOwner && <span> (Staked) </span>}
+                  {indirectOwner && <span> {indirectOwner} (Staked) </span>}
+                  {!indirectOwner && <span>{owner}</span>}
                 </div>
 
                 <h5 className="mt-3" style={{ color: "#ffd454" }}>
