@@ -22,7 +22,7 @@ import { Container, Button, Alert, Modal, Row, Col } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
 import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralWallet } from "./SpiralWallet";
 import { SpiralDetail } from "./SpiralDetail";
@@ -345,6 +345,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
           <Routes>
             <Route
               path="/"
+              element={<Navigate replace to="/spirals" />}
+            />
+
+            <Route
+              path="/impishdao"
               element={
                 <ImpishDAO
                   {...this.state}

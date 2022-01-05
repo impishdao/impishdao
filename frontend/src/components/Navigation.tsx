@@ -19,24 +19,15 @@ export function Navigation(props: NavigationProps) {
     expandSection = 1;
   } else if (loc.pathname === "/spiralstaking" || loc.pathname.startsWith("/spiralstaking/")) {
     expandSection = 2;
+  } else if (loc.pathname === "/impishdao" || loc.pathname.startsWith("/impishdao")) {
+    expandSection = 3;
   }
 
   return (
     <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
       <Container>
-        <Navbar.Brand href="/">ImpishDAO</Navbar.Brand>
+        <Navbar.Brand href="/spirals">IMPISH</Navbar.Brand>
         <Nav className="me-auto">
-          <LinkContainer to="/">
-            <Nav.Link>Home</Nav.Link>
-          </LinkContainer>
-          {expandSection === 0 && (
-            <>
-              <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
-              <Nav.Link href="#stats">Stats</Nav.Link>
-              <Nav.Link href="#whitepaper">FAQ</Nav.Link>
-            </>
-          )}
-          <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
           <LinkContainer to="/spirals">
             <Nav.Link>Spirals</Nav.Link>
           </LinkContainer>
@@ -60,6 +51,17 @@ export function Navigation(props: NavigationProps) {
           <LinkContainer to="/spiralstaking">
             <Nav.Link>Staking</Nav.Link>
           </LinkContainer>
+          <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
+          <LinkContainer to="/impishdao">
+            <Nav.Link>ImpishDAO</Nav.Link>
+          </LinkContainer>
+          {expandSection === 3 && (
+            <>
+              <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
+              <Nav.Link href="#stats">Stats</Nav.Link>
+              <Nav.Link href="#whitepaper">FAQ</Nav.Link>
+            </>
+          )}
         </Nav>
         {!props.selectedAddress && (
           <Button className="connect" variant="warning" onClick={props.connectWallet}>
@@ -72,7 +74,7 @@ export function Navigation(props: NavigationProps) {
               {(expandSection === 1 || expandSection === 2) && (
                 <span>{format4Decimals(props.spiralBitsBalance)} SPIRALBITS</span>
               )}
-              {expandSection === 0 && <span>{format4Decimals(props.tokenBalance)} IMPISH</span>}
+              {expandSection === 3 && <span>{format4Decimals(props.tokenBalance)} IMPISH</span>}
             </div>
             <Button className="address" variant="warning">
               {props.selectedAddress}
