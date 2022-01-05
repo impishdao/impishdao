@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/anchor-has-content */
 import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { DappState } from "../AppState";
-import { format4Decimals, pad, range, retryTillSucceed } from "./utils";
+import { format4Decimals, formatkmb, pad, range, retryTillSucceed } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { Contract, BigNumber } from "ethers";
 import { useEffect, useState } from "react";
@@ -228,7 +228,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
         });
     }
 
-    console.log("Querying spiralstaking");
     retryTillSucceed(async () => {
       if (props.selectedAddress && props.spiralstaking) {
         const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
@@ -254,8 +253,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
   }, [props.selectedAddress, props.impspiral, props.spiralstaking, refreshCounter]);
 
   useEffect(() => {
-    console.log("Querying rwnftstaking");
-
     retryTillSucceed(async () => {
       if (props.selectedAddress && props.rwnftstaking) {
         const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
@@ -361,13 +358,13 @@ export function SpiralStaking(props: SpiralStakingProps) {
   let totalSpiralWithdrawWithBonus;
   if (spiralsTokenInfo?.pending) {
     const p = spiralsTokenInfo.pending;
-    totalSpiralWithdrawWithBonus = format4Decimals(p.add(p.mul(spiralsTokenInfo.bonusBips).div(10000)));
+    totalSpiralWithdrawWithBonus = p.add(p.mul(spiralsTokenInfo.bonusBips).div(10000));
   }
 
   let totalRWNFTWithdrawWithBonus;
   if (rwnftTokenInfo?.pending) {
     const p = rwnftTokenInfo.pending;
-    totalRWNFTWithdrawWithBonus = format4Decimals(p.add(p.mul(rwnftTokenInfo.bonusBips).div(10000)));
+    totalRWNFTWithdrawWithBonus = p.add(p.mul(rwnftTokenInfo.bonusBips).div(10000));
   }
 
   return (
@@ -427,7 +424,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 <tbody>
                   <tr>
                     <td>SPIRALBITS earned:</td>
-                    <td style={{ textAlign: "right" }}>{format4Decimals(spiralsTokenInfo?.pending)} SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{formatkmb(spiralsTokenInfo?.pending)} SPIRALBITS</td>
                   </tr>
                   <tr>
                     <td>Current Bonus</td>
@@ -435,7 +432,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   </tr>
                   <tr>
                     <td>Total if withdrawn now:</td>
-                    <td style={{ textAlign: "right" }}>{totalSpiralWithdrawWithBonus} SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{formatkmb(totalSpiralWithdrawWithBonus)} SPIRALBITS</td>
                   </tr>
                 </tbody>
               </Table>
@@ -491,7 +488,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 <tbody>
                   <tr>
                     <td>SPIRALBITS earned:</td>
-                    <td style={{ textAlign: "right" }}>{format4Decimals(rwnftTokenInfo?.pending)} SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{formatkmb(rwnftTokenInfo?.pending)} SPIRALBITS</td>
                   </tr>
                   <tr>
                     <td>Current Bonus</td>
@@ -499,7 +496,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   </tr>
                   <tr>
                     <td>Total if withdrawn now:</td>
-                    <td style={{ textAlign: "right" }}>{totalRWNFTWithdrawWithBonus} SPIRALBITS</td>
+                    <td style={{ textAlign: "right" }}>{formatkmb(totalRWNFTWithdrawWithBonus)} SPIRALBITS</td>
                   </tr>
                 </tbody>
               </Table>

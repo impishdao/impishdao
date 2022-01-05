@@ -3,7 +3,7 @@ import { LinkContainer } from "react-router-bootstrap";
 import { useLocation } from "react-router-dom";
 
 import { DappState } from "../AppState";
-import { format4Decimals } from "./utils";
+import { format4Decimals, formatkmb } from "./utils";
 
 type NavigationProps = DappState & {
   connectWallet: () => void;
@@ -72,7 +72,7 @@ export function Navigation(props: NavigationProps) {
           <>
             <div style={{ marginRight: "10px" }}>
               {(expandSection === 1 || expandSection === 2) && (
-                <span>{format4Decimals(props.spiralBitsBalance)} SPIRALBITS</span>
+                <span>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</span>
               )}
               {expandSection === 3 && <span>{format4Decimals(props.tokenBalance)} IMPISH</span>}
             </div>

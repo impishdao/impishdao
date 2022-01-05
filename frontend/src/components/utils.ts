@@ -21,6 +21,32 @@ export function format4Decimals(n?: BigNumber): string {
   return parseFloat(ethers.utils.formatEther(n)).toFixed(4);
 }
 
+
+export function formatkmb(n?: BigNumber): string {
+  if (n === undefined) {
+    return "-";
+  }
+
+  let num = parseFloat(ethers.utils.formatEther(n));
+  let suffix = '';
+  if (num > 1000) {
+    num /= 1000;
+    suffix = 'K';
+  }
+
+  if (num > 1000) {
+    num /= 1000;
+    suffix = 'M';
+  }
+
+  if (num > 1000) {
+    num /= 1000;
+    suffix = 'B';
+  }
+
+  return `${num.toFixed(2)}${suffix}`;
+}
+
 export function formatUSD(bal: BigNumber, lastETHPrice?: number) {
   if (lastETHPrice === undefined || !lastETHPrice) {
     return "(USD -)";
