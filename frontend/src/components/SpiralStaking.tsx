@@ -235,6 +235,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
   };
 
   useEffect(() => {
+    // Update the user data, which contains the update-token-balances logic
+    props.readUserData();
+  }, [props, refreshCounter]);
+
+  // Get Spiral staking info for the wallet
+  useEffect(() => {
     if (props.selectedAddress) {
       fetch(`/spiralapi/wallet/${props.selectedAddress}`)
         .then((r) => r.json())
@@ -267,6 +273,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
     });
   }, [props.selectedAddress, props.impspiral, props.spiralstaking, refreshCounter]);
 
+  // Get RWNFT staking info for the wallet
   useEffect(() => {
     retryTillSucceed(async () => {
       if (props.selectedAddress && props.rwnftstaking) {
