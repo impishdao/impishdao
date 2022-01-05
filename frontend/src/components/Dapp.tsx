@@ -343,10 +343,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
           )}
 
           <Routes>
-            <Route
-              path="/"
-              element={<Navigate replace to="/spirals" />}
-            />
+            <Route path="/" element={<Navigate replace to="/spirals" />} />
 
             <Route
               path="/impishdao"

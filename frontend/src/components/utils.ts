@@ -46,4 +46,22 @@ export function trimAddress(address: string): string {
   return address.substring(0, 7) + "..." + address.substring(address.length - 5, address.length);
 }
 
+export function retryTillSucceed(fn: () => Promise<void>, ctr?: number) {
+  if (ctr && ctr > 10) {
+    console.log("Giving up after 10 tries");
+    return;
+  }
+
+  (async () => {
+    try {
+      await fn();
+      // If it succeeds, return
+      return;
+    } catch (e) {
+      console.log(e);
+      setTimeout(() => retryTillSucceed(fn), 1000 * 2, (ctr || 0) + 1);
+    }
+  })();
+}
+
 export const THREE_DAYS = 3 * 24 * 3600;

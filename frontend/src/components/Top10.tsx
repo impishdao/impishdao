@@ -102,7 +102,8 @@ export function Top10(props: Top10Props) {
                       <ListGroup.Item
                         style={{ backgroundColor: "black", color: "white", borderBottom: "solid 1px white" }}
                       >
-                        <span>{s.indirectOwner ? "Staked" : "Owned"}</span> By: {trimAddress(s.indirectOwner || s.owner)}
+                        <span>{s.indirectOwner ? "Staked" : "Owned"}</span> By:{" "}
+                        {trimAddress(s.indirectOwner || s.owner)}
                       </ListGroup.Item>
                       <ListGroup.Item style={{ backgroundColor: "black", color: "white" }}>
                         Reward ETH {format4Decimals(rewardETH)}
