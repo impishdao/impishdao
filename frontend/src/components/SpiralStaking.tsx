@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/anchor-has-content */
 import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { DappState } from "../AppState";
-import { format4Decimals, formatkmb, pad, range, retryTillSucceed } from "./utils";
+import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
 import { Contract, BigNumber } from "ethers";
 import { useEffect, useState } from "react";
@@ -50,6 +50,20 @@ const StakingPageDisplay = ({
       setSelection(newSelection);
     }
   };
+
+  const selectAll = () => {
+    if (spirals && spirals.length > 0) {
+      const newSelection = spirals.slice(0, 50).map((t: any) => {
+        if (t.tokenId) {
+          return t.tokenId.toNumber();
+        } else {
+          return t.toNumber();
+        }
+      });
+      setSelection(new Set(newSelection));
+    }
+    
+  }
 
   const numPages = spirals ? Math.floor(spirals.length / pageSize) + 1 : 1;
 
@@ -137,7 +151,8 @@ const StakingPageDisplay = ({
       <Row>
         <div style={{ display: "flex", justifyContent: "end", flexDirection: "row" }}>
           {spirals && (
-            <div>
+            <div style={{display: 'flex', flexDirection: 'row', gap: '10px'}}>
+              <div style={{textDecoration: 'underline', color: 'white', cursor: 'pointer'}} onClick={selectAll}>Select All</div>
               (Selected: {selection.size} / {spirals.length})
             </div>
           )}
