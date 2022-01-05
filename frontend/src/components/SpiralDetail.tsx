@@ -207,6 +207,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
 
   const [seed, setSeed] = useState("");
   const [owner, setOwner] = useState("");
+  const [indirectOwner, setIndirectOwner] = useState();
   const [spiralState, setSpiralState] = useState<SpiralsState | undefined>();
 
   const [listingPrice, setListingPrice] = useState(BigNumber.from(0));
@@ -257,9 +258,10 @@ export function SpiralDetail(props: SpiralDetailProps) {
     fetch(`/spiralapi/seedforid/${id}`)
       .then((r) => r.json())
       .then((data) => {
-        const { seed, owner } = data;
+        const { seed, owner, indirectOwner } = data;
         setSeed(seed);
         setOwner(owner);
+        setIndirectOwner(owner);
 
         if (canvasDetailRef.current) {
           setup_image(canvasDetailRef.current, `detail${id}`, seed);
@@ -533,10 +535,11 @@ export function SpiralDetail(props: SpiralDetailProps) {
                 <div
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    nav(`/spirals/wallet/${owner}`);
+                    nav(`/spirals/wallet/${indirectOwner || owner}`);
                   }}
                 >
-                  {owner}
+                  {indirectOwner || owner}
+                  {indirectOwner && <span> (Staked) </span>}
                 </div>
 
                 <h5 className="mt-3" style={{ color: "#ffd454" }}>

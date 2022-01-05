@@ -9,6 +9,7 @@ import { BigNumber, ethers } from "ethers";
 
 import RandomWalkNFTArtifact from "./contracts/rwnft.json";
 import ImpishDAOArtifact from "./contracts/impdao.json";
+import SpiralStakingArtifact from "./contracts/spiralstaking.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 import ImpishDAOConfig from "./impishdao-config.json";
@@ -26,6 +27,7 @@ const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
 const _impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, provider);
 const _rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFTArtifact.abi, provider);
 const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
+const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
 
 const nftsAvailable = new Set<number>();
 
@@ -286,6 +288,7 @@ type SeedToIDValue = {
   id: BigNumber;
   seed: string;
   owner: string;
+  indirectOwner: string;
 };
 const seedToIdCache = new Map<number, SeedToIDValue>();
 app.get("/spiralapi/seedforid/:id", async (req, res) => {
@@ -305,9 +308,15 @@ app.get("/spiralapi/seedforid/:id", async (req, res) => {
 
     const owner = await _impishspiral.ownerOf(id);
 
-    seedToIdCache.set(id.toNumber(), { id, seed, owner });
+    let indirectOwner;
+    if (owner === contractAddresses.SpiralStaking) {
+      // Get the indirect owner
+      indirectOwner = (await _spiralstaking.stakedTokenOwners(id)).owner;
+    }
 
-    res.send({ id, seed, owner });
+    seedToIdCache.set(id.toNumber(), { id, seed, owner, indirectOwner });
+
+    res.send({ id, seed, owner, indirectOwner });
   } catch (err) {
     console.log(err);
     res.send({});

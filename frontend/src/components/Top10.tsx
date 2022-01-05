@@ -14,6 +14,7 @@ type SpiralDetail = {
   tokenId: BigNumber;
   seed: string;
   owner: string;
+  indirectOwner?: string;
 };
 
 export function Top10(props: Top10Props) {
@@ -50,9 +51,9 @@ export function Top10(props: Top10Props) {
               try {
                 const tokenId = BigNumber.from(t);
                 const url = `/spiralapi/seedforid/${tokenId.toString()}`;
-                const { seed, owner } = await (await fetch(url)).json();
+                const { seed, owner, indirectOwner } = await (await fetch(url)).json();
 
-                return { tokenId, seed, owner };
+                return { tokenId, seed, owner, indirectOwner };
               } catch (err) {
                 console.log(err);
                 return {};
@@ -101,7 +102,7 @@ export function Top10(props: Top10Props) {
                       <ListGroup.Item
                         style={{ backgroundColor: "black", color: "white", borderBottom: "solid 1px white" }}
                       >
-                        Owned By: {trimAddress(s.owner)}
+                        <span>{s.indirectOwner ? "Staked" : "Owned"}</span> By: {trimAddress(s.indirectOwner || s.owner)}
                       </ListGroup.Item>
                       <ListGroup.Item style={{ backgroundColor: "black", color: "white" }}>
                         Reward ETH {format4Decimals(rewardETH)}
