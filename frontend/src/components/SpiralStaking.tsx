@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 type StakingPageDisplayProps = {
   title: string;
   pageSize: number;
-  spirals: Array<SpiralDetail | BigNumber>;
+  spirals?: Array<SpiralDetail | BigNumber>;
   buttonName: string;
   onButtonClick: (selection: Set<number>) => void;
   secondButtonName?: string;
@@ -51,7 +51,7 @@ const StakingPageDisplay = ({
     }
   };
 
-  const numPages = Math.floor(spirals.length / pageSize) + 1;
+  const numPages = spirals ? Math.floor(spirals.length / pageSize) + 1 : 1;
 
   const PageList = () => {
     return (
@@ -80,7 +80,7 @@ const StakingPageDisplay = ({
     );
   };
 
-  const disabled = spirals.length === 0;
+  const disabled = !spirals || spirals.length === 0;
 
   return (
     <>
@@ -93,47 +93,56 @@ const StakingPageDisplay = ({
           justifyContent: "center",
         }}
       >
-        {spirals.slice(startPage * pageSize, startPage * pageSize + pageSize).map((s: any) => {
-          let imgurl;
-          let tokenId: BigNumber;
-          let height;
+        {!spirals && (
+          <span style={{ color: "#aaa", textAlign: "center" }}>Loading...</span>
+        )}
+        {spirals && (
+          <>
+            {spirals.slice(startPage * pageSize, startPage * pageSize + pageSize).map((s: any) => {
+              let imgurl;
+              let tokenId: BigNumber;
+              let height;
 
-          if (s.tokenId !== undefined) {
-            imgurl = `/spiral_image/seed/${s.seed}/75.png`;
-            tokenId = s.tokenId;
-            height = "75px";
-          } else {
-            const paddedTokenId = pad(s.toString(), 6);
-            imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
-            tokenId = s;
-            height = "50px";
-          }
+              if (s.tokenId !== undefined) {
+                imgurl = `/spiral_image/seed/${s.seed}/75.png`;
+                tokenId = s.tokenId;
+                height = "75px";
+              } else {
+                const paddedTokenId = pad(s.toString(), 6);
+                imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
+                tokenId = s;
+                height = "50px";
+              }
 
-          const border = selection.has(tokenId.toNumber()) ? "solid 2px #ffd454" : "solid 1px white";
+              const border = selection.has(tokenId.toNumber()) ? "solid 2px #ffd454" : "solid 1px white";
 
-          return (
-            <Col md={2} key={tokenId.toNumber()} className="mb-3">
-              <Card
-                style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
-                onClick={() => toggleInSelection(tokenId.toNumber())}
-              >
-                <Card.Img variant="top" src={imgurl} style={{ width: "75px", height }} />#{tokenId.toString()}
-              </Card>
-            </Col>
-          );
-        })}
-        {spirals.length === 0 && (
-          <span style={{ color: "#aaa", textAlign: "center" }}>
-            {nothingMessage !== undefined && <div>{nothingMessage}</div>}
-            {nothingMessage === undefined && <span>Nothing Here</span>}
-          </span>
+              return (
+                <Col md={2} key={tokenId.toNumber()} className="mb-3">
+                  <Card
+                    style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
+                    onClick={() => toggleInSelection(tokenId.toNumber())}
+                  >
+                    <Card.Img variant="top" src={imgurl} style={{ width: "75px", height }} />#{tokenId.toString()}
+                  </Card>
+                </Col>
+              );
+            })}
+            {spirals.length === 0 && (
+              <span style={{ color: "#aaa", textAlign: "center" }}>
+                {nothingMessage !== undefined && <div>{nothingMessage}</div>}
+                {nothingMessage === undefined && <span>Nothing Here</span>}
+              </span>
+            )}
+          </>
         )}
       </Row>
       <Row>
         <div style={{ display: "flex", justifyContent: "end", flexDirection: "row" }}>
-          <div>
-            (Selected: {selection.size} / {spirals.length})
-          </div>
+          {spirals && (
+            <div>
+              (Selected: {selection.size} / {spirals.length})
+            </div>
+          )}
         </div>
       </Row>
       <Row>
@@ -179,13 +188,13 @@ type SpiralBitsDetails = {
 };
 
 export function SpiralStaking(props: SpiralStakingProps) {
-  const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>([]);
-  const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>([]);
+  const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>();
+  const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>();
   const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
   const [spiralStakingApprovalNeeded, setSpiralStakingApprovalNeeded] = useState(false);
 
-  const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>([]);
-  const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>([]);
+  const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>();
+  const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>();
   const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
   const [rwnftStakingApprovalNeeded, setRwnftStakingApprovalNeeded] = useState(false);
 

@@ -315,8 +315,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
   };
 
   render() {
-    console.log(this.state);
-
     return (
       <BrowserRouter>
         <Container>

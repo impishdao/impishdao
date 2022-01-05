@@ -387,7 +387,7 @@ app.get("/spiral_image/seed/:seed/:size.png", async (req, res) => {
     });
 
     child.on("exit", (exitCode) => {
-      console.log(`For exitcode ${exitCode}`);
+      // console.log(`For exitcode ${exitCode}`);
     });
   } catch (e) {
     console.log(e);
