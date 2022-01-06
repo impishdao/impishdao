@@ -18,10 +18,10 @@ import MultiMintArtifact from "../contracts/multimint.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
-import { Container, Button, Alert, Modal, Row, Col } from "react-bootstrap";
+import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import { DappState, NFTForSale, WANTED_NETWORK_ID } from "../AppState";
+import { DappState, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralWallet } from "./SpiralWallet";
@@ -29,6 +29,7 @@ import { SpiralDetail } from "./SpiralDetail";
 import { Top10 } from "./Top10";
 import { Marketplace } from "./Marketplace";
 import { SpiralStaking } from "./SpiralStaking";
+import { cloneDeep } from "lodash";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -315,6 +316,29 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.setState({ modalTitle: title, modalMessage: message, modalShowing: true, modalCloseCallBack });
   };
 
+  hideToast = (id: number) => {
+    const newToasts = this.state.currentToasts
+      .map((toast) => {
+        if (!toast.show || toast.id === id) {
+          return null;
+        } else {
+          return toast;
+        }
+      })
+      .filter((t) => t) as Array<ToastInfo>;
+    this.setState({ currentToasts: newToasts });
+  };
+
+  showToast = (title: string, body: JSX.Element, autohide?: boolean): number => {
+    const newToasts = cloneDeep(this.state.currentToasts);
+    const id = newToasts.length + 1;
+    autohide = autohide || false;
+    newToasts.push({ title, body, autohide, id, show: true });
+
+    this.setState({ currentToasts: newToasts });
+    return id;
+  };
+
   render() {
     return (
       <BrowserRouter>
@@ -330,6 +354,24 @@ export class Dapp extends React.Component<DappProps, DappState> {
               }
             }}
           />
+          <ToastContainer position="bottom-end" className="p-3">
+            {this.state.currentToasts.map((toast) => {
+              return (
+                <Toast
+                  onClose={() => this.hideToast(toast.id)}
+                  show={toast.show}
+                  delay={5000}
+                  autohide={toast.autohide}
+                  bg="dark"
+                >
+                  <Toast.Header>
+                    <strong className="me-auto">{toast.title}</strong>
+                  </Toast.Header>
+                  <Toast.Body>{toast.body}</Toast.Body>
+                </Toast>
+              );
+            })}
+          </ToastContainer>
 
           <div className="mt-5" />
           {this.state.networkError && (
@@ -388,6 +430,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readDappState={() => this.readDappState()}
                   readUserData={() => this.readUserData()}
                   showModal={this.showModal}
+                  showToast={this.showToast}
+                  hideToast={this.hideToast}
                   provider={this.provider}
                   rwnft={this.rwnft}
                   spiralbits={this.spiralbits}

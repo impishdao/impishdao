@@ -18,6 +18,14 @@ export class NFTForSale {
   }
 }
 
+export type ToastInfo = {
+  id: number;
+  title: string;
+  body: JSX.Element;
+  autohide: boolean;
+  show: boolean;
+}
+
 export class DappState {
   networkError?: string;
   lastETHPrice?: number;
@@ -47,6 +55,9 @@ export class DappState {
   // List of NFTs for sale by the DAO
   nftsWithPrice: Array<NFTForSale>;
 
+  // Toasts currently Displaying
+  currentToasts: Array<ToastInfo>;
+
   constructor() {
     this.tokenBalance = BigNumber.from(0);
     this.spiralBitsBalance = BigNumber.from(0);
@@ -57,6 +68,7 @@ export class DappState {
 
     this.tokenBalance = BigNumber.from(0);
     this.nftsWithPrice = [];
+    this.currentToasts = [];
   }
 }
 
