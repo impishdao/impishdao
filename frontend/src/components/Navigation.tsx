@@ -1,4 +1,4 @@
-import { Button, Container, Nav, Navbar } from "react-bootstrap";
+import { Button, Container, Nav, Navbar, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useLocation } from "react-router-dom";
 
@@ -72,7 +72,14 @@ export function Navigation(props: NavigationProps) {
           <>
             <div style={{ marginRight: "10px" }}>
               {(expandSection === 1 || expandSection === 2) && (
-                <span>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</span>
+                <OverlayTrigger
+                  placement="bottom"
+                  overlay={
+                    <Tooltip id={`tooltip-spiralbits`}>{format4Decimals(props.spiralBitsBalance)} SPIRALBITS</Tooltip>
+                  }
+                >
+                  <span>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</span>
+                </OverlayTrigger>
               )}
               {expandSection === 3 && <span>{format4Decimals(props.tokenBalance)} IMPISH</span>}
             </div>

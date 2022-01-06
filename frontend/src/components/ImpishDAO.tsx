@@ -542,8 +542,31 @@ export function ImpishDAO(props: ImpishDAOProps) {
       {props.nftsWithPrice.length > 0 && (
         <>
           <a id="nftsforsale"></a>
-          <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
+          <Row style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
             <h1>NFTs for Sale</h1>
+          </Row>
+
+          <Row className="mb-5 mt-2">
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              {!props.selectedAddress && (
+                <Button
+                  className="connect mb-2"
+                  variant="warning"
+                  style={{ maxWidth: "150px" }}
+                  onClick={props.connectWallet}
+                >
+                  Connect Wallet
+                </Button>
+              )}
+              <a
+                href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "white" }}
+              >
+                Buy $IMPISH on Uniswap
+              </a>
+            </div>
           </Row>
 
           <Row className="justify-content-md-center">

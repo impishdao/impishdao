@@ -143,7 +143,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
       RWNFTStakingArtifact.abi,
       this.provider.getSigner(0)
     );
-    console.log(this.rwnftstaking);
 
     this.readDappState();
     this.readUserData();
@@ -390,10 +389,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readUserData={() => this.readUserData()}
                   showModal={this.showModal}
                   provider={this.provider}
-                  impdao={this.impdao}
                   rwnft={this.rwnft}
+                  spiralbits={this.spiralbits}
                   impspiral={this.impspiral}
-                  multimint={this.multimint}
                   spiralstaking={this.spiralstaking}
                   rwnftstaking={this.rwnftstaking}
                 />

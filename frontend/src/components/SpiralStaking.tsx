@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { Button, Card, Col, Row, Table } from "react-bootstrap";
+import { Button, Card, Col, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
 import { DappState } from "../AppState";
 import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
@@ -15,8 +15,10 @@ type StakingPageDisplayProps = {
   pageSize: number;
   spirals?: Array<SpiralDetail | BigNumber>;
   buttonName: string;
+  buttonTooltip?: string;
   onButtonClick: (selection: Set<number>) => void;
   secondButtonName?: string;
+  secondButtonTooltip?: string;
   onSecondButtonClick?: (selection: Set<number>) => void;
   refreshCounter: number;
   nothingMessage?: JSX.Element;
@@ -24,10 +26,12 @@ type StakingPageDisplayProps = {
 const StakingPageDisplay = ({
   pageSize,
   spirals,
-  buttonName,
   title,
+  buttonName,
+  buttonTooltip,
   onButtonClick,
   secondButtonName,
+  secondButtonTooltip,
   onSecondButtonClick,
   refreshCounter,
   nothingMessage,
@@ -62,8 +66,7 @@ const StakingPageDisplay = ({
       });
       setSelection(new Set(newSelection));
     }
-    
-  }
+  };
 
   const numPages = spirals ? Math.floor(spirals.length / pageSize) + 1 : 1;
 
@@ -151,8 +154,10 @@ const StakingPageDisplay = ({
       <Row>
         <div style={{ display: "flex", justifyContent: "end", flexDirection: "row" }}>
           {spirals && (
-            <div style={{display: 'flex', flexDirection: 'row', gap: '10px'}}>
-              <div style={{textDecoration: 'underline', color: 'white', cursor: 'pointer'}} onClick={selectAll}>Select All</div>
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
+              <div style={{ textDecoration: "underline", color: "white", cursor: "pointer" }} onClick={selectAll}>
+                Select All
+              </div>
               (Selected: {selection.size} / {spirals.length})
             </div>
           )}
@@ -161,13 +166,17 @@ const StakingPageDisplay = ({
       <Row>
         <div style={{ display: "flex", justifyContent: "end", padding: "10px", gap: "10px" }}>
           {secondButtonName && onSecondButtonClick && (
-            <Button variant="info" onClick={() => onSecondButtonClick(selection)} disabled={disabled}>
-              {secondButtonName}
-            </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip>{secondButtonTooltip || ""}</Tooltip>}>
+              <Button variant="info" onClick={() => onSecondButtonClick(selection)} disabled={disabled}>
+                {secondButtonName}
+              </Button>
+            </OverlayTrigger>
           )}
-          <Button variant="info" onClick={() => onButtonClick(selection)} disabled={disabled || selection.size === 0}>
-            {buttonName}
-          </Button>
+          <OverlayTrigger placement="top" overlay={<Tooltip>{buttonTooltip || ""}</Tooltip>}>
+            <Button variant="info" onClick={() => onButtonClick(selection)} disabled={disabled || selection.size === 0}>
+              {buttonName}
+            </Button>
+          </OverlayTrigger>
         </div>
       </Row>
     </>
@@ -176,10 +185,9 @@ const StakingPageDisplay = ({
 
 type SpiralStakingProps = DappState & {
   provider?: Web3Provider;
-  impdao?: Contract;
+  spiralbits?: Contract;
   rwnft?: Contract;
   impspiral?: Contract;
-  multimint?: Contract;
   spiralstaking?: Contract;
   rwnftstaking?: Contract;
 
@@ -323,21 +331,29 @@ export function SpiralStaking(props: SpiralStakingProps) {
   };
 
   const unstakeSpirals = async (spiralTokenIds: Set<number>) => {
-    console.log(`Un Staking ${Array.from(spiralTokenIds)}`);
-
     if (props.spiralstaking) {
+      const beforeSpiralBits = props.spiralBitsBalance;
+
       const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.spiralstaking.unstakeNFTs(tokenIds, true);
       await tx.wait();
 
       setRefreshCounter(refreshCounter + 1);
+      if (props.spiralbits && props.selectedAddress) {
+        const afterSpiralBits = await props.spiralbits.balanceOf(props.selectedAddress);
+        if (afterSpiralBits.gt(beforeSpiralBits)) {
+          props.showModal(
+            "Claimed SPIRALBITS",
+            <div>
+              You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
+            </div>
+          );
+        }
+      }
     }
   };
 
   const stakeRWNFTs = async (rwTokenIds: Set<number>) => {
-    console.log(`Staking ${Array.from(rwTokenIds)}`);
-    console.log(props.rwnft);
-
     if (props.rwnftstaking && props.rwnft && rwTokenIds.size > 0) {
       // First, check if approved
       if (rwnftStakingApprovalNeeded) {
@@ -354,18 +370,32 @@ export function SpiralStaking(props: SpiralStakingProps) {
   };
 
   const unstakeRWNFTs = async (rwTokenIds: Set<number>) => {
-    console.log(`Un Staking ${Array.from(rwTokenIds)}`);
-
     if (props.rwnftstaking) {
+      const beforeSpiralBits = props.spiralBitsBalance;
+
       const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
       const tx = await props.rwnftstaking.unstakeNFTs(tokenIds, true);
       await tx.wait();
 
       setRefreshCounter(refreshCounter + 1);
+
+      if (props.spiralbits && props.selectedAddress) {
+        const afterSpiralBits = await props.spiralbits.balanceOf(props.selectedAddress);
+        if (afterSpiralBits.gt(beforeSpiralBits)) {
+          props.showModal(
+            "Claimed SPIRALBITS",
+            <div>
+              You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
+            </div>
+          );
+        }
+      }
     }
   };
 
   const claimSpiralbits = async (contractNum: number) => {
+    const beforeSpiralBits = props.spiralBitsBalance;
+
     if (props.rwnftstaking && contractNum === 1) {
       const tx = await props.rwnftstaking.unstakeNFTs([], true);
       await tx.wait();
@@ -375,6 +405,18 @@ export function SpiralStaking(props: SpiralStakingProps) {
     }
 
     setRefreshCounter(refreshCounter + 1);
+
+    if (props.spiralbits && props.selectedAddress) {
+      const afterSpiralBits = await props.spiralbits.balanceOf(props.selectedAddress);
+      if (afterSpiralBits.gt(beforeSpiralBits)) {
+        props.showModal(
+          "Claimed SPIRALBITS",
+          <div>
+            You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
+          </div>
+        );
+      }
+    }
   };
 
   let totalSpiralWithdrawWithBonus;
@@ -433,11 +475,13 @@ export function SpiralStaking(props: SpiralStakingProps) {
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Staked Spirals"
-                  buttonName="UnStake &amp; Claim"
+                  buttonName="Unstake &amp; Claim"
+                  buttonTooltip="Unstake selected Spirals and claim all SPIRALBITS into your wallet"
                   pageSize={6}
                   spirals={walletStakedSpirals}
                   onButtonClick={unstakeSpirals}
                   secondButtonName="Claim"
+                  secondButtonTooltip="Claim all SPIRALBITS into your wallet without unstaking any Spirals"
                   refreshCounter={refreshCounter}
                   onSecondButtonClick={() => claimSpiralbits(0)}
                 />
@@ -497,10 +541,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
               {props.selectedAddress && (
                 <StakingPageDisplay
                   title="Staked RandomWalkNFTs"
-                  buttonName="UnStake &amp; Claim"
+                  buttonName="Unstake &amp; Claim"
+                  buttonTooltip="Unstake selected RandomWalkNFTs and claim all SPIRALBITS into your wallet"
                   pageSize={6}
                   spirals={walletStakedRWNFTs}
                   onButtonClick={unstakeRWNFTs}
+                  secondButtonTooltip="Claim all SPIRALBITS into your wallet without unstaking any RandomWalkNFTs"
                   secondButtonName="Claim"
                   refreshCounter={refreshCounter}
                   onSecondButtonClick={() => claimSpiralbits(1)}
@@ -596,6 +642,21 @@ export function SpiralStaking(props: SpiralStakingProps) {
             Similarly, if you have staked RandomWalkNFTs and have accumulated SPIRALBITS, at the instant you withdraw,
             the contract calculates the number of Spirals staked, divided by the total number of Spirals in existance,
             calculates the percentage, and awards that percentage of SPIRALBITS as the bonus.
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How can I buy SPIRABITS?</span>
+            <br />
+            Apart from Staking, you can also buy SPIRALBITS tokens on{" "}
+            <a
+              href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x650A9960673688Ba924615a2D28c39A8E015fB19"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "white" }}
+            >
+              Uniswap
+            </a>{" "}
+            on Arbitrum.
           </div>
 
           <div className="mb-3">
