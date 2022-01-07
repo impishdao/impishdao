@@ -1,10 +1,10 @@
-import { BigNumber, ethers } from "ethers";
+import { BigNumber } from "ethers";
 import { Button, Card } from "react-bootstrap";
 import { formatkmb, pad } from "./utils";
 
 type NFTCardProps = {
   selectedAddress?: string;
-  buyNFTFromDAO: (tokenId: BigNumber) => Promise<void>;
+  buyNFTFromDAO: (tokenId: BigNumber, price: BigNumber) => Promise<void>;
   tokenId: BigNumber;
   nftPriceImpish?: BigNumber;
   ethPer100Impish: BigNumber;
@@ -60,7 +60,7 @@ export function NFTCard({
           </a>
         </Card.Title>
         {showPrice && <Card.Text>{priceStr}</Card.Text>}
-        <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId)} disabled={!buyEnabled}>
+        <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId, price)} disabled={!buyEnabled}>
           Buy Now
         </Button>
       </Card.Body>

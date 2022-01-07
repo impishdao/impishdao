@@ -15,6 +15,7 @@ import SpiralBitsArtifact from "../contracts/spiralbits.json";
 import SpiralStakingArtifact from "../contracts/spiralstaking.json";
 import RWNFTStakingArtifact from "../contracts/rwnftstaking.json";
 import MultiMintArtifact from "../contracts/multimint.json";
+import BuyWithEtherArtifact from "../contracts/buywithether.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
@@ -68,6 +69,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   spiralstaking?: Contract;
   rwnftstaking?: Contract;
   spiralbits?: Contract;
+  buywitheth?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -142,6 +144,13 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.rwnftstaking = new ethers.Contract(
       contractAddresses.RWNFTStaking,
       RWNFTStakingArtifact.abi,
+      this.provider.getSigner(0)
+    );
+
+    // Buy ImpishDAO NFTs with ETH or Spiralbits
+    this.buywitheth = new ethers.Contract(
+      contractAddresses.BuyWithEther,
+      BuyWithEtherArtifact.abi,
       this.provider.getSigner(0)
     );
 
@@ -400,6 +409,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   provider={this.provider}
                   impdao={this.impdao}
                   rwnft={this.rwnft}
+                  buywitheth={this.buywitheth}
                 />
               }
             />

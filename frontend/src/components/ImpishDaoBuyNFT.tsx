@@ -52,14 +52,30 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
     );
   };
 
-  const buyNFTFromDAO = async (tokenId: BigNumber) => {
+  const buyNFTFromDAO = async (tokenId: BigNumber, price: BigNumber) => {
     // Wait for this Tx to be mined, then refresh all data.
     try {
-      let tx: ContractTransaction = await props.impdao?.buyNFT(tokenId);
+      let tx: ContractTransaction | undefined;
+      switch (priceIn) {
+        case "IMPISH": {
+          tx = await props.impdao?.buyNFT(tokenId);
+          break;
+        }
+        case "ETH": {
+          tx = await props.buywitheth?.buyRwNFTFromDaoWithEth(tokenId, false, {value: price});
+          break;
+        }
+        case "SPIRALBITS": {
+          tx = await props.buywitheth?.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
+          break;
+        }
+      }
 
-      await tx.wait();
+      if (tx) {
+        await tx.wait();
+      }
+
       const tokenIdPadded = pad(tokenId.toString(), 6);
-
       props.showModal(
         "Congrats on your new NFT!",
         <div>
@@ -82,11 +98,11 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
       // If user didn't cancel
       if (e?.code !== ERROR_CODE_TX_REJECTED_BY_USER) {
         props.showModal(
-          "Not Enough IMPISH Tokens!",
+          `Not Enough ${priceIn}!`,
           <div>
-            You don't have enough IMPISH tokens to buy this NFT!
+            You don't have enough {priceIn} to buy this NFT!
             <br />
-            Buy IMPISH tokens by contributing to ImpishDAO or from{" "}
+            Buy {priceIn} {(priceIn === "IMPISH") && "by contributing to ImpishDAO or"} from{" "}
             <a
               href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6"
               target="_blank"
