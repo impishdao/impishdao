@@ -1,29 +1,19 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
+import { BigNumber, ContractTransaction, ethers } from "ethers";
 
-import { Web3Provider } from "@ethersproject/providers";
 import { Button, InputGroup, FormControl, Row, Col, Stack, Table } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
-import { format4Decimals, formatUSD, pad, range, secondsToDhms } from "./utils";
-import { NFTCard } from "./NFTcard";
+import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
 import React, { useEffect, useState } from "react";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { Navigation } from "./Navigation";
+import { ImpishDAOBuyNFTs } from "./ImpishDaoBuyNFT";
+import { Route, Routes } from "react-router-dom";
 
 let timeNow = Date.now();
 
-type ImpishDAOProps = DappState & {
-  provider?: Web3Provider;
-  impdao?: Contract;
-  rwnft?: Contract;
-
-  connectWallet: () => void;
-
-  readDappState: () => Promise<void>;
-  readUserData: () => Promise<void>;
-  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
-};
+type ImpishDAOProps = DappState & DappFunctions & DappContracts & {};
 
 type BeenOutbidProps = DappState & {
   depositIntoDAO: (amount: BigNumber) => Promise<void>;
@@ -325,8 +315,6 @@ const Loading = () => {
 };
 
 export function ImpishDAO(props: ImpishDAOProps) {
-  const [startPage, setStartPage] = useState(0);
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const AdminDepositExternal = async () => {
     if (props.provider) {
@@ -347,7 +335,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
     }
   };
 
-  async function depositIntoDAO(amount: BigNumber) {
+  const depositIntoDAO = async (amount: BigNumber) => {
     try {
       // Wait for this Tx to be mined, then refresh all data.
       let tx: ContractTransaction = await props.impdao?.deposit({ value: amount });
@@ -388,7 +376,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         props.showModal("Error Contributing to ImpishDAO!", <div>{msg}</div>);
       }
     }
-  }
+  };
 
   const redeemTokens = async () => {
     // Wait for this Tx to be mined, then refresh all data.
@@ -409,54 +397,6 @@ export function ImpishDAO(props: ImpishDAOProps) {
       // If user didn't cancel
       if (e?.code !== ERROR_CODE_TX_REJECTED_BY_USER) {
         props.showModal("Error Redeeming tokens!", <div>{e?.data?.message}</div>);
-      }
-    }
-  };
-
-  const buyNFTFromDAO = async (tokenId: BigNumber) => {
-    // Wait for this Tx to be mined, then refresh all data.
-    try {
-      let tx: ContractTransaction = await props.impdao?.buyNFT(tokenId);
-
-      await tx.wait();
-      const tokenIdPadded = pad(tokenId.toString(), 6);
-
-      props.showModal(
-        "Congrats on your new NFT!",
-        <div>
-          Congrats on purchasing RandomWalkNFT #{tokenIdPadded}
-          <br />
-          <a href={`https://randomwalknft.com/detail/${tokenIdPadded}`} target="_blank" rel="noreferrer">
-            View on RandomWalkNFT
-          </a>
-        </div>
-      );
-
-      // Set a timer to refresh data after a few seconds, so that the server has time to process the event
-      setTimeout(() => {
-        props.readDappState();
-        props.readUserData();
-      }, 1000 * 5);
-    } catch (e: any) {
-      console.log(e);
-
-      // If user didn't cancel
-      if (e?.code !== ERROR_CODE_TX_REJECTED_BY_USER) {
-        props.showModal(
-          "Not Enough IMPISH Tokens!",
-          <div>
-            You don't have enough IMPISH tokens to buy this NFT!
-            <br />
-            Buy IMPISH tokens by contributing to ImpishDAO or from{" "}
-            <a
-              href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Uniswap
-            </a>
-          </div>
-        );
       }
     }
   };
@@ -497,168 +437,81 @@ export function ImpishDAO(props: ImpishDAOProps) {
       .div(props.totalTokenSupply);
   }
 
-  const PAGE_SIZE = 16;
-  const numPages = Math.floor(props.nftsWithPrice.length / PAGE_SIZE) + 1;
-
-  const PageList = () => {
-    return (
-      <Row className="mb-2">
-        {numPages > 1 && (
-          <Col xs={{ span: 6, offset: 3 }}>
-            <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "center" }}>
-              Pages
-              {range(numPages).map((p) => {
-                const textDecoration = p === startPage ? "underline" : "";
-                return (
-                  <div key={p} style={{ cursor: "pointer" }} onClick={() => setStartPage(p)}>
-                    <span style={{ textDecoration }}>{p}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </Col>
-        )}
-      </Row>
-    );
-  };
-
   return (
     <>
       <Navigation {...props} />
 
-      <a id="home"></a>
-      <div className="withBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
-        {renderScreen === 4 && (
-          <BeenOutbid {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
-        )}
-        {renderScreen === 3 && (
-          <WeAreWinning {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
-        )}
-        {renderScreen === 2 && <WeWon {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />}
-        {renderScreen === 1 && <Redeem {...props} redeemTokens={redeemTokens} />}
-        {renderScreen === 0 && <Loading />}
-      </div>
+      <Routes>
+        <Route
+          path=""
+          element={
+            <>
+              <div className="withBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
+                {renderScreen === 4 && (
+                  <BeenOutbid {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
+                )}
+                {renderScreen === 3 && (
+                  <WeAreWinning {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
+                )}
+                {renderScreen === 2 && (
+                  <WeWon {...props} depositIntoDAO={depositIntoDAO} connectWallet={props.connectWallet} />
+                )}
+                {renderScreen === 1 && <Redeem {...props} redeemTokens={redeemTokens} />}
+                {renderScreen === 0 && <Loading />}
+              </div>
 
-      {props.nftsWithPrice.length > 0 && (
-        <>
-          <a id="nftsforsale"></a>
-          <Row style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
-            <h1>NFTs for Sale</h1>
-          </Row>
+              <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
+                <h1>ImpishDAO Stats</h1>
+              </Row>
+              <Row className="justify-content-md-center mb-4">
+                <Col md={4}>
+                  <Table style={{ color: "white" }}>
+                    <tbody>
+                      <tr>
+                        <td>DAO Balance</td>
+                        <td>ETH {format4Decimals(props.daoBalance)}</td>
+                      </tr>
+                      <tr>
+                        <td>RandomWalkNFT Prize</td>
+                        <td>ETH {format4Decimals(props.withdrawalAmount)}</td>
+                      </tr>
+                      <tr>
+                        <td>Next RandomWalkNFT Price</td>
+                        <td>ETH {format4Decimals(props.mintPrice)}</td>
+                      </tr>
+                      <tr>
+                        <td>Total IMPISH Supply</td>
+                        <td>IMPISH {format4Decimals(props.totalTokenSupply)}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Col>
 
-          <Row className="mb-5 mt-2">
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              {!props.selectedAddress && (
-                <Button
-                  className="connect mb-2"
-                  variant="warning"
-                  style={{ maxWidth: "150px" }}
-                  onClick={props.connectWallet}
-                >
-                  Connect Wallet
-                </Button>
-              )}
-              <a
-                href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6"
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "white" }}
-              >
-                Buy $IMPISH on Uniswap
-              </a>
-            </div>
-          </Row>
-
-          <Row className="justify-content-md-center">
-            <PageList />
-            <Row>
-              {props.nftsWithPrice.slice(startPage * PAGE_SIZE, startPage * PAGE_SIZE + PAGE_SIZE).map((nft) => {
-                return (
-                  <Col xl={3} className="mb-3" key={nft.tokenId.toString()}>
-                    <NFTCard
-                      selectedAddress={props.selectedAddress}
-                      nftPrice={nft.price}
-                      buyNFTFromDAO={buyNFTFromDAO}
-                      tokenId={nft.tokenId}
-                    />
+                {props.selectedAddress && (
+                  <Col md={4}>
+                    <Table style={{ color: "white" }}>
+                      <tbody>
+                        <tr>
+                          <td>Your IMPISH Balance</td>
+                          <td>IMPISH {format4Decimals(props.tokenBalance)}</td>
+                        </tr>
+                        <tr>
+                          <td>Your share if ImpishDAO wins</td>
+                          <td>ETH {format4Decimals(myShareOfWinnings)}</td>
+                        </tr>
+                      </tbody>
+                    </Table>
                   </Col>
-                );
-              })}
-            </Row>
-            <PageList />
-          </Row>
-        </>
-      )}
+                )}
+              </Row>
+            </>
+          }
+        />
 
-      {/* <div style={{ border: "solid 1px #fff", margin: 20, padding: 20 }}>
-        {props.selectedAddress && (
-          <>
-            <Stack direction="horizontal" gap={3}>
-              <Button onClick={AdminDepositExternal}>Mint NFT Directly</Button>
-              <Button onClick={AdminWithdraw}>Withdraw() Directly</Button>
-              <Button onClick={props.readDappState}>Refresh DAO Data</Button>
-              <Button
-                onClick={() => {
-                  props.readDappState();
-                  props.readUserData();
-                  timeNow += 30 * 24 * 3600 * 1000;
-                }}
-              >
-                Advance Time
-              </Button>
-            </Stack>
-          </>
-        )}
-      </div> */}
+        <Route path="buy" element={<ImpishDAOBuyNFTs {...props} />} />
 
-      <a id="stats"></a>
-      <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
-        <h1>ImpishDAO Stats</h1>
-      </Row>
-      <Row className="justify-content-md-center mb-4">
-        <Col md={4}>
-          <Table style={{ color: "white" }}>
-            <tbody>
-              <tr>
-                <td>DAO Balance</td>
-                <td>ETH {format4Decimals(props.daoBalance)}</td>
-              </tr>
-              <tr>
-                <td>RandomWalkNFT Prize</td>
-                <td>ETH {format4Decimals(props.withdrawalAmount)}</td>
-              </tr>
-              <tr>
-                <td>Next RandomWalkNFT Price</td>
-                <td>ETH {format4Decimals(props.mintPrice)}</td>
-              </tr>
-              <tr>
-                <td>Total IMPISH Supply</td>
-                <td>IMPISH {format4Decimals(props.totalTokenSupply)}</td>
-              </tr>
-            </tbody>
-          </Table>
-        </Col>
-
-        {props.selectedAddress && (
-          <Col md={4}>
-            <Table style={{ color: "white" }}>
-              <tbody>
-                <tr>
-                  <td>Your IMPISH Balance</td>
-                  <td>IMPISH {format4Decimals(props.tokenBalance)}</td>
-                </tr>
-                <tr>
-                  <td>Your share if ImpishDAO wins</td>
-                  <td>ETH {format4Decimals(myShareOfWinnings)}</td>
-                </tr>
-              </tbody>
-            </Table>
-          </Col>
-        )}
-      </Row>
-
-      <a id="whitepaper"></a>
-      <Whitepaper withdrawalAmount={props.withdrawalAmount || BigNumber.from(0)} />
+        <Route path="faq" element={<Whitepaper withdrawalAmount={props.withdrawalAmount || BigNumber.from(0)} />} />
+      </Routes>
     </>
   );
 }

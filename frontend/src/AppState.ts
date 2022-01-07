@@ -1,5 +1,6 @@
-import { BigNumber } from "ethers";
+import { BigNumber, Contract } from "ethers";
 import ImpishDAOConfig from "./impishdao-config.json";
+import { Web3Provider } from "@ethersproject/providers";
 
 export const ARBITRUM_NETWORK_ID = "42161";
 
@@ -77,3 +78,23 @@ export type SpiralsState = {
   nextTokenId: BigNumber;
   totalReward: BigNumber;
 };
+
+export type DappFunctions = {
+  connectWallet: () => void;
+  readDappState: () => Promise<void>;
+  readUserData: () => Promise<void>;
+  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
+}
+
+export type DappContracts = {
+  provider?: Web3Provider;
+
+  rwnft?: Contract;
+  impdao?: Contract;
+  impspiral?: Contract;
+  spiralmarket?: Contract;
+  multimint?: Contract;
+  spiralbits?: Contract;  
+  spiralstaking?: Contract;
+  rwnftstaking?: Contract;
+}

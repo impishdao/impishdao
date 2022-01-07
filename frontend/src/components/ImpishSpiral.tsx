@@ -1,27 +1,14 @@
 import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { format4Decimals, formatUSD, range, secondsToDhms, THREE_DAYS } from "./utils";
-import { Web3Provider } from "@ethersproject/providers";
-import { BigNumber, Contract } from "ethers";
+import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setup_image } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
 
-type SpiralProps = DappState & {
-  provider?: Web3Provider;
-  impdao?: Contract;
-  rwnft?: Contract;
-  impspiral?: Contract;
-  multimint?: Contract;
-
-  connectWallet: () => void;
-
-  readDappState: () => Promise<void>;
-  readUserData: () => Promise<void>;
-  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
-};
+type SpiralProps = DappState & DappFunctions & DappContracts & {};
 
 export function ImpishSpiral(props: SpiralProps) {
   // const canvasPreviewRef = useRef<HTMLCanvasElement>(null);

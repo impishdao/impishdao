@@ -57,9 +57,12 @@ export function Navigation(props: NavigationProps) {
           </LinkContainer>
           {expandSection === 3 && (
             <>
-              <Nav.Link href="#nftsforsale">NFTs for Sale</Nav.Link>
-              <Nav.Link href="#stats">Stats</Nav.Link>
-              <Nav.Link href="#whitepaper">FAQ</Nav.Link>
+              <LinkContainer to="/impishdao/buy">
+                <Nav.Link>NFTs for Sale</Nav.Link>
+              </LinkContainer>
+              <LinkContainer to="/impishdao/faq">
+                <Nav.Link>FAQ</Nav.Link>
+              </LinkContainer>
             </>
           )}
         </Nav>

@@ -1,10 +1,10 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
 import { Button, Card, Col, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
-import { DappState } from "../AppState";
+import { DappContracts, DappFunctions, DappState } from "../AppState";
 import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 import { Web3Provider } from "@ethersproject/providers";
-import { Contract, BigNumber } from "ethers";
+import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
@@ -68,7 +68,7 @@ const StakingPageDisplay = ({
     }
   };
 
-  const numPages = spirals ? Math.floor((spirals.length-1) / pageSize) + 1 : 1;
+  const numPages = spirals ? Math.floor((spirals.length - 1) / pageSize) + 1 : 1;
 
   const PageList = () => {
     return (
@@ -183,22 +183,14 @@ const StakingPageDisplay = ({
   );
 };
 
-type SpiralStakingProps = DappState & {
-  provider?: Web3Provider;
-  spiralbits?: Contract;
-  rwnft?: Contract;
-  impspiral?: Contract;
-  spiralstaking?: Contract;
-  rwnftstaking?: Contract;
+type SpiralStakingProps = DappState &
+  DappFunctions &
+  DappContracts & {
+    provider?: Web3Provider;
 
-  connectWallet: () => void;
-
-  readDappState: () => Promise<void>;
-  readUserData: () => Promise<void>;
-  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
-  showToast: (title: string, body: JSX.Element, autohide?: boolean) => number;
-  hideToast: (id: number) => void;
-};
+    showToast: (title: string, body: JSX.Element, autohide?: boolean) => number;
+    hideToast: (id: number) => void;
+  };
 
 type SpiralDetail = {
   tokenId: BigNumber;

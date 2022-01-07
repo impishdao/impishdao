@@ -86,7 +86,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     // Fetching the token data and the user's balance are specific to this
     // sample project, but you can reuse the same initialization pattern.
     this._intializeEthers();
-  }
+  };
 
   _intializeEthers = async () => {
     // We first initialize ethers by creating a provider using window.ethereum
@@ -147,7 +147,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
     this.readDappState();
     this.readUserData();
-  }
+  };
 
   addChainRequest = (ethereum: any) => {
     return ethereum.request({
@@ -237,7 +237,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
       this._resetState();
       console.log(`Network is now ${networkId}`);
     });
-  }
+  };
 
   // This method resets the state
   _resetState = () => {
@@ -245,12 +245,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
       // After the new state is set, refresh all data from the server
       this.readDappState();
     });
-  }
+  };
 
   // This method just clears part of the state.
   _dismissNetworkError = () => {
     this.setState({ networkError: undefined });
-  }
+  };
 
   readDappState = async () => {
     fetch("/lastethprice")
@@ -389,7 +389,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route path="/" element={<Navigate replace to="/spirals" />} />
 
             <Route
-              path="/impishdao"
+              path="/impishdao/*"
               element={
                 <ImpishDAO
                   {...this.state}
@@ -465,10 +465,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
               }
             />
 
-            <Route
-              path="/spirals/top10"
-              element={<Top10 {...this.state} connectWallet={this._connectWallet} />}
-            />
+            <Route path="/spirals/top10" element={<Top10 {...this.state} connectWallet={this._connectWallet} />} />
           </Routes>
 
           <Row

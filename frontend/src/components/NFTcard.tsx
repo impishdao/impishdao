@@ -4,7 +4,7 @@ import { pad } from "./utils";
 
 type NFTCardProps = {
   selectedAddress?: string;
-  buyNFTFromDAO?: (tokenId: BigNumber) => Promise<void>;
+  buyNFTFromDAO: (tokenId: BigNumber) => Promise<void>;
   tokenId: BigNumber;
   nftPrice?: BigNumber;
 };
@@ -14,6 +14,8 @@ export function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: N
   const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
   const showPrice = nftPrice && nftPrice.gt(0);
   const price = parseFloat(ethers.utils.formatEther(nftPrice || 0)).toFixed(4);
+
+  const buyEnabled = selectedAddress && buyNFTFromDAO;
 
   return (
     <Card style={{ width: "320px", padding: "10px", borderRadius: "5px" }} key={tokenId.toString()}>
@@ -37,11 +39,9 @@ export function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: N
           </a>
         </Card.Title>
         {showPrice && <Card.Text>Price: {price} IMPISH</Card.Text>}
-        {selectedAddress && buyNFTFromDAO && (
-          <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId)}>
-            Buy Now
-          </Button>
-        )}
+        <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId)} disabled={!buyEnabled}>
+          Buy Now
+        </Button>
       </Card.Body>
     </Card>
   );
