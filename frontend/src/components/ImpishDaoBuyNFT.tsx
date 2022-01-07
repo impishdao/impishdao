@@ -104,7 +104,7 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
                 <div>Prices In:</div>
 
                 <Dropdown as={ButtonGroup} variant="secondary" title="ETH" onSelect={(e) => setPricedIn(e || "")}>
-                  <Dropdown.Toggle>{pricedIn}</Dropdown.Toggle>
+                  <Dropdown.Toggle variant="secondary">{pricedIn}</Dropdown.Toggle>
                   <Dropdown.Menu variant="dark">
                     <Dropdown.Item eventKey="ETH">ETH</Dropdown.Item>
                     <Dropdown.Item eventKey="IMPISH">IMPISH</Dropdown.Item>
