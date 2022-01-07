@@ -349,6 +349,13 @@ export class Dapp extends React.Component<DappProps, DappState> {
     return id;
   };
 
+  waitForTxConfirmation = async (tx: Promise<any>, title?: string) => {
+    const t = await tx;
+    const id = this.showToast(title || "Sending Tx", <span>Waiting for confirmations...</span>);
+    await t.wait();
+    this.hideToast(id);
+  };
+
   render() {
     return (
       <BrowserRouter>
@@ -407,6 +414,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
                   showModal={this.showModal}
                   provider={this.provider}
                   impdao={this.impdao}
@@ -425,6 +433,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   showModal={this.showModal}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
                   provider={this.provider}
                   impdao={this.impdao}
                   rwnft={this.rwnft}
@@ -443,8 +452,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   showModal={this.showModal}
-                  showToast={this.showToast}
-                  hideToast={this.hideToast}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
                   provider={this.provider}
                   rwnft={this.rwnft}
                   spiralbits={this.spiralbits}

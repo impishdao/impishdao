@@ -66,34 +66,34 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
   const buyNFTFromDAO = async (tokenId: BigNumber, price: BigNumber) => {
     // Wait for this Tx to be mined, then refresh all data.
     try {
-      let tx: ContractTransaction | undefined;
+      let tx: Promise<ContractTransaction> | undefined;
       switch (priceIn) {
         case "IMPISH": {
-          tx = await props.impdao?.buyNFT(tokenId);
+          tx = props.impdao?.buyNFT(tokenId);
           break;
         }
         case "ETH": {
-          tx = await props.buywitheth?.buyRwNFTFromDaoWithEth(tokenId, false, { value: price });
+          tx = props.buywitheth?.buyRwNFTFromDaoWithEth(tokenId, false, { value: price });
           break;
         }
         case "SPIRALBITS": {
           if (props.spiralbits && props.buywitheth) {
             if (spiralbitsAllowance.lt(price)) {
-              const approveTx = await props.spiralbits.approve(
+              const approveTx = props.spiralbits.approve(
                 props.buywitheth.address,
                 BigNumber.from(10).pow(18 + 10)
               );
-              await approveTx.wait();
+              await props.waitForTxConfirmation(approveTx, "Approving");
             }
 
-            tx = await props.buywitheth?.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
+            tx = props.buywitheth?.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
           }
           break;
         }
       }
 
       if (tx) {
-        await tx.wait();
+        await props.waitForTxConfirmation(tx, "Buying RandomWalkNFT");
       }
 
       const tokenIdPadded = pad(tokenId.toString(), 6);

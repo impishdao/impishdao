@@ -86,6 +86,7 @@ export type DappFunctions = {
   readDappState: () => Promise<void>;
   readUserData: () => Promise<void>;
   showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
+  waitForTxConfirmation: (tx: Promise<any>, title?: string) => Promise<void>;
 }
 
 export type DappContracts = {

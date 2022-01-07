@@ -188,8 +188,7 @@ type SpiralStakingProps = DappState &
   DappContracts & {
     provider?: Web3Provider;
 
-    showToast: (title: string, body: JSX.Element, autohide?: boolean) => number;
-    hideToast: (id: number) => void;
+    waitForTxConfirmation: (tx: Promise<any>, title?: string) => Promise<void>;
   };
 
 type SpiralDetail = {
@@ -313,17 +312,14 @@ export function SpiralStaking(props: SpiralStakingProps) {
     if (props.spiralstaking && props.impspiral && spiralTokenIds.size > 0) {
       // First, check if approved
       if (spiralStakingApprovalNeeded) {
-        const tx = await props.impspiral.setApprovalForAll(props.spiralstaking.address, true);
-        const id = props.showToast("Approve Staking", <span>Waiting for confirmations...</span>);
-        await tx.wait();
-        props.hideToast(id);
+        await props.waitForTxConfirmation(
+          props.impspiral.setApprovalForAll(props.spiralstaking.address, true),
+          "Approve Staking"
+        );
       }
 
       const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
-      const tx = await props.spiralstaking.stakeNFTs(tokenIds);
-      const id = props.showToast("Staking", <span>Waiting for confirmations...</span>);
-      await tx.wait();
-      props.hideToast(id);
+      await props.waitForTxConfirmation(props.spiralstaking.stakeNFTs(tokenIds), "Staking");
 
       setRefreshCounter(refreshCounter + 1);
     }
@@ -334,10 +330,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const beforeSpiralBits = props.spiralBitsBalance;
 
       const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
-      const tx = await props.spiralstaking.unstakeNFTs(tokenIds, true);
-      const id = props.showToast("Unstaking", <span>Waiting for confirmations...</span>);
-      await tx.wait();
-      props.hideToast(id);
+      await props.waitForTxConfirmation(props.spiralstaking.unstakeNFTs(tokenIds, true), "Unstaking");
 
       setRefreshCounter(refreshCounter + 1);
       if (props.spiralbits && props.selectedAddress) {
@@ -358,17 +351,14 @@ export function SpiralStaking(props: SpiralStakingProps) {
     if (props.rwnftstaking && props.rwnft && rwTokenIds.size > 0) {
       // First, check if approved
       if (rwnftStakingApprovalNeeded) {
-        const tx = await props.rwnft.setApprovalForAll(props.rwnftstaking.address, true);
-        const id = props.showToast("Approve Staking", <span>Waiting for confirmations...</span>);
-        await tx.wait();
-        props.hideToast(id);
+        await props.waitForTxConfirmation(
+          props.rwnft.setApprovalForAll(props.rwnftstaking.address, true),
+          "Approve Staking"
+        );
       }
 
       const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
-      const tx = await props.rwnftstaking.stakeNFTs(tokenIds);
-      const id = props.showToast("Stake RandomWalkNFTs", <span>Waiting for confirmations...</span>);
-      await tx.wait();
-      props.hideToast(id);
+      await props.waitForTxConfirmation(props.rwnftstaking.stakeNFTs(tokenIds), "Stake RandomWalkNFTs");
 
       setRefreshCounter(refreshCounter + 1);
     }
@@ -379,10 +369,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
       const beforeSpiralBits = props.spiralBitsBalance;
 
       const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
-      const tx = await props.rwnftstaking.unstakeNFTs(tokenIds, true);
-      const id = props.showToast("Unstaking", <span>Waiting for confirmations...</span>);
-      await tx.wait();
-      props.hideToast(id);
+      await props.waitForTxConfirmation(props.rwnftstaking.unstakeNFTs(tokenIds, true), "Unstaking");
 
       setRefreshCounter(refreshCounter + 1);
 
@@ -405,14 +392,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
     let tx;
     if (props.rwnftstaking && contractNum === 1) {
-      tx = await props.rwnftstaking.unstakeNFTs([], true);
+      tx = props.rwnftstaking.unstakeNFTs([], true);
     } else if (props.spiralstaking && contractNum === 0) {
-      tx = await props.spiralstaking.unstakeNFTs([], true);
+      tx = props.spiralstaking.unstakeNFTs([], true);
     }
 
-    const id = props.showToast("Claim SPIRALBITS", <span>Waiting for confirmations...</span>);
-    await tx.wait();
-    props.hideToast(id);
+    await props.waitForTxConfirmation(tx, "Claim SPIRALBITS");
 
     setRefreshCounter(refreshCounter + 1);
 
