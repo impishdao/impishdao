@@ -1,8 +1,8 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
 import { BigNumber, ContractTransaction } from "ethers";
-import { useState } from "react";
-import { Button, ButtonGroup, Col, DropdownButton, Dropdown, Row } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Button, ButtonGroup, Col, Dropdown, Row } from "react-bootstrap";
 import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { NFTCard } from "./NFTcard";
 import { pad, range } from "./utils";
@@ -11,10 +11,24 @@ type ImpishDAOBuyNFTsProps = DappState & DappFunctions & DappContracts & {};
 
 export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
   const [startPage, setStartPage] = useState(0);
-  const [pricedIn, setPricedIn] = useState("ETH");
+  const [priceIn, setPriceIn] = useState("ETH");
+
+  const [ethPer100Impish, setEthPer100Impish] = useState(BigNumber.from(0));
+  const [spiralBitsPer100Impish, setSpiralBitsPer100Impish] = useState(BigNumber.from(0));
 
   const PAGE_SIZE = 16;
   const numPages = Math.floor(props.nftsWithPrice.length / PAGE_SIZE) + 1;
+
+  useEffect(() => {
+    // Fetch prices
+    fetch("/marketapi/uniswapv3prices")
+      .then((r) => r.json())
+      .then((data) => {
+        const { ETHper100Impish, SPIRALBITSper100Impish } = data;
+        setEthPer100Impish(BigNumber.from(ETHper100Impish));
+        setSpiralBitsPer100Impish(BigNumber.from(SPIRALBITSper100Impish));
+      });
+  }, []);
 
   const PageList = () => {
     return (
@@ -103,8 +117,8 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
                 <div>Prices In:</div>
 
-                <Dropdown as={ButtonGroup} variant="secondary" title="ETH" onSelect={(e) => setPricedIn(e || "")}>
-                  <Dropdown.Toggle variant="secondary">{pricedIn}</Dropdown.Toggle>
+                <Dropdown as={ButtonGroup} variant="secondary" title="ETH" onSelect={(e) => setPriceIn(e || "")}>
+                  <Dropdown.Toggle variant="secondary">{priceIn}</Dropdown.Toggle>
                   <Dropdown.Menu variant="dark">
                     <Dropdown.Item eventKey="ETH">ETH</Dropdown.Item>
                     <Dropdown.Item eventKey="IMPISH">IMPISH</Dropdown.Item>
@@ -146,7 +160,10 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
                   <Col xl={3} className="mb-3" key={nft.tokenId.toString()}>
                     <NFTCard
                       selectedAddress={props.selectedAddress}
-                      nftPrice={nft.price}
+                      nftPriceImpish={nft.price}
+                      ethPer100Impish={ethPer100Impish}
+                      spiralBitsPer100Impish={spiralBitsPer100Impish}
+                      priceIn={priceIn}
                       buyNFTFromDAO={buyNFTFromDAO}
                       tokenId={nft.tokenId}
                     />

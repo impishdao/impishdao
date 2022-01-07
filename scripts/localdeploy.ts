@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+/* eslint-disable no-unused-vars */
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
@@ -6,6 +8,7 @@
 import { Contract } from "@ethersproject/contracts";
 import { artifacts, ethers } from "hardhat";
 import path from "path";
+import contractAddresses from "../proddata/contracts/contract-addresses.json";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -14,6 +17,14 @@ async function main() {
   // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile');
+
+  // Uniswap addresses
+  const swapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+  const impishPoolAddress = "0xb2c699cdfbee566c53f1fbc9868a8bb828729985";
+  const WETH9 = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
+
+  // eslint-disable-next-line no-unused-vars
+  const [signer, otherSigner] = await ethers.getSigners();
 
   // We get the contract to deploy
   const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
@@ -25,94 +36,23 @@ async function main() {
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
 
-  const rwnft = await RandomWalkNFT.deploy();
-  await rwnft.deployed();
+  const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
+  const buywithether = await BuyWithEther.deploy(swapRouter);
+  await buywithether.deployed();
 
-  const impdao = await ImpishDAO.deploy(rwnft.address);
-  await impdao.deployed();
+  console.log(`Deployed at ${buywithether.address}`);
 
-  const impishspiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
-  await impishspiral.deployed();
-
-  const spiralmarket = await SpiralMarket.deploy(impishspiral.address);
-  await spiralmarket.deployed();
-
-  const multimint = await MultiMint.deploy(impishspiral.address);
-  await multimint.deployed();
-
-  const spiralbits = await SpiralBits.deploy();
-  await spiralbits.deployed();
-
-  const spiralstaking = await SpiralStaking.deploy(impishspiral.address, spiralbits.address, rwnft.address);
-  await spiralstaking.deployed();
-
-  const rwnftstaking = await RwnftStaking.deploy(impishspiral.address, spiralbits.address, rwnft.address);
-  await rwnftstaking.deployed();
-
-  await spiralstaking.setRwNFTStakingContract(rwnftstaking.address);
-  await rwnftstaking.setSpiralStakingContract(spiralstaking.address);
-
-  // Allow spiral staking to mint spiralbits
-  await spiralbits.addAllowedMinter(spiralstaking.address);
-  await spiralbits.addAllowedMinter(rwnftstaking.address);
-
-  // Mint a new NFT to reset the last mint time
-  await rwnft.mint({ value: await rwnft.getMintPrice() });
-
-  console.log("RandomWalkNFT deployed to:", rwnft.address);
-  console.log("ImpishDAO deployed to:", impdao.address);
-  console.log("ImpishSpiral deployed to:", impishspiral.address);
-  console.log("SpiralMarket deployed to:", spiralmarket.address);
-  console.log("MultiMint deployed to:", multimint.address);
-  console.log("SpiralBits deployed to:", spiralbits.address);
-  console.log("SpiralStaking deployed to:", spiralstaking.address);
-  console.log("RWNFTStaking deployed to:", rwnftstaking.address);
-
-  // Start the ImpishSpiral for ease
-  await impishspiral.startMints();
+  const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
+  const impish = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAO.interface, signer);
+  const spiralbits = new ethers.Contract(contractAddresses.SpiralBits, SpiralBits.interface, signer);
+  const impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiral.interface, signer);
+  const spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarket.interface, signer);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(rwnft, impdao, impishspiral, spiralmarket, multimint, spiralbits, spiralstaking, rwnftstaking);
-
-  // eslint-disable-next-line no-unused-vars
-  const [signer, otherSigner] = await ethers.getSigners();
-
-  setTimeout(async () => {
-    // Approve the market for listing
-    // await impishspiral.setApprovalForAll(spiralmarket.address, true);
-    await rwnft.mint({ value: await rwnft.getMintPrice() });
-
-    // Mint 5 spirals
-    for (let i = 0; i < 5; i++) {
-      const mintPrice = await impishspiral.getMintPrice();
-      const tx = await impishspiral.mintSpiralRandom({ value: mintPrice });
-      await tx.wait();
-    }
-
-    await impishspiral.connect(otherSigner).setApprovalForAll(spiralmarket.address, true);
-    for (let i = 0; i < 5; i++) {
-      const tokenId = await impishspiral._tokenIdCounter();
-      const tx2 = await impishspiral
-        .connect(otherSigner)
-        .mintSpiralRandom({ value: await impishspiral.getMintPrice() });
-      await tx2.wait();
-
-      // And list it for sale
-      spiralmarket.connect(otherSigner).listSpiral(tokenId, ethers.utils.parseEther("0.005"));
-    }
-  }, 10 * 1000);
+  saveFrontendFiles(buywithether);
 }
 
-function saveFrontendFiles(
-  rwnft: Contract,
-  impdao: Contract,
-  impishspiral: Contract,
-  spiralmarket: Contract,
-  multimint: Contract,
-  spiralbits: Contract,
-  spiralstaking: Contract,
-  rwnftstaking: Contract
-) {
+function saveFrontendFiles(buywithether: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -125,55 +65,20 @@ function saveFrontendFiles(
     fs.mkdirSync(serverDir);
   }
 
-  const contractAddress = JSON.stringify(
-    {
-      RandomWalkNFT: rwnft.address,
-      ImpishDAO: impdao.address,
-      ImpishSpiral: impishspiral.address,
-      SpiralMarket: spiralmarket.address,
-      MultiMint: multimint.address,
-      SpiralBits: spiralbits.address,
-      SpiralStaking: spiralstaking.address,
-      RWNFTStaking: rwnftstaking.address,
-    },
+  const newContractAddressStr = JSON.stringify(
+    Object.assign(contractAddresses, {
+      BuyWithEther: buywithether.address,
+    }),
     undefined,
     2
   );
 
-  fs.writeFileSync(contractsDir + "/contract-addresses.json", contractAddress);
-  fs.writeFileSync(serverDir + "/contract-addresses.json", contractAddress);
+  fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
+  fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
 
-  const rwnftArtifact = artifacts.readArtifactSync("RandomWalkNFT");
-  fs.writeFileSync(contractsDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/rwnft.json", JSON.stringify(rwnftArtifact, null, 2));
-
-  const wrwArtifact = artifacts.readArtifactSync("ImpishDAO");
-  fs.writeFileSync(contractsDir + "/impdao.json", JSON.stringify(wrwArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/impdao.json", JSON.stringify(wrwArtifact, null, 2));
-
-  const impSpiralArtifact = artifacts.readArtifactSync("ImpishSpiral");
-  fs.writeFileSync(contractsDir + "/impishspiral.json", JSON.stringify(impSpiralArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/impishspiral.json", JSON.stringify(impSpiralArtifact, null, 2));
-
-  const spiralMarketArtifact = artifacts.readArtifactSync("SpiralMarket");
-  fs.writeFileSync(contractsDir + "/spiralmarket.json", JSON.stringify(spiralMarketArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/spiralmarket.json", JSON.stringify(spiralMarketArtifact, null, 2));
-
-  const multiMintArtifact = artifacts.readArtifactSync("MultiMint");
-  fs.writeFileSync(contractsDir + "/multimint.json", JSON.stringify(multiMintArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/multimint.json", JSON.stringify(multiMintArtifact, null, 2));
-
-  const spiralBitsArtifact = artifacts.readArtifactSync("SpiralBits");
-  fs.writeFileSync(contractsDir + "/spiralbits.json", JSON.stringify(spiralBitsArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/spiralbits.json", JSON.stringify(spiralBitsArtifact, null, 2));
-
-  const spiralStakingArtifact = artifacts.readArtifactSync("SpiralStaking");
-  fs.writeFileSync(contractsDir + "/spiralstaking.json", JSON.stringify(spiralStakingArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/spiralstaking.json", JSON.stringify(spiralStakingArtifact, null, 2));
-
-  const rwnftStakingArtifact = artifacts.readArtifactSync("RWNFTStaking");
-  fs.writeFileSync(contractsDir + "/rwnftstaking.json", JSON.stringify(rwnftStakingArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/rwnftstaking.json", JSON.stringify(rwnftStakingArtifact, null, 2));
+  const buywithEtherArtifact = artifacts.readArtifactSync("BuyWithEther");
+  fs.writeFileSync(contractsDir + "/buywithether.json", JSON.stringify(buywithEtherArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/buywithether.json", JSON.stringify(buywithEtherArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

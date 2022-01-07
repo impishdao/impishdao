@@ -1,19 +1,40 @@
 import { BigNumber, ethers } from "ethers";
 import { Button, Card } from "react-bootstrap";
-import { pad } from "./utils";
+import { formatkmb, pad } from "./utils";
 
 type NFTCardProps = {
   selectedAddress?: string;
   buyNFTFromDAO: (tokenId: BigNumber) => Promise<void>;
   tokenId: BigNumber;
-  nftPrice?: BigNumber;
+  nftPriceImpish?: BigNumber;
+  ethPer100Impish: BigNumber;
+  spiralBitsPer100Impish: BigNumber;
+  priceIn: string;
 };
 
-export function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: NFTCardProps) {
+export function NFTCard({
+  selectedAddress,
+  nftPriceImpish,
+  ethPer100Impish,
+  spiralBitsPer100Impish,
+  priceIn,
+  buyNFTFromDAO,
+  tokenId,
+}: NFTCardProps) {
   const paddedTokenId = pad(tokenId.toString(), 6);
   const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
-  const showPrice = nftPrice && nftPrice.gt(0);
-  const price = parseFloat(ethers.utils.formatEther(nftPrice || 0)).toFixed(4);
+  const showPrice = nftPriceImpish && nftPriceImpish.gt(0);
+  
+  let price = BigNumber.from(0);
+  if (nftPriceImpish) {
+    switch (priceIn) {
+      case "ETH": { price = nftPriceImpish.mul(ethPer100Impish.div(100)).div(BigNumber.from(10).pow(18)); break; }
+      case "IMPISH": { price = nftPriceImpish; break; }
+      case "SPIRALBITS": { price = nftPriceImpish.mul(spiralBitsPer100Impish.div(100)).div(BigNumber.from(10).pow(18)); break; }
+    }
+  }
+
+  const priceStr = `${formatkmb(price)} ${priceIn}`;
 
   const buyEnabled = selectedAddress && buyNFTFromDAO;
 
@@ -38,7 +59,7 @@ export function NFTCard({ selectedAddress, nftPrice, buyNFTFromDAO, tokenId }: N
             #{paddedTokenId}
           </a>
         </Card.Title>
-        {showPrice && <Card.Text>Price: {price} IMPISH</Card.Text>}
+        {showPrice && <Card.Text>{priceStr}</Card.Text>}
         <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId)} disabled={!buyEnabled}>
           Buy Now
         </Button>
