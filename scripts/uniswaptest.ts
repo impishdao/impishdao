@@ -35,7 +35,6 @@ async function main() {
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
 
-  console.log("Starting");
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
   const buywithether = await BuyWithEther.deploy(swapRouter);
   await buywithether.deployed();
@@ -50,17 +49,38 @@ async function main() {
   const SpiralStaking_address = "0xFa798e448dB7987A5D7ab3620D7C3d5ECb18275E";
   const RWNFTStaking_address = "0xD9403e7497051b317cf1aE88eEaf46ee4E8eAD68";
 
+  const rwnft = new ethers.Contract(RandomWalkNFT_address, RandomWalkNFT.interface, signer);
   const impish = new ethers.Contract(IMPISHDAO_address, ImpishDAO.interface, signer);
+  const spiralbits = new ethers.Contract(SpiralBits_address, SpiralBits.interface, signer);
+
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
+  });
+  const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
+  await (await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address)).wait();
+  await (await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"))).wait();
+  await (await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"))).wait();
+  
+  // signer approves Uniswap v3 for SPIRALBITS
+  await spiralbits.approve(buywithether.address, ethers.utils.parseEther("100000000"));
 
   // console.log(`Before ETH: ${await signer.getBalance(signer.address)}`);
   console.log(`Before ETH: ${ethers.utils.formatEther(await ethers.provider.getBalance(signer.address))}`);
   console.log(`Before IMPISH: ${ethers.utils.formatEther(await impish.balanceOf(signer.address))}`);
+  console.log(`Before SPIRALBITS: ${ethers.utils.formatEther(await spiralbits.balanceOf(signer.address))}`);
 
-  const tx = await buywithether.buyRwNFTFromDaoWithEth(3548, {value: ethers.utils.parseEther("1")});
+  const tokenId = 3544;
+  const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), false, {value: ethers.utils.parseEther("1")});
   await tx.wait();
 
+  // const rwnftstaking = new ethers.Contract(RWNFTStaking_address, RwnftStaking.interface, signer);
+  // const tx2 = await rwnftstaking.unstakeNFTs([tokenId], true);
+
+  console.log(`Token ${tokenId} owned by ${await rwnft.ownerOf(tokenId)} should be ${signer.address}`);
   console.log(`AFTER ETH: ${ethers.utils.formatEther(await ethers.provider.getBalance(signer.address))}`);
   console.log(`AFTER IMPISH: ${ethers.utils.formatEther(await impish.balanceOf(signer.address))}`);
+  console.log(`AFTER SPIRALBITS: ${ethers.utils.formatEther(await spiralbits.balanceOf(signer.address))}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
