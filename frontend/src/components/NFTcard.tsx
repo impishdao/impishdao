@@ -10,6 +10,7 @@ type NFTCardProps = {
   ethPer100Impish: BigNumber;
   spiralBitsPer100Impish: BigNumber;
   priceIn: string;
+  spiralbitsAllowance: BigNumber;
 };
 
 export function NFTCard({
@@ -20,23 +21,37 @@ export function NFTCard({
   priceIn,
   buyNFTFromDAO,
   tokenId,
+  spiralbitsAllowance,
 }: NFTCardProps) {
   const paddedTokenId = pad(tokenId.toString(), 6);
   const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
   const showPrice = nftPriceImpish && nftPriceImpish.gt(0);
-  
+
   let price = BigNumber.from(0);
   if (nftPriceImpish) {
     switch (priceIn) {
-      case "ETH": { price = nftPriceImpish.mul(ethPer100Impish.div(100)).div(BigNumber.from(10).pow(18)); break; }
-      case "IMPISH": { price = nftPriceImpish; break; }
-      case "SPIRALBITS": { price = nftPriceImpish.mul(spiralBitsPer100Impish.div(100)).div(BigNumber.from(10).pow(18)); break; }
+      case "ETH": {
+        price = nftPriceImpish.mul(ethPer100Impish.div(100)).div(BigNumber.from(10).pow(18));
+        break;
+      }
+      case "IMPISH": {
+        price = nftPriceImpish;
+        break;
+      }
+      case "SPIRALBITS": {
+        price = nftPriceImpish.mul(spiralBitsPer100Impish.div(100)).div(BigNumber.from(10).pow(18));
+        break;
+      }
     }
   }
 
   const priceStr = `${formatkmb(price)} ${priceIn}`;
 
   const buyEnabled = selectedAddress && buyNFTFromDAO;
+  let needsApprove = false;
+  if (priceIn === "SPIRALBITS" && spiralbitsAllowance.lt(price)) {
+    needsApprove = true;
+  }
 
   return (
     <Card style={{ width: "320px", padding: "10px", borderRadius: "5px" }} key={tokenId.toString()}>
@@ -61,6 +76,7 @@ export function NFTCard({
         </Card.Title>
         {showPrice && <Card.Text>{priceStr}</Card.Text>}
         <Button variant="primary" onClick={() => buyNFTFromDAO(tokenId, price)} disabled={!buyEnabled}>
+          {needsApprove && "Approve & "}
           Buy Now
         </Button>
       </Card.Body>

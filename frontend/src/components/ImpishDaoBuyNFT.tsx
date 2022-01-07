@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 import { Button, ButtonGroup, Col, Dropdown, Row } from "react-bootstrap";
 import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { NFTCard } from "./NFTcard";
-import { pad, range } from "./utils";
+import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 
 type ImpishDAOBuyNFTsProps = DappState & DappFunctions & DappContracts & {};
 
 export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
   const [startPage, setStartPage] = useState(0);
   const [priceIn, setPriceIn] = useState("ETH");
+  const [spiralbitsAllowance, setSpiralbitsAllowance] = useState(BigNumber.from(0));
 
   const [ethPer100Impish, setEthPer100Impish] = useState(BigNumber.from(0));
   const [spiralBitsPer100Impish, setSpiralBitsPer100Impish] = useState(BigNumber.from(0));
@@ -29,6 +30,16 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
         setSpiralBitsPer100Impish(BigNumber.from(SPIRALBITSper100Impish));
       });
   }, []);
+
+  // Check if SpiralBits -> BuyWithEther contract needs approval
+  useEffect(() => {
+    retryTillSucceed(async () => {
+      if (props.selectedAddress && props.spiralbits && props.buywitheth) {
+        const allowance = await props.spiralbits.allowance(props.selectedAddress, props.buywitheth.address);
+        setSpiralbitsAllowance(allowance);
+      }
+    });
+  }, [props.buywitheth, props.selectedAddress, props.spiralbits]);
 
   const PageList = () => {
     return (
@@ -62,11 +73,21 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
           break;
         }
         case "ETH": {
-          tx = await props.buywitheth?.buyRwNFTFromDaoWithEth(tokenId, false, {value: price});
+          tx = await props.buywitheth?.buyRwNFTFromDaoWithEth(tokenId, false, { value: price });
           break;
         }
         case "SPIRALBITS": {
-          tx = await props.buywitheth?.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
+          if (props.spiralbits && props.buywitheth) {
+            if (spiralbitsAllowance.lt(price)) {
+              const approveTx = await props.spiralbits.approve(
+                props.buywitheth.address,
+                BigNumber.from(10).pow(18 + 10)
+              );
+              await approveTx.wait();
+            }
+
+            tx = await props.buywitheth?.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
+          }
           break;
         }
       }
@@ -102,7 +123,7 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
           <div>
             You don't have enough {priceIn} to buy this NFT!
             <br />
-            Buy {priceIn} {(priceIn === "IMPISH") && "by contributing to ImpishDAO or"} from{" "}
+            Buy {priceIn} {priceIn === "IMPISH" && "by contributing to ImpishDAO or"} from{" "}
             <a
               href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x36f6d831210109719d15abaee45b327e9b43d6c6"
               target="_blank"
@@ -115,6 +136,10 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
       }
     }
   };
+
+  const walletBalance = `${formatkmb(
+    priceIn === "ETH" ? props.ethBalance : priceIn === "IMPISH" ? props.impishTokenBalance : props.spiralBitsBalance
+  )} ${priceIn}`;
 
   return (
     <>
@@ -141,6 +166,13 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
                     <Dropdown.Item eventKey="SPIRALBITS">SPIRALBITS</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
+
+                {props.selectedAddress && (
+                  <>
+                    <div>Wallet:</div>
+                    <div>{walletBalance}</div>
+                  </>
+                )}
               </div>
             </Col>
 
@@ -182,6 +214,7 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
                       priceIn={priceIn}
                       buyNFTFromDAO={buyNFTFromDAO}
                       tokenId={nft.tokenId}
+                      spiralbitsAllowance={spiralbitsAllowance}
                     />
                   </Col>
                 );

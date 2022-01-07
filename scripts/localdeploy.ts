@@ -6,7 +6,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { Contract } from "@ethersproject/contracts";
-import { artifacts, ethers } from "hardhat";
+import { artifacts, ethers, network } from "hardhat";
 import path from "path";
 import contractAddresses from "../proddata/contracts/contract-addresses.json";
 
@@ -50,6 +50,17 @@ async function main() {
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(buywithether);
+
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
+  });
+  const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
+  await (await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address)).wait();
+  await (
+    await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"))
+  ).wait();
+  await (await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"))).wait();
 }
 
 function saveFrontendFiles(buywithether: Contract) {

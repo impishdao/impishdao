@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable camelcase */
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
@@ -59,9 +61,11 @@ async function main() {
   });
   const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
   await (await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address)).wait();
-  await (await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"))).wait();
+  await (
+    await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"))
+  ).wait();
   await (await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"))).wait();
-  
+
   // signer approves Uniswap v3 for SPIRALBITS
   await spiralbits.approve(buywithether.address, ethers.utils.parseEther("100000000"));
 
@@ -73,7 +77,7 @@ async function main() {
   const tokenId = 3560;
   // const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true, {value: ethers.utils.parseEther("1")});
   // const tx = await buywithether.buyRwNFTFromDaoWithEthDirect(tokenId, true, {value: ethers.utils.parseEther("1")});
-  const tx = await buywithether.buyRwNFTFromDaoWithEth(tokenId, true, {value: ethers.utils.parseEther("1")});
+  const tx = await buywithether.buyRwNFTFromDaoWithEth(tokenId, true, { value: ethers.utils.parseEther("1") });
   await tx.wait();
 
   const rwnftstaking = new ethers.Contract(RWNFTStaking_address, RwnftStaking.interface, signer);

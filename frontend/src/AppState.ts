@@ -32,8 +32,9 @@ export class DappState {
   lastETHPrice?: number;
 
   // User specific state
-  tokenBalance: BigNumber;
+  impishTokenBalance: BigNumber;
   spiralBitsBalance: BigNumber;
+  ethBalance: BigNumber;
   selectedAddress?: string;
 
   modalTitle?: string;
@@ -60,14 +61,15 @@ export class DappState {
   currentToasts: Array<ToastInfo>;
 
   constructor() {
-    this.tokenBalance = BigNumber.from(0);
+    this.impishTokenBalance = BigNumber.from(0);
     this.spiralBitsBalance = BigNumber.from(0);
+    this.ethBalance = BigNumber.from(0);
     this.modalShowing = false;
 
     this.areWeWinning = false;
     this.isRoundFinished = false;
 
-    this.tokenBalance = BigNumber.from(0);
+    this.impishTokenBalance = BigNumber.from(0);
     this.nftsWithPrice = [];
     this.currentToasts = [];
   }

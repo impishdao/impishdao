@@ -84,7 +84,7 @@ export function Navigation(props: NavigationProps) {
                   <span>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</span>
                 </OverlayTrigger>
               )}
-              {expandSection === 3 && <span>{format4Decimals(props.tokenBalance)} IMPISH</span>}
+              {expandSection === 3 && <span>{format4Decimals(props.impishTokenBalance)} IMPISH</span>}
             </div>
             <Button className="address" variant="warning">
               {props.selectedAddress}

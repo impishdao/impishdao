@@ -124,7 +124,7 @@ const BeenOutbid = ({
 
 const WeAreWinning = ({
   withdrawalAmount,
-  tokenBalance,
+  impishTokenBalance,
   totalTokenSupply,
   daoBalance,
   selectedAddress,
@@ -255,7 +255,7 @@ type RedeemProps = DappState & {
 };
 const Redeem = ({
   selectedAddress,
-  tokenBalance,
+  impishTokenBalance,
   daoBalance,
   contractState,
   totalTokenSupply,
@@ -272,8 +272,13 @@ const Redeem = ({
   }
 
   let ethRedeemable = BigNumber.from(0);
-  if (tokenBalance !== undefined && totalTokenSupply !== undefined && daoBalance !== undefined && daoBalance.gt(0)) {
-    ethRedeemable = tokenBalance.mul(daoBalance).div(totalTokenSupply);
+  if (
+    impishTokenBalance !== undefined &&
+    totalTokenSupply !== undefined &&
+    daoBalance !== undefined &&
+    daoBalance.gt(0)
+  ) {
+    ethRedeemable = impishTokenBalance.mul(daoBalance).div(totalTokenSupply);
   }
 
   return (
@@ -286,7 +291,7 @@ const Redeem = ({
             <Col xs lg="4">
               <div className="mb-3">
                 You have <br />
-                <h4>{ethers.utils.formatEther(tokenBalance)} IMPISH Tokens</h4>
+                <h4>{ethers.utils.formatEther(impishTokenBalance)} IMPISH Tokens</h4>
               </div>
               <div className="mb-3">
                 which can be redeemed for
@@ -295,7 +300,7 @@ const Redeem = ({
               </div>
             </Col>
           </Row>
-          {tokenBalance.gt(0) && (
+          {impishTokenBalance.gt(0) && (
             <Button variant="warning" onClick={() => redeemTokens()}>
               Redeem
             </Button>
@@ -426,13 +431,13 @@ export function ImpishDAO(props: ImpishDAOProps) {
   let myShareOfWinnings = BigNumber.from(0);
   if (
     props.selectedAddress &&
-    props.tokenBalance &&
+    props.impishTokenBalance &&
     props.withdrawalAmount &&
     props.daoBalance &&
     props.totalTokenSupply &&
     props.totalTokenSupply.gt(0)
   ) {
-    myShareOfWinnings = props.tokenBalance
+    myShareOfWinnings = props.impishTokenBalance
       .mul(props.withdrawalAmount.add(props.daoBalance))
       .div(props.totalTokenSupply);
   }
@@ -493,7 +498,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
                       <tbody>
                         <tr>
                           <td>Your IMPISH Balance</td>
-                          <td>IMPISH {format4Decimals(props.tokenBalance)}</td>
+                          <td>IMPISH {format4Decimals(props.impishTokenBalance)}</td>
                         </tr>
                         <tr>
                           <td>Your share if ImpishDAO wins</td>

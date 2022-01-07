@@ -310,9 +310,11 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
   readUserData = async () => {
     if (this.state.selectedAddress) {
-      const tokenBalance = await this.impdao?.balanceOf(this.state.selectedAddress);
+      const impishTokenBalance = await this.impdao?.balanceOf(this.state.selectedAddress);
       const spiralBitsBalance = await this.spiralbits?.balanceOf(this.state.selectedAddress);
-      this.setState({ tokenBalance, spiralBitsBalance });
+      const ethBalance = (await this.provider?.getBalance(this.state.selectedAddress)) || BigNumber.from(0);
+
+      this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
     }
   };
 
@@ -409,6 +411,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   provider={this.provider}
                   impdao={this.impdao}
                   rwnft={this.rwnft}
+                  spiralbits={this.spiralbits}
                   buywitheth={this.buywitheth}
                 />
               }
