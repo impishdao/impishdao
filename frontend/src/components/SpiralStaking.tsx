@@ -68,7 +68,7 @@ const StakingPageDisplay = ({
     }
   };
 
-  const numPages = spirals ? Math.floor(spirals.length / pageSize) + 1 : 1;
+  const numPages = spirals ? Math.floor((spirals.length-1) / pageSize) + 1 : 1;
 
   const PageList = () => {
     return (
@@ -244,10 +244,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
     return filtered;
   };
 
+  const { readUserData } = props;
   useEffect(() => {
     // Update the user data, which contains the update-token-balances logic
-    props.readUserData();
-  }, [refreshCounter]);
+    readUserData();
+  }, [readUserData, refreshCounter]);
 
   // Get Spiral staking info for the wallet
   useEffect(() => {

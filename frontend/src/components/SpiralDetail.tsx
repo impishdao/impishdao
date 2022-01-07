@@ -481,10 +481,10 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                      <Button variant="primary" onClick={() => cancelListing()}>
+                      <Button variant="primary" onClick={cancelListing}>
                         Cancel Listing
                       </Button>
-                      <Button variant="warning" onClick={() => updateSalePrice()}>
+                      <Button variant="warning" onClick={updateSalePrice}>
                         Update Price
                       </Button>
                     </div>
@@ -496,7 +496,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     <div className="mt-2 mb-5">
                       <h3>Sell On The Marketplace</h3>
                       <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                        <Button variant="warning" onClick={() => listForSale()}>
+                        <Button variant="warning" onClick={listForSale}>
                           Sell Spiral
                         </Button>
                       </div>
@@ -511,7 +511,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                       <h3 style={{ color: "#ffd454" }}>Buy Now Price: ETH {format4Decimals(listingPrice)}</h3>
                       <h5>{formatUSD(listingPrice, props.lastETHPrice)}</h5>
                       {props.selectedAddress && (
-                        <Button variant="warning" onClick={() => buyNow()}>
+                        <Button variant="warning" onClick={buyNow}>
                           Buy Now
                         </Button>
                       )}

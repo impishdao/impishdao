@@ -75,7 +75,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this.state = new DappState();
   }
 
-  _initialize(userAddress: string) {
+  _initialize = (userAddress: string) => {
     // This method initializes the dapp
 
     // We first store the user's address in the component's state
@@ -88,7 +88,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     this._intializeEthers();
   }
 
-  async _intializeEthers() {
+  _intializeEthers = async () => {
     // We first initialize ethers by creating a provider using window.ethereum
     this.provider = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -176,8 +176,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     });
   };
 
-  async _connectWallet() {
-    console.log("_connectWallet");
+  _connectWallet = async () => {
     // This method is run when the user clicks the Connect. It connects the
     // dapp to the user's wallet, and initializes it.
     if (window.ethereum === undefined) {
@@ -241,7 +240,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   }
 
   // This method resets the state
-  _resetState() {
+  _resetState = () => {
     this.setState(new DappState(), () => {
       // After the new state is set, refresh all data from the server
       this.readDappState();
@@ -249,7 +248,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   }
 
   // This method just clears part of the state.
-  _dismissNetworkError() {
+  _dismissNetworkError = () => {
     this.setState({ networkError: undefined });
   }
 
@@ -358,6 +357,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
             {this.state.currentToasts.map((toast) => {
               return (
                 <Toast
+                  key={toast.id}
                   onClose={() => this.hideToast(toast.id)}
                   show={toast.show}
                   delay={5000}
@@ -393,9 +393,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <ImpishDAO
                   {...this.state}
-                  connectWallet={() => this._connectWallet()}
-                  readDappState={() => this.readDappState()}
-                  readUserData={() => this.readUserData()}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
                   showModal={this.showModal}
                   provider={this.provider}
                   impdao={this.impdao}
@@ -408,9 +408,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <ImpishSpiral
                   {...this.state}
-                  connectWallet={() => this._connectWallet()}
-                  readDappState={() => this.readDappState()}
-                  readUserData={() => this.readUserData()}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
                   showModal={this.showModal}
                   provider={this.provider}
                   impdao={this.impdao}
@@ -426,9 +426,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <SpiralStaking
                   {...this.state}
-                  connectWallet={() => this._connectWallet()}
-                  readDappState={() => this.readDappState()}
-                  readUserData={() => this.readUserData()}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
                   showModal={this.showModal}
                   showToast={this.showToast}
                   hideToast={this.hideToast}
@@ -444,12 +444,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route
               path="/spirals/wallet/:address"
-              element={<SpiralWallet {...this.state} connectWallet={() => this._connectWallet()} />}
+              element={<SpiralWallet {...this.state} connectWallet={this._connectWallet} />}
             />
 
             <Route
               path="/spirals/marketplace"
-              element={<Marketplace {...this.state} connectWallet={() => this._connectWallet()} />}
+              element={<Marketplace {...this.state} connectWallet={this._connectWallet} />}
             />
 
             <Route
@@ -467,7 +467,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route
               path="/spirals/top10"
-              element={<Top10 {...this.state} connectWallet={() => this._connectWallet()} />}
+              element={<Top10 {...this.state} connectWallet={this._connectWallet} />}
             />
           </Routes>
 
