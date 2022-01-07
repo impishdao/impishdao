@@ -3,9 +3,10 @@ pragma solidity ^0.8.9;
 
 pragma abicoder v2;
 
-import "hardhat/console.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 abstract contract IWETH9 {
     function deposit() external payable virtual;
@@ -13,20 +14,19 @@ abstract contract IWETH9 {
     function balanceOf(address owner) external virtual returns (uint256);
 }
 
-contract BuyWithEther {
-    // For the scope of these swap examples,
-    // we will detail the design considerations when using
-    // `exactInput`, `exactInputSingle`, `exactOutput`, and  `exactOutputSingle`.
+abstract contract IImpishDAO {
+    function buyNFTPrice(uint256 tokenID) public view virtual returns (uint256);
+    function buyNFT(uint256 tokenID) public virtual;
+}
 
-    // It should be noted that for the sake of these examples, we purposefully pass in the swap router instead of inherit the swap router for simplicity.
-    // More advanced example contracts will detail how to inherit the swap router safely.
-
+contract BuyWithEther is IERC721Receiver {
+    // Uniswap v3router
     ISwapRouter public immutable swapRouter;
 
-    // This example swaps DAI/WETH9 for single path swaps and DAI/USDC/WETH9 for multi path swaps.
-
+    // Contract addresses deployed on Arbitrum
     address public constant WETH9 = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address public constant IMPISH = 0x36F6d831210109719D15abAEe45B327E9b43D6C6;
+    address public constant RWNFT = 0x895a6F444BE4ba9d124F61DF736605792B35D66b;
 
     // For this example, we will set the pool fee to 1%.
     uint24 public constant poolFee = 10000;
@@ -34,44 +34,45 @@ contract BuyWithEther {
     constructor(ISwapRouter _swapRouter) {
         swapRouter = _swapRouter;
 
-        // Approve the router to spend the specifed `amountInMaximum` of WETH9.
+        // Approve the router to spend the WETH9
         TransferHelper.safeApprove(WETH9, address(swapRouter), 2**256 - 1);
     }
 
-    /// @notice swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
-    /// @dev The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
-    /// the calling address will need to approve for a slightly higher amount, anticipating some variance.
-    /// @param amountOut The exact amount of WETH9 to receive from the swap.
-    /// @param amountInMaximum The amount of DAI we are willing to spend to receive the specified amount of WETH9.
-    /// @return amountIn The amount of DAI actually spent in the swap.
-    function swapExactOutputSingle(uint256 amountOut, uint256 amountInMaximum) external payable returns (uint256 amountIn) {
-        // Transfer the specified amount of DAI to this contract.
-        // TransferHelper.safeTransferFrom(WETH9, msg.sender, address(this), amountInMaximum);
-        console.log("Depositing");
-        IWETH9(WETH9).deposit{value: address(this).balance}();
-        console.log(IWETH9(WETH9).balanceOf(address(this)));
+    function buyRwNFTFromDaoWithEth(uint256 tokenId) external payable {
+        // Get the buyNFT price
+        uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
+        swapExactOutputSingle(nftPriceInIMPISH, msg.value);
 
-        console.log("Swapping");
+        IImpishDAO(IMPISH).buyNFT(tokenId);
+
+        // transfer the NFT to the sender
+        IERC721(RWNFT).safeTransferFrom(address(this), msg.sender, tokenId);
+    }
+
+    /// Swap with Uniswap V3 for the exact amountOut, using upto amountInMaximum
+    function swapExactOutputSingle(uint256 amountOut, uint256 amountInMaximum) internal returns (uint256 amountIn) {
+        // Convert to WETH, since thats what Uniswap uses
+        IWETH9(WETH9).deposit{value: address(this).balance}();
+
         ISwapRouter.ExactOutputSingleParams memory params =
             ISwapRouter.ExactOutputSingleParams({
                 tokenIn: WETH9,
                 tokenOut: IMPISH,
                 fee: poolFee,
-                recipient: msg.sender,
+                recipient: address(this),
                 deadline: block.timestamp,
                 amountOut: amountOut,
                 amountInMaximum: amountInMaximum,
                 sqrtPriceLimitX96: 0
             });
 
-        console.log("execitig");
         // Executes the swap returning the amountIn needed to spend to receive the desired amountOut.
         amountIn = swapRouter.exactOutputSingle(params);
 
         // For exact output swaps, the amountInMaximum may not have all been spent.
-        // If the actual amount spent (amountIn) is less than the specified maximum amount, we must refund the msg.sender and approve the swapRouter to spend 0.
+        // If the actual amount spent (amountIn) is less than the specified maximum amount, 
+        // we must refund the msg.sender
         if (amountIn < amountInMaximum) {
-            console.log("returining");
             IWETH9(WETH9).withdraw(IWETH9(WETH9).balanceOf(address(this)));
             (bool success, ) = msg.sender.call{value: address(this).balance}("");
             require(success, "Transfer failed.");
@@ -81,5 +82,14 @@ contract BuyWithEther {
     // Default payable function, so the contract can accept any refunds
     receive() external payable {
         // Do nothing
+    }
+
+    // Function that marks this contract can accept incoming NFT transfers
+    function onERC721Received(address, address, uint256 , bytes calldata) public view returns(bytes4) {
+        // Only accept NFT transfers from RandomWalkNFT
+        require(msg.sender == address(RWNFT), "NFT not recognized");
+
+        // Return this value to accept the NFT
+        return IERC721Receiver.onERC721Received.selector;
     }
 }

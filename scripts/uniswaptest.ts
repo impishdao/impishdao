@@ -56,9 +56,7 @@ async function main() {
   console.log(`Before ETH: ${ethers.utils.formatEther(await ethers.provider.getBalance(signer.address))}`);
   console.log(`Before IMPISH: ${ethers.utils.formatEther(await impish.balanceOf(signer.address))}`);
 
-  const tx = await buywithether.swapExactOutputSingle(ethers.utils.parseEther("10"), ethers.utils.parseEther("1"), {
-    value: ethers.utils.parseEther("1"),
-  });
+  const tx = await buywithether.buyRwNFTFromDaoWithEth(3548, {value: ethers.utils.parseEther("1")});
   await tx.wait();
 
   console.log(`AFTER ETH: ${ethers.utils.formatEther(await ethers.provider.getBalance(signer.address))}`);
