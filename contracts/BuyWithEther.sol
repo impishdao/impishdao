@@ -3,8 +3,6 @@ pragma solidity ^0.8.9;
 
 pragma abicoder v2;
 
-// import "hardhat/console.sol";
-
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -19,6 +17,7 @@ abstract contract IWETH9 {
 abstract contract IImpishDAO {
     function buyNFTPrice(uint256 tokenID) public view virtual returns (uint256);
     function buyNFT(uint256 tokenID) public virtual;
+    function deposit() public payable virtual;
 }
 
 abstract contract IRwNFTStaking {
@@ -37,16 +36,38 @@ contract BuyWithEther is IERC721Receiver {
     address public constant RWNFTSTAKING = 0xD9403e7497051b317cf1aE88eEaf46ee4E8eAD68;
 
     // For this example, we will set the pool fee to 1%.
-    uint24 public constant poolFee = 10000;
+    uint24 public constant POOL_FEE = 10000;
 
     constructor(ISwapRouter _swapRouter) {
         swapRouter = _swapRouter;
 
-        // Approve the router to spend the WETH9
+        // Approve the router to spend the WETH9 and SPIRALBITS
         TransferHelper.safeApprove(WETH9, address(swapRouter), 2**256 - 1);
         TransferHelper.safeApprove(SPIRALBITS, address(swapRouter), 2**256 - 1);
 
         IERC721(RWNFT).setApprovalForAll(RWNFTSTAKING, true);
+    }
+
+    function buyAndStake(uint256 tokenId, bool stake) internal {
+        IImpishDAO(IMPISH).buyNFT(tokenId);
+
+        if (!stake) {
+            // transfer the NFT to the sender
+            IERC721(RWNFT).safeTransferFrom(address(this), msg.sender, tokenId);
+        } else {
+            uint32[] memory tokens  = new uint32[](1);
+            tokens[0] = uint32(tokenId);
+            IRwNFTStaking(RWNFTSTAKING).stakeNFTsForOwner(tokens, msg.sender);
+        }
+    }
+
+    function buyRwNFTFromDaoWithEthDirect(uint256 tokenId, bool stake) external payable {
+        uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
+        
+        // We add 1 wei, because we've divided by 1000, which will remove the smallest 4 digits
+        // and we need to add it back because he actual price has those 4 least significant digits.
+        IImpishDAO(IMPISH).deposit{value: (nftPriceInIMPISH / 1000) + 1}();
+        buyAndStake(tokenId, stake);
     }
 
     function buyRwNFTFromDaoWithEth(uint256 tokenId, bool stake) external payable {
@@ -54,16 +75,7 @@ contract BuyWithEther is IERC721Receiver {
         uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
         swapExactOutputSingle(nftPriceInIMPISH, msg.value);
 
-        IImpishDAO(IMPISH).buyNFT(tokenId);
-
-        if (!stake) {
-            // transfer the NFT to the sender
-            IERC721(RWNFT).safeTransferFrom(address(this), msg.sender, tokenId);
-        } else {
-            uint32[] memory tokens  = new uint32[](1);
-            tokens[0] = uint32(tokenId);
-            IRwNFTStaking(RWNFTSTAKING).stakeNFTsForOwner(tokens, msg.sender);
-        }
+        buyAndStake(tokenId, stake);
     }
 
     function buyRwNFTFromDaoWithSpiralBits(uint256 tokenId, uint256 maxSpiralBits, bool stake) external payable {
@@ -71,16 +83,7 @@ contract BuyWithEther is IERC721Receiver {
         uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
         swapExactOutputMultiple(nftPriceInIMPISH, maxSpiralBits);
 
-        IImpishDAO(IMPISH).buyNFT(tokenId);
-
-        if (!stake) {
-            // transfer the NFT to the sender
-            IERC721(RWNFT).safeTransferFrom(address(this), msg.sender, tokenId);
-        } else {
-            uint32[] memory tokens  = new uint32[](1);
-            tokens[0] = uint32(tokenId);
-            IRwNFTStaking(RWNFTSTAKING).stakeNFTsForOwner(tokens, msg.sender);
-        }
+        buyAndStake(tokenId, stake);
     }
 
     /// Swap with Uniswap V3 for the exact amountOut, using upto amountInMaximum of ETH
@@ -92,7 +95,7 @@ contract BuyWithEther is IERC721Receiver {
             ISwapRouter.ExactOutputSingleParams({
                 tokenIn: WETH9,
                 tokenOut: IMPISH,
-                fee: poolFee,
+                fee: POOL_FEE,
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountOut: amountOut,
@@ -120,7 +123,7 @@ contract BuyWithEther is IERC721Receiver {
 
         ISwapRouter.ExactOutputParams memory params =
             ISwapRouter.ExactOutputParams({
-                path: abi.encodePacked(IMPISH, poolFee, WETH9, poolFee, SPIRALBITS),
+                path: abi.encodePacked(IMPISH, POOL_FEE, WETH9, POOL_FEE, SPIRALBITS),
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountOut: amountOut,

@@ -70,12 +70,14 @@ async function main() {
   console.log(`Before IMPISH: ${ethers.utils.formatEther(await impish.balanceOf(signer.address))}`);
   console.log(`Before SPIRALBITS: ${ethers.utils.formatEther(await spiralbits.balanceOf(signer.address))}`);
 
-  const tokenId = 3544;
-  const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), false, {value: ethers.utils.parseEther("1")});
+  const tokenId = 3560;
+  // const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true, {value: ethers.utils.parseEther("1")});
+  // const tx = await buywithether.buyRwNFTFromDaoWithEthDirect(tokenId, true, {value: ethers.utils.parseEther("1")});
+  const tx = await buywithether.buyRwNFTFromDaoWithEth(tokenId, true, {value: ethers.utils.parseEther("1")});
   await tx.wait();
 
-  // const rwnftstaking = new ethers.Contract(RWNFTStaking_address, RwnftStaking.interface, signer);
-  // const tx2 = await rwnftstaking.unstakeNFTs([tokenId], true);
+  const rwnftstaking = new ethers.Contract(RWNFTStaking_address, RwnftStaking.interface, signer);
+  const tx2 = await rwnftstaking.unstakeNFTs([tokenId], true);
 
   console.log(`Token ${tokenId} owned by ${await rwnft.ownerOf(tokenId)} should be ${signer.address}`);
   console.log(`AFTER ETH: ${ethers.utils.formatEther(await ethers.provider.getBalance(signer.address))}`);
