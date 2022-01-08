@@ -25,8 +25,8 @@ export function Top10(props: Top10Props) {
   // Countdown timer.
   useEffect(() => {
     const timerID = setInterval(() => {
-      setTimeRemaining(timeRemaining - 1);
-    }, 1000);
+      setTimeRemaining(timeRemaining - 60);
+    }, 1000 * 60);
 
     return function cleanup() {
       clearInterval(timerID);

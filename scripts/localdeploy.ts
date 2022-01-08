@@ -35,12 +35,7 @@ async function main() {
   const SpiralBits = await ethers.getContractFactory("SpiralBits");
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
-
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
-  const buywithether = await BuyWithEther.deploy(swapRouter);
-  await buywithether.deployed();
-
-  console.log(`Deployed at ${buywithether.address}`);
 
   const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
   const impish = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAO.interface, signer);
@@ -49,7 +44,7 @@ async function main() {
   const spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarket.interface, signer);
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(buywithether);
+  saveFrontendFiles();
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
@@ -63,7 +58,7 @@ async function main() {
   await (await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"))).wait();
 }
 
-function saveFrontendFiles(buywithether: Contract) {
+function saveFrontendFiles(/*buywithether: Contract*/) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -78,7 +73,7 @@ function saveFrontendFiles(buywithether: Contract) {
 
   const newContractAddressStr = JSON.stringify(
     Object.assign(contractAddresses, {
-      BuyWithEther: buywithether.address,
+      // BuyWithEther: buywithether.address,
     }),
     undefined,
     2

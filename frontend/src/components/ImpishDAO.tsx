@@ -10,6 +10,7 @@ import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER
 import { Navigation } from "./Navigation";
 import { ImpishDAOBuyNFTs } from "./ImpishDaoBuyNFT";
 import { Route, Routes } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 let timeNow = Date.now();
 
@@ -57,9 +58,6 @@ const BeenOutbid = ({
     <>
       <h1>ImpishDAO has been outbid!</h1>
       <div className="mb-5" style={{ marginTop: "-20px" }}>
-        <a href="#whitepaper" className="mb-5" style={{ color: "#ffc106" }}>
-          What is ImpishDAO?
-        </a>
       </div>
       {neededInEth.gt(0) && (
         <>
@@ -158,8 +156,8 @@ const WeAreWinning = ({
 
   useEffect(() => {
     const timerID = setInterval(() => {
-      setTimeRemaining(timeRemaining - 1);
-    }, 1000);
+      setTimeRemaining(timeRemaining - 60);
+    }, 1000 * 60);
 
     return function cleanup() {
       clearInterval(timerID);
@@ -174,9 +172,6 @@ const WeAreWinning = ({
     <>
       <h1>ImpishDAO is Winning!</h1>
       <div className="mb-5" style={{ marginTop: "-20px" }}>
-        <a href="#whitepaper" className="mb-5" style={{ color: "#ffc106" }}>
-          What is ImpishDAO?
-        </a>
       </div>
       <div>ImpishDAO will win</div>
       <h1>ETH {format4Decimals(withdrawalAmount.add(daoBalance))}</h1>
@@ -463,6 +458,11 @@ export function ImpishDAO(props: ImpishDAOProps) {
                 )}
                 {renderScreen === 1 && <Redeem {...props} redeemTokens={redeemTokens} />}
                 {renderScreen === 0 && <Loading />}
+                <h4 className="mt-5">
+                  <Link to="/impishdao/buy" style={{color: "#ffc106"}}>
+                    {props.nftsWithPrice.length} RandomWalk NFTs are available!
+                  </Link>
+                </h4>
               </div>
 
               <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
