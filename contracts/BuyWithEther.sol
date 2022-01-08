@@ -98,6 +98,12 @@ contract BuyWithEther is IERC721Receiver {
         // and we need to add it back because he actual price has those 4 least significant digits.
         IImpishDAO(IMPISH).deposit{value: (nftPriceInIMPISH / 1000) + 1}();
         buyAndStakeRW(tokenId, stake);
+
+        // Return any excess
+        if (address(this).balance > 0) {
+            (bool success, ) = msg.sender.call{value: address(this).balance}("");
+            require(success, "TransferFailed");
+        }
     }
 
     function buyRwNFTFromDaoWithEth(uint256 tokenId, bool stake) external payable {
