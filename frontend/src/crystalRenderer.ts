@@ -14,6 +14,15 @@ const fromHexString = (hexString: string): Uint8Array => {
 export const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
 
+const rgbToHex = (color: RGB) => {
+  const {r, g, b} = color;
+
+  return '#' + [r, g, b].map(x => {
+    const hex = x.toString(16)
+    return hex.length === 1 ? '0' + hex : hex
+  }).join('');
+}
+
 function* random_generator(init_seed: string) {
   if (init_seed.startsWith("0x")) {
     init_seed = init_seed.substring(2);
@@ -43,6 +52,7 @@ type RGB = {
   g: number;
   b: number;
 };
+
 
 type RGBPolarPoint = {
   rr: number;
@@ -125,11 +135,11 @@ function get_next_rgb(rgb: RGB, gen: Generator<number>): RGB {
 }
 
 // Get a random walk starting at (0, 0).
-function get_path_polar(seed: string, length: number): RGBPolarPoint[] {
+function get_path_polar(seed: string, length: number, startAngle: number): RGBPolarPoint[] {
   const gen = random_generator(seed);
 
   // Start at 0, 0 with a random color
-  const points: RGBPolarPoint[] = [{ rr: 0, th: 0, color: get_random_rgb(gen) }];
+  const points: RGBPolarPoint[] = [{ rr: 0, th: startAngle, color: get_random_rgb(gen) }];
 
   for (let i = 0; i < length - 1; i++) {
     const rr = points[i].rr + (gen.next().value === 0 ? 0.1 : 1);
@@ -144,7 +154,7 @@ function get_path_polar(seed: string, length: number): RGBPolarPoint[] {
 }
 
 function draw_image(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, seed: string) {
-  const path = get_path_polar(seed, 1000);
+  const path = get_path_polar(seed, 1000, Math.PI / 4);
   console.log(`PAth length: ${path.length}`);
 
   const cart_path: RGBCartPoint[] = path.map(({rr, th, color}) => {
@@ -158,33 +168,50 @@ function draw_image(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHe
   const {min_x, min_y, max_x, max_y} = get_min_max(cart_path);
   console.log(get_min_max(cart_path));
 
-  const id = new ImageData(canvasWidth, canvasHeight);
-  const pixels = id.data;
+  // const id = new ImageData(canvasWidth, canvasHeight);
+  // const pixels = id.data;
   const border = canvasWidth * 0.03; // 3% border each side
   const drawableWidth = canvasWidth - (2 * border);
   const longer_range = Math.max(max_x - min_x, max_y - min_y);
   const scale = drawableWidth / longer_range;
 
-  for (let i = 0; i < cart_path.length; i++) {
-    const p = cart_path[i];
-
+  const translatePoint = (p: RGBCartPoint) => {
     const x = Math.round(scale * (p.xx - min_x) + border);
     const y = Math.round(scale * (p.yy - min_y) + border);
 
-    // console.log(`Pixel ${x}-${y}: (${JSON.stringify(p.color)})`);
-
-    const off = (y * id.width + x) * 4;
-    pixels[off] = p.color.r;
-    pixels[off + 1] = p.color.g;
-    pixels[off + 2] = p.color.b;
-    pixels[off + 3] = 255;
-  }
+    return {x, y};
+  };
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  ctx.rect(0, 0, canvasWidth, canvasHeight);
-  ctx.fillStyle = "black";
-  ctx.fill();
-  ctx.putImageData(id, 0, 0);
+  
+
+  // ctx.fillStyle = "black";
+  // ctx.strokeStyle = "black";
+  // ctx.rect(0, 0, canvasWidth, canvasHeight);
+  // ctx.fill();
+
+  const {x, y} = translatePoint(cart_path[0]);
+  let prev_x = x;
+  let prev_y = y;
+
+  for (let i = 0; i < cart_path.length; i++) {
+    const p = cart_path[i];
+
+    const {x, y} = translatePoint(cart_path[i]);
+    
+    ctx.beginPath();
+    ctx.moveTo(prev_x, prev_y);
+
+    ctx.strokeStyle = rgbToHex(p.color);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.closePath();
+    
+    prev_x = x;
+    prev_y = y;
+  }
+  
+  // ctx.putImageData(id, 0, 0);
 }
 
 export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
