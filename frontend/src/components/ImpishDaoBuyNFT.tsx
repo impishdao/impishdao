@@ -145,12 +145,8 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
     <>
       {props.nftsWithPrice.length > 0 && (
         <>
-          <Row className="mt-3" style={{ textAlign: "center", padding: "20px" }}>
+          <Row className="mb-2" style={{ textAlign: "center", padding: "20px", marginTop: '65px' }}>
             <h1>RandomWalkNFTs for Sale</h1>
-          </Row>
-
-          <Row className="mb-5 mt-2">
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}></div>
           </Row>
 
           <Row style={{ backgroundColor: "#333", padding: "20px" }}>

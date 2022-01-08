@@ -54,6 +54,7 @@ async function main() {
   const rwnft = new ethers.Contract(RandomWalkNFT_address, RandomWalkNFT.interface, signer);
   const impish = new ethers.Contract(IMPISHDAO_address, ImpishDAO.interface, signer);
   const spiralbits = new ethers.Contract(SpiralBits_address, SpiralBits.interface, signer);
+  const impishspirals = new ethers.Contract(IMPISHSPIRALS_address, ImpishSpiral.interface, signer);
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
@@ -74,14 +75,18 @@ async function main() {
   console.log(`Before IMPISH: ${ethers.utils.formatEther(await impish.balanceOf(signer.address))}`);
   console.log(`Before SPIRALBITS: ${ethers.utils.formatEther(await spiralbits.balanceOf(signer.address))}`);
 
-  const tokenId = 3560;
+  const tokenId = 2322;
   // const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true, {value: ethers.utils.parseEther("1")});
   // const tx = await buywithether.buyRwNFTFromDaoWithEthDirect(tokenId, true, {value: ethers.utils.parseEther("1")});
-  const tx = await buywithether.buyRwNFTFromDaoWithEth(tokenId, true, { value: ethers.utils.parseEther("1") });
+  // const tx = await buywithether.buyRwNFTFromDaoWithEth(tokenId, true, { value: ethers.utils.parseEther("1") });
+  // const tx = await buywithether.buySpiralFromMarketWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true);
+  const tx = await buywithether.buyRwNFTFromRWMarket(222, tokenId, ethers.utils.parseEther("0.05"),  ethers.utils.parseEther("100000000"), true);
   await tx.wait();
 
   const rwnftstaking = new ethers.Contract(RWNFTStaking_address, RwnftStaking.interface, signer);
   const tx2 = await rwnftstaking.unstakeNFTs([tokenId], true);
+  // const spiralstaking = new ethers.Contract(SpiralStaking_address, SpiralStaking.interface, signer);
+  // const tx2 = await spiralstaking.unstakeNFTs([tokenId], true);
 
   console.log(`Token ${tokenId} owned by ${await rwnft.ownerOf(tokenId)} should be ${signer.address}`);
   console.log(`AFTER ETH: ${ethers.utils.formatEther(await ethers.provider.getBalance(signer.address))}`);

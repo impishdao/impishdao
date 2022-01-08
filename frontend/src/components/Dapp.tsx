@@ -350,10 +350,13 @@ export class Dapp extends React.Component<DappProps, DappState> {
   };
 
   waitForTxConfirmation = async (tx: Promise<any>, title?: string) => {
-    const t = await tx;
     const id = this.showToast(title || "Sending Tx", <span>Waiting for confirmations...</span>);
-    await t.wait();
-    this.hideToast(id);
+    try {
+      const t = await tx;
+      await t.wait();
+    } finally {
+      this.hideToast(id);
+    }
   };
 
   render() {
@@ -371,25 +374,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
               }
             }}
           />
-          <ToastContainer position="bottom-end" className="p-3">
-            {this.state.currentToasts.map((toast) => {
-              return (
-                <Toast
-                  key={toast.id}
-                  onClose={() => this.hideToast(toast.id)}
-                  show={toast.show}
-                  delay={5000}
-                  autohide={toast.autohide}
-                  bg="dark"
-                >
-                  <Toast.Header>
-                    <strong className="me-auto">{toast.title}</strong>
-                  </Toast.Header>
-                  <Toast.Body>{toast.body}</Toast.Body>
-                </Toast>
-              );
-            })}
-          </ToastContainer>
 
           <div className="mt-5" />
           {this.state.networkError && (
@@ -488,6 +472,26 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route path="/spirals/top10" element={<Top10 {...this.state} connectWallet={this._connectWallet} />} />
           </Routes>
+
+          <ToastContainer position="bottom-end" className="p-3">
+            {this.state.currentToasts.map((toast) => {
+              return (
+                <Toast
+                  key={toast.id}
+                  onClose={() => this.hideToast(toast.id)}
+                  show={toast.show}
+                  delay={5000}
+                  autohide={toast.autohide}
+                  bg="dark"
+                >
+                  <Toast.Header>
+                    <strong className="me-auto">{toast.title}</strong>
+                  </Toast.Header>
+                  <Toast.Body>{toast.body}</Toast.Body>
+                </Toast>
+              );
+            })}
+          </ToastContainer>
 
           <Row
             className="mt-2"
