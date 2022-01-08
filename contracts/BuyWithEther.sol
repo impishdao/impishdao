@@ -59,7 +59,7 @@ contract BuyWithEther is IERC721Receiver {
     address public constant SPIRALMARKET = 0x75ae378320E1cDe25a496Dfa22972d253Fc2270F;
     address public constant RWMARKET = 0x47eF85Dfb775aCE0934fBa9EEd09D22e6eC0Cc08;
 
-    // For this example, we will set the pool fee to 1%.
+    // We will set the pool fee to 1%.
     uint24 public constant POOL_FEE = 10000;
 
     constructor(ISwapRouter _swapRouter) {
@@ -69,6 +69,7 @@ contract BuyWithEther is IERC721Receiver {
         TransferHelper.safeApprove(WETH9, address(swapRouter), 2**256 - 1);
         TransferHelper.safeApprove(SPIRALBITS, address(swapRouter), 2**256 - 1);
 
+        // Approve the NFTs for this contract as well.
         IERC721(RWNFT).setApprovalForAll(RWNFTSTAKING, true);
         IERC721(IMPISHSPIRAL).setApprovalForAll(SPIRALSTAKING, true);
     }
@@ -84,7 +85,8 @@ contract BuyWithEther is IERC721Receiver {
         }
     }
 
-    function buyAndStake(uint256 tokenId, bool stake) internal {
+    // Buy and Stake a RWNFT
+    function buyAndStakeRW(uint256 tokenId, bool stake) internal {
         IImpishDAO(IMPISH).buyNFT(tokenId);
         maybeStakeRW(tokenId, stake);
     }
@@ -95,7 +97,7 @@ contract BuyWithEther is IERC721Receiver {
         // We add 1 wei, because we've divided by 1000, which will remove the smallest 4 digits
         // and we need to add it back because he actual price has those 4 least significant digits.
         IImpishDAO(IMPISH).deposit{value: (nftPriceInIMPISH / 1000) + 1}();
-        buyAndStake(tokenId, stake);
+        buyAndStakeRW(tokenId, stake);
     }
 
     function buyRwNFTFromDaoWithEth(uint256 tokenId, bool stake) external payable {
@@ -103,7 +105,7 @@ contract BuyWithEther is IERC721Receiver {
         uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
         swapExactOutputSingleToImpish(nftPriceInIMPISH, msg.value);
 
-        buyAndStake(tokenId, stake);
+        buyAndStakeRW(tokenId, stake);
     }
 
     function buyRwNFTFromDaoWithSpiralBits(uint256 tokenId, uint256 maxSpiralBits, bool stake) external {
@@ -111,7 +113,7 @@ contract BuyWithEther is IERC721Receiver {
         uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
         swapExactOutputMultiple(nftPriceInIMPISH, maxSpiralBits);
 
-        buyAndStake(tokenId, stake);
+        buyAndStakeRW(tokenId, stake);
     }
 
     function buySpiralFromMarketWithSpiralBits(uint256 tokenId, uint256 maxSpiralBits, bool stake) external {
@@ -140,7 +142,7 @@ contract BuyWithEther is IERC721Receiver {
     function buyRwNFTFromRWMarket(uint256 offerId, uint256 tokenId, uint256 priceInEth, uint256 maxSpiralBits, bool stake) external {
         // Swap SPIRALBITS -> WETH9
         swapExactOutputSingleToETH(priceInEth, maxSpiralBits);
-        
+
         // WETH9 -> ETH
         IWETH9(WETH9).withdraw(IWETH9(WETH9).balanceOf(address(this)));
 
@@ -205,7 +207,7 @@ contract BuyWithEther is IERC721Receiver {
         if (amountIn < amountInMaximum) {
             IWETH9(WETH9).withdraw(IWETH9(WETH9).balanceOf(address(this)));
             (bool success, ) = msg.sender.call{value: address(this).balance}("");
-            require(success, "Transfer failed.");
+            require(success, "TransferFailed");
         }
     }
 
@@ -234,8 +236,6 @@ contract BuyWithEther is IERC721Receiver {
         }
     }
 
-    
-
     // Default payable function, so the contract can accept any refunds
     receive() external payable {
         // Do nothing
@@ -244,7 +244,7 @@ contract BuyWithEther is IERC721Receiver {
     // Function that marks this contract can accept incoming NFT transfers
     function onERC721Received(address, address, uint256 , bytes calldata) public view returns(bytes4) {
         // Only accept NFT transfers from RandomWalkNFT
-        require(msg.sender == RWNFT || msg.sender == IMPISHSPIRAL, "NFT not recognized");
+        require(msg.sender == RWNFT || msg.sender == IMPISHSPIRAL, "UnknownNFT");
 
         // Return this value to accept the NFT
         return IERC721Receiver.onERC721Received.selector;
