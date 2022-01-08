@@ -11,7 +11,7 @@ export function secondsToDhms(seconds: number, includeSeconds?: boolean) {
   var hDisplay = h > 0 ? h + (h === 1 ? " hour, " : " hours, ") : "";
   var mDisplay = m > 0 ? m + (m === 1 ? " minute" : " minutes ") : "";
 
-  var sDisplay = '';
+  var sDisplay = "";
   if (includeSeconds) {
     sDisplay = s + (s === 1 ? ", second" : ", seconds");
   }
@@ -25,27 +25,26 @@ export function format4Decimals(n?: BigNumber): string {
   return parseFloat(ethers.utils.formatEther(n)).toFixed(4);
 }
 
-
 export function formatkmb(n?: BigNumber): string {
   if (n === undefined) {
     return "-";
   }
 
   let num = parseFloat(ethers.utils.formatEther(n));
-  let suffix = '';
+  let suffix = "";
   if (num > 1000) {
     num /= 1000;
-    suffix = 'K';
+    suffix = "K";
   }
 
   if (num > 1000) {
     num /= 1000;
-    suffix = 'M';
+    suffix = "M";
   }
 
   if (num > 1000) {
     num /= 1000;
-    suffix = 'B';
+    suffix = "B";
   }
 
   return `${num.toFixed(2)}${suffix}`;

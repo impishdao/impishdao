@@ -25,7 +25,7 @@ export type ToastInfo = {
   body: JSX.Element;
   autohide: boolean;
   show: boolean;
-}
+};
 
 export class DappState {
   networkError?: string;
@@ -87,7 +87,7 @@ export type DappFunctions = {
   readUserData: () => Promise<void>;
   showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
   waitForTxConfirmation: (tx: Promise<any>, title?: string) => Promise<void>;
-}
+};
 
 export type DappContracts = {
   provider?: Web3Provider;
@@ -97,8 +97,8 @@ export type DappContracts = {
   impspiral?: Contract;
   spiralmarket?: Contract;
   multimint?: Contract;
-  spiralbits?: Contract;  
+  spiralbits?: Contract;
   spiralstaking?: Contract;
   rwnftstaking?: Contract;
   buywitheth?: Contract;
-}
+};

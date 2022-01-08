@@ -31,6 +31,7 @@ import { Top10 } from "./Top10";
 import { Marketplace } from "./Marketplace";
 import { SpiralStaking } from "./SpiralStaking";
 import { cloneDeep } from "lodash";
+import { Crystals } from "./Crystals";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -408,6 +409,25 @@ export class Dapp extends React.Component<DappProps, DappState> {
                 />
               }
             />
+
+            <Route
+              path="/crystals"
+              element={
+                <Crystals {...this.state}
+                connectWallet={this._connectWallet}
+                readDappState={this.readDappState}
+                readUserData={this.readUserData}
+                showModal={this.showModal}
+                waitForTxConfirmation={this.waitForTxConfirmation}
+                provider={this.provider}
+                impdao={this.impdao}
+                rwnft={this.rwnft}
+                impspiral={this.impspiral}
+                multimint={this.multimint}
+                />
+              }
+            />
+
             <Route
               path="/spirals"
               element={

@@ -409,10 +409,15 @@ const [transferListener] = setupSpiralMarket(app, provider);
 
 // Serve static files
 app.use("/spirals", express.static(path.join(__dirname, "index.html")));
-app.use("/impishdao", express.static(path.join(__dirname, "index.html")));
-app.use("/impishdao/*", express.static(path.join(__dirname, "index.html")));
 app.use("/spirals/*", express.static(path.join(__dirname, "index.html")));
 app.use("/spiralstaking", express.static(path.join(__dirname, "index.html")));
+
+app.use("/crystals", express.static(path.join(__dirname, "index.html")));
+
+app.use("/impishdao", express.static(path.join(__dirname, "index.html")));
+app.use("/impishdao/*", express.static(path.join(__dirname, "index.html")));
+
+
 app.use("/", express.static(path.join(__dirname)));
 
 app.listen(3001, () => console.log("Example app listening on port 3001!"));
