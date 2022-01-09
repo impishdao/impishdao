@@ -75,10 +75,10 @@ class Child {
   relPos: number;
   rotation: number;
 
-  constructor(width: number, height: number, relPos: number) {
-    this.rect = {width, height, color: {r: 200, g: 0, b: 0}};
+  constructor(width: number, height: number, relPos: number, rotation: number) {
+    this.rect = { width, height, color: { r: 200, g: 0, b: 0 } };
     this.relPos = relPos;
-    this.rotation = Math.PI / 3;
+    this.rotation = rotation;
   }
 
   render(ctx: CanvasRenderingContext2D) {
@@ -86,7 +86,7 @@ class Child {
 
     // Draw the base rect
     ctx.fillStyle = rgbToHex(this.rect.color);
-    ctx.fillRect(-this.rect.width/2, 0, this.rect.width, this.rect.height);
+    ctx.fillRect(-this.rect.width / 2, 0, this.rect.width, this.rect.height);
 
     ctx.restore();
   }
@@ -95,45 +95,51 @@ class Child {
 class Finger {
   rect: Rect;
   sym: number;
-  children: Child[]
+  children: Child[];
 
   constructor() {
-    this.rect = {width: 10, height: 80, color: {r: 250, g: 0, b: 0}};
-    this.sym = 9;
-    this.children = [new Child(5, 20, 0.8), new Child(8, 20, 0.6), new Child(2, 40, 0.1)];
+    this.rect = { width: 10, height: 255, color: { r: 250, g: 200, b: 200 } };
+    this.sym = 11;
+    this.children = [
+      new Child(5, 100, 0.8, Math.PI / 3),
+      new Child(8, 30, 0.6, Math.PI / 4),
+      new Child(18, 30, 0.3, Math.PI / 4),
+      new Child(12, 40, 0.1, Math.PI / 2),
+      new Child(5, 30, 0.9, 2 * Math.PI / 3),
+      new Child(5, 10, 1, 0),
+    ];
   }
 
   render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     ctx.save();
-    
+
     // First, move the ctx to the center
-    ctx.translate(canvasWidth/2, canvasHeight/2);
+    ctx.translate(canvasWidth / 2, canvasHeight / 2);
     for (let s = 0; s < this.sym; s++) {
-      console.log(`Rendering ${s} at ${s * 2 * Math.PI / this.sym}`);
 
       // Rotate for this finger. Note that this is incremental for each iteration
       // so we rotate by the same amount each time.
-      ctx.rotate(2 * Math.PI / this.sym);
+      ctx.rotate((2 * Math.PI) / this.sym);
 
       // Draw the base rect
-      ctx.fillStyle = rgbToHex({r: 150 + (s*20), g: 0, b: 0});
-      ctx.fillRect(-this.rect.width/2, 0, this.rect.width, this.rect.height);
+      ctx.fillStyle = rgbToHex(this.rect.color);
+      ctx.fillRect(-this.rect.width / 2, 0, this.rect.width, this.rect.height);
 
       // Draw each of the children
       for (let c = 0; c < this.children.length; c++) {
         ctx.save();
 
         // Move to the relative position
-        ctx.translate(0, this.rect.height*this.children[c].relPos);
-        // We draw each child twice, 
-        
+        ctx.translate(0, this.rect.height * this.children[c].relPos);
+        // We draw each child twice,
+
         // once rotating left
         ctx.rotate(-this.children[c].rotation);
         this.children[c].render(ctx);
 
         // once rotating right
-        ctx.rotate(2*this.children[c].rotation);
+        ctx.rotate(2 * this.children[c].rotation);
         this.children[c].render(ctx);
 
         // reset the rotations and translates
@@ -153,7 +159,6 @@ function get_random_byte(gen: Generator<number>): number {
 
   return byte;
 }
-
 
 export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   console.log("setup crystal");

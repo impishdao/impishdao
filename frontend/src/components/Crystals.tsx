@@ -16,7 +16,7 @@ export function Crystals(props: CrystalsProps) {
   useLayoutEffect(() => {
     if (canvasRef.current) {
 
-      setup_crystal(canvasRef.current, "e");
+      setup_crystal(canvasRef.current, "seed");
     }
   });
 
@@ -30,7 +30,7 @@ export function Crystals(props: CrystalsProps) {
         <Container className="mt-5 mb-5">
           <Row>
             <Col xs={12}>
-              <canvas ref={canvasRef} width="600px" height="600px"></canvas>
+              <canvas ref={canvasRef} width="600px" height="600px" style={{border: "solid 1px white"}}></canvas>
             </Col>
           </Row>
         </Container>
