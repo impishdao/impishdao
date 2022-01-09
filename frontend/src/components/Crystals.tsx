@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Card, Col, Container, ListGroup, Row } from "react-bootstrap";
+import { Button, Card, Col, Container, ListGroup, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { DappContracts, DappFunctions, DappState, SpiralsState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
@@ -12,11 +12,11 @@ type CrystalsProps = DappState & DappFunctions & DappContracts & {
 
 export function Crystals(props: CrystalsProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [seed, setSeed] = useState("seed");
 
   useLayoutEffect(() => {
     if (canvasRef.current) {
-
-      setup_crystal(canvasRef.current, "seed");
+      setup_crystal(canvasRef.current, seed);
     }
   });
 
@@ -31,6 +31,11 @@ export function Crystals(props: CrystalsProps) {
           <Row>
             <Col xs={12}>
               <canvas ref={canvasRef} width="600px" height="600px" style={{border: "solid 1px white"}}></canvas>
+            </Col>
+          </Row>
+          <Row>
+            <Col xs={{span: 1, offset: 5}}>
+              <Button onClick={() => setSeed(seed + "1")}>Next</Button>
             </Col>
           </Row>
         </Container>
