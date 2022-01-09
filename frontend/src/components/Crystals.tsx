@@ -30,7 +30,7 @@ export function Crystals(props: CrystalsProps) {
         <Container className="mt-5 mb-5">
           <Row>
             <Col xs={12}>
-              <canvas ref={canvasRef} width="600px" height="600px" style={{border: "solid 1px white"}}></canvas>
+              <canvas ref={canvasRef} width="650px" height="650px" style={{border: "solid 1px white"}}></canvas>
             </Col>
           </Row>
           <Row>

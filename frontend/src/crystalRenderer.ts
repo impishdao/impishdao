@@ -104,21 +104,33 @@ class Child {
   relPos: number;
   rotation: number;
   neg: boolean;
+  topper: number;
+  depth: number;
 
   children: Child[];
 
   constructor(gen: Generator<number>, depth: number) {
-    const width = depth === 0 ? rb(gen, 2, 20) : rb(gen, 1, 18);
-    const height = depth === 0 ? rb(gen, 200, 255) : rb(gen, 10, 100);
+    const width = depth === 0 ? rb(gen, 2, 20) : depth === 1 ? rb(gen, 1, 14) : rb(gen, 1, 3);
+    const height = depth === 0 ? rb(gen, 200, 255) : depth === 1 ? rb(gen, 10, 100) : rb(gen, 1, 10);
 
     this.rect = { width, height, color: random_color_bright(gen) };
     this.relPos = depth === 0 ? 0 : rb(gen, 1, 10) / 10;
     this.rotation = depth === 0 ? 0 : Math.PI / rb(gen, 1, 6);
     this.neg = random_bool(gen);
+    this.depth = depth;
+    this.topper = rb(gen, 0, 2);
+
     this.children = [];
 
     if (depth === 0) {
       const numChildren = rb(gen, 3, 8);
+      for (let i = 0; i < numChildren; i++) {
+        this.children.push(new Child(gen, depth + 1));
+      }
+    }
+
+    if (depth === 1) {
+      const numChildren = rb(gen, 0, 1);
       for (let i = 0; i < numChildren; i++) {
         this.children.push(new Child(gen, depth + 1));
       }
@@ -132,10 +144,20 @@ class Child {
     ctx.fillStyle = rgbToHex(this.rect.color);
     ctx.fillRect(-this.rect.width / 2, 0, this.rect.width, this.rect.height);
 
+    // Draw a topper if needed
+    // if (this.depth === 0) {
+      // Circle
+      ctx.fillStyle = rgbToHex(this.rect.color);
+      ctx.beginPath();
+      ctx.arc(0, this.rect.height, this.rect.width / 2, 0, 2 * Math.PI);
+      ctx.closePath();
+      ctx.fill();
+    // }
+
     // If there is a "neg", then draw a negative space inside
     if (this.neg) {
       ctx.fillStyle = "black";
-      ctx.fillRect(-this.rect.width / 4, 0, this.rect.width / 2, this.rect.height * 0.8);
+      ctx.fillRect(-this.rect.width / 4, 0, this.rect.width / 2, this.rect.height * 0.9);
     }
 
     // Draw each of the children
