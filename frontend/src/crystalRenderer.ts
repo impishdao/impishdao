@@ -58,9 +58,9 @@ type RGB = {
   b: number;
 };
 
-type RGBPolarPoint = {
-  rr: number;
-  th: number;
+type Rect = {
+  width: number;
+  height: number;
   color: RGB;
 };
 
@@ -69,6 +69,81 @@ type RGBCartPoint = {
   yy: number;
   color: RGB;
 };
+
+class Child {
+  rect: Rect;
+  relPos: number;
+  rotation: number;
+
+  constructor(width: number, height: number, relPos: number) {
+    this.rect = {width, height, color: {r: 200, g: 0, b: 0}};
+    this.relPos = relPos;
+    this.rotation = Math.PI / 3;
+  }
+
+  render(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+
+    // Draw the base rect
+    ctx.fillStyle = rgbToHex(this.rect.color);
+    ctx.fillRect(-this.rect.width/2, 0, this.rect.width, this.rect.height);
+
+    ctx.restore();
+  }
+}
+
+class Finger {
+  rect: Rect;
+  sym: number;
+  children: Child[]
+
+  constructor() {
+    this.rect = {width: 10, height: 80, color: {r: 250, g: 0, b: 0}};
+    this.sym = 9;
+    this.children = [new Child(5, 20, 0.8), new Child(8, 20, 0.6), new Child(2, 40, 0.1)];
+  }
+
+  render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.save();
+    
+    // First, move the ctx to the center
+    ctx.translate(canvasWidth/2, canvasHeight/2);
+    for (let s = 0; s < this.sym; s++) {
+      console.log(`Rendering ${s} at ${s * 2 * Math.PI / this.sym}`);
+
+      // Rotate for this finger. Note that this is incremental for each iteration
+      // so we rotate by the same amount each time.
+      ctx.rotate(2 * Math.PI / this.sym);
+
+      // Draw the base rect
+      ctx.fillStyle = rgbToHex({r: 150 + (s*20), g: 0, b: 0});
+      ctx.fillRect(-this.rect.width/2, 0, this.rect.width, this.rect.height);
+
+      // Draw each of the children
+      for (let c = 0; c < this.children.length; c++) {
+        ctx.save();
+
+        // Move to the relative position
+        ctx.translate(0, this.rect.height*this.children[c].relPos);
+        // We draw each child twice, 
+        
+        // once rotating left
+        ctx.rotate(-this.children[c].rotation);
+        this.children[c].render(ctx);
+
+        // once rotating right
+        ctx.rotate(2*this.children[c].rotation);
+        this.children[c].render(ctx);
+
+        // reset the rotations and translates
+        ctx.restore();
+      }
+    }
+
+    ctx.restore();
+  }
+}
 
 function get_random_byte(gen: Generator<number>): number {
   let byte = 0;
@@ -79,182 +154,6 @@ function get_random_byte(gen: Generator<number>): number {
   return byte;
 }
 
-type MinMax = {
-  min_x: number;
-  max_x: number;
-  min_y: number;
-  max_y: number;
-};
-
-function get_min_max(paths: Array<RGBCartPoint[]>): MinMax {
-  const minmax = { min_x: 0, max_x: 0, min_y: 0, max_y: 0 };
-
-  for (let j = 0; j < paths.length; j++) {
-    const path = paths[j];
-
-    for (let i = 0; i < path.length; i++) {
-      const p = path[i];
-      if (p.xx < minmax.min_x) {
-        minmax.min_x = p.xx;
-      }
-      if (p.yy < minmax.min_y) {
-        minmax.min_y = p.yy;
-      }
-      if (p.xx > minmax.max_x) {
-        minmax.max_x = p.xx;
-      }
-      if (p.yy > minmax.max_y) {
-        minmax.max_y = p.yy;
-      }
-    }
-  }
-
-  return minmax;
-}
-
-function get_random_rgb(gen: Generator<number>): RGB {
-  // each point is random 8 bits
-  return { r: get_random_byte(gen), g: get_random_byte(gen), b: get_random_byte(gen) };
-}
-
-// Get the next color evolution
-function get_next_rgb(rgb: RGB, gen: Generator<number>): RGB {
-  const newRGB = Object.assign({ ...rgb });
-
-  newRGB.r += gen.next().value === 0 ? +1 : -1;
-  if (newRGB.r < 0) {
-    newRGB.r = 1;
-  }
-  if (newRGB.r > 255) {
-    newRGB.r = 254;
-  }
-
-  newRGB.g += gen.next().value === 0 ? +1 : -1;
-  if (newRGB.g < 0) {
-    newRGB.g = 1;
-  }
-  if (newRGB.g > 255) {
-    newRGB.g = 254;
-  }
-
-  newRGB.b += gen.next().value === 0 ? +1 : -1;
-  if (newRGB.b < 0) {
-    newRGB.b = 1;
-  }
-  if (newRGB.b > 255) {
-    newRGB.b = 254;
-  }
-
-  console.log(`Color ${JSON.stringify(rgb)} -> ${JSON.stringify(newRGB)}`);
-
-  return newRGB;
-}
-
-// Get a random walk starting at (0, 0).
-function get_path_polar(seed: string, length: number, startAngle: number): RGBPolarPoint[] {
-  const gen = random_generator(seed);
-
-  // Start at 0, 0 with a random color
-  const points: RGBPolarPoint[] = [{ rr: 0, th: startAngle, color: get_random_rgb(gen) }];
-
-  for (let i = 0; i < length - 1; i++) {
-    const rr = points[i].rr + (gen.next().value === 0 ? 0.1 : 1);
-    const th = points[i].th + (gen.next().value === 0 ? +0.01 : -0.01);
-
-    const color = get_next_rgb(points[i].color, gen);
-
-    points.push({ rr, th, color });
-  }
-
-  return points;
-}
-
-function get_path_cart(path: RGBPolarPoint[], startAtX: number, startAtY: number): RGBCartPoint[] {
-  const cart_path: RGBCartPoint[] = path.map(({ rr, th, color }) => {
-    let xx = rr * Math.cos(th) + startAtX;
-    let yy = rr * Math.sin(th) + startAtY;
-
-    return { xx, yy, color };
-  });
-
-  return cart_path;
-}
-
-function draw_cart_path(
-  ctx: CanvasRenderingContext2D,
-  mm: MinMax,
-  scale: number,
-  border: number,
-  cart_path: RGBCartPoint[],
-  width: number
-) {
-  const { min_x, min_y, max_x, max_y } = mm;
-
-  const translatePoint = (p: RGBCartPoint) => {
-    const x = Math.round(scale * (p.xx - min_x) + border);
-    const y = Math.round(scale * (p.yy - min_y) + border);
-
-    return { x, y };
-  };
-
-  const { x, y } = translatePoint(cart_path[0]);
-  let prev_x = x;
-  let prev_y = y;
-
-  for (let i = 0; i < cart_path.length; i++) {
-    const p = cart_path[i];
-
-    const { x, y } = translatePoint(cart_path[i]);
-
-    ctx.beginPath();
-    ctx.moveTo(prev_x, prev_y);
-
-    ctx.strokeStyle = rgbToHex(p.color);
-    ctx.lineWidth = width;
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.closePath();
-
-    prev_x = x;
-    prev_y = y;
-  }
-}
-
-function draw_image(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, seed: string) {
-  const pp = get_path_polar(seed, 1500, Math.PI / 3);
-  const lastTh = pp[pp.length - 1].th;
-
-  const pp1 = get_path_polar(seed + "1", 1250, lastTh - Math.PI / 3);
-  const pp2 = get_path_polar(seed + "2", 1250, lastTh + Math.PI / 3);
-
-  const cp = get_path_cart(pp, 0, 0);
-  const cp1 = get_path_cart(pp1, cp[cp.length - 1].xx, cp[cp.length - 1].yy);
-  const cp2 = get_path_cart(pp2, cp[cp.length - 1].xx, cp[cp.length - 1].yy);
-
-  // Find min and max
-  const mm = get_min_max([cp, cp1, cp2]);
-  // console.log(get_min_max(cart_path));
-
-  // const id = new ImageData(canvasWidth, canvasHeight);
-  // const pixels = id.data;
-
-  const border = canvasWidth * 0.03; // 3% border each side
-  const drawableWidth = canvasWidth - 2 * border;
-  const longer_range = Math.max(mm.max_x - mm.min_x, mm.max_y - mm.min_y);
-  const scale = drawableWidth / longer_range;
-
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-  // ctx.fillStyle = "black";
-  // ctx.strokeStyle = "black";
-  // ctx.rect(0, 0, canvasWidth, canvasHeight);
-  // ctx.fill();
-  draw_cart_path(ctx, mm, scale, border, cp, 3);
-  draw_cart_path(ctx, mm, scale, border, cp1, 1);
-  draw_cart_path(ctx, mm, scale, border, cp2, 1);
-
-  // ctx.putImageData(id, 0, 0);
-}
 
 export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   console.log("setup crystal");
@@ -263,8 +162,10 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
+  const f = new Finger();
+
   if (ctx) {
-    draw_image(ctx, canvasWidth, canvasHeight, seed);
+    f.render(ctx, canvasWidth, canvasHeight);
   } else {
     console.log("No context");
   }
