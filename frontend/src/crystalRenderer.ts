@@ -52,6 +52,10 @@ function* random_generator(init_seed: string) {
   }
 }
 
+function random_bool(gen: Generator<number>): boolean {
+  return gen.next().value === 0;
+}
+
 function random_255(gen: Generator<number>): number {
   let n = 0;
   for (let i = 0; i < 8; i++) {
@@ -67,6 +71,14 @@ function rb(gen: Generator<number>, startInc: number, endInc: number): number {
   }
 
   return startInc + (random_255(gen) * (endInc - startInc + 1)) / 255;
+}
+
+function random_color_bright(gen: Generator<number>): RGB {
+  return {
+    r: Math.floor(rb(gen, 150, 255)),
+    g: Math.floor(rb(gen, 150, 255)),
+    b: Math.floor(rb(gen, 150, 255)),
+  };
 }
 
 type RGB = {
@@ -91,13 +103,26 @@ class Child {
   rect: Rect;
   relPos: number;
   rotation: number;
+  neg: boolean;
+
   children: Child[];
 
-  constructor(width: number, height: number, relPos: number, rotation: number, color: RGB) {
-    this.rect = { width, height, color };
-    this.relPos = relPos;
-    this.rotation = rotation;
+  constructor(gen: Generator<number>, depth: number) {
+    const width = depth === 0 ? rb(gen, 2, 20) : rb(gen, 1, 18);
+    const height = depth === 0 ? rb(gen, 200, 255) : rb(gen, 10, 100);
+
+    this.rect = { width, height, color: random_color_bright(gen) };
+    this.relPos = depth === 0 ? 0 : rb(gen, 1, 10) / 10;
+    this.rotation = depth === 0 ? 0 : Math.PI / rb(gen, 1, 6);
+    this.neg = random_bool(gen);
     this.children = [];
+
+    if (depth === 0) {
+      const numChildren = rb(gen, 3, 8);
+      for (let i = 0; i < numChildren; i++) {
+        this.children.push(new Child(gen, depth + 1));
+      }
+    }
   }
 
   render(ctx: CanvasRenderingContext2D) {
@@ -106,6 +131,12 @@ class Child {
     // Draw the base rect
     ctx.fillStyle = rgbToHex(this.rect.color);
     ctx.fillRect(-this.rect.width / 2, 0, this.rect.width, this.rect.height);
+
+    // If there is a "neg", then draw a negative space inside
+    if (this.neg) {
+      ctx.fillStyle = "black";
+      ctx.fillRect(-this.rect.width / 4, 0, this.rect.width / 2, this.rect.height * 0.8);
+    }
 
     // Draw each of the children
     for (let c = 0; c < this.children.length; c++) {
@@ -136,25 +167,12 @@ class Finger {
   mainChild: Child;
 
   constructor(seed: string) {
-    this.sym = 5;
+    this.sym = 15;
 
     const gen = random_generator(seed);
+    const mainColor = random_color_bright(gen);
 
-    this.mainChild = new Child(rb(gen, 1, 10), rb(gen, 200, 255), 0, 0, {
-      r: 250,
-      g: 200,
-      b: 200,
-    });
-
-    const numChildren = rb(gen, 3, 8);
-    for (let i = 0; i < numChildren; i++) {
-      const child = new Child(rb(gen, 2, 18), rb(gen, 10, 100), rb(gen, 1, 10) / 10, Math.PI / rb(gen, 1, 6), {
-        r: 200,
-        g: 255,
-        b: 255,
-      });
-      this.mainChild.children.push(child);
-    }
+    this.mainChild = new Child(gen, 0);
   }
 
   render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
