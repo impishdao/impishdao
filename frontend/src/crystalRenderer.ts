@@ -75,9 +75,9 @@ function rb(gen: Generator<number>, startInc: number, endInc: number): number {
 
 function random_color_bright(gen: Generator<number>): RGB {
   return {
-    r: Math.floor(rb(gen, 150, 255)),
-    g: Math.floor(rb(gen, 150, 255)),
-    b: Math.floor(rb(gen, 150, 255)),
+    r: Math.floor(rb(gen, 100, 255)),
+    g: Math.floor(rb(gen, 100, 255)),
+    b: Math.floor(rb(gen, 100, 255)),
   };
 }
 
@@ -100,7 +100,7 @@ class Rect {
 
   neg: boolean;
   negRelHeight: number = 0;
-  topper: boolean;
+  roundTopper: boolean;
 
   constructor(gen: Generator<number>, depth: number) {
     let widths = this.get_minmax_width_at_depth(depth);
@@ -114,7 +114,7 @@ class Rect {
     if (this.neg) {
       this.negRelHeight = 0.5 + rb(gen, 0, 0.75);
     }
-    this.topper = random_bool(gen);
+    this.roundTopper = random_bool(gen);
 
     this.color = random_color_bright(gen);
   }
@@ -154,6 +154,7 @@ class Child {
   relPos: number;
   rotation: number;
   depth: number;
+  isGhost: boolean = false; 
 
   children: Child[];
 
@@ -162,7 +163,7 @@ class Child {
     this.rect = new Rect(gen, depth);
 
     this.relPos = depth === 0 ? 0 : rb(gen, 1, 10) / 10;
-    this.rotation = depth === 0 ? 0 : Math.PI / rb(gen, 1, 6);
+    this.rotation = depth === 0 ? 0 : Math.PI / rb(gen, 1, 8);
 
     this.depth = depth;
 
@@ -187,59 +188,63 @@ class Child {
         const child = new Child(gen, depth + 1);
         // Ghost props
         child.rect.color = { r: 0, g: 0, b: 0};
+        child.rect.topWidth /= 4;
+        child.rect.bottomWidth /= 4;
         child.rect.neg = false;
         child.relPos /= 10;
+        child.isGhost = true;
 
         this.children.push(child);
       }
     }
   }
 
-  render(ctx: CanvasRenderingContext2D) {
+  render(ctx: CanvasRenderingContext2D, pass: number) {
     ctx.save();
 
-    // Draw the base rect
-    ctx.fillStyle = rgbToHex(this.rect.color);
-    // ctx.fillRect(-this.rect.bottomWidth / 2, 0, this.rect.bottomWidth, this.rect.height);
-    ctx.beginPath();
-    ctx.moveTo(-this.rect.bottomWidth/2, 0);
-    ctx.lineTo(-this.rect.topWidth/2, this.rect.height);
-    ctx.lineTo(this.rect.topWidth/2, this.rect.height);
-    ctx.lineTo(this.rect.bottomWidth/2, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    // Draw a topper if needed
-    if (this.rect.topper) {
-      // Circle
+    if ((this.isGhost && pass === 2) || (!this.isGhost && pass === 1)) {
+      // Draw the base rect
       ctx.fillStyle = rgbToHex(this.rect.color);
       ctx.beginPath();
-      ctx.arc(0, this.rect.height, this.rect.topWidth / 2, 0, 2 * Math.PI);
+      ctx.moveTo(-this.rect.bottomWidth/2, 0);
+      ctx.lineTo(-this.rect.topWidth/2, this.rect.height);
+      ctx.lineTo(this.rect.topWidth/2, this.rect.height);
+      ctx.lineTo(this.rect.bottomWidth/2, 0);
       ctx.closePath();
       ctx.fill();
-    } else {
-      // Triangle on top
+
+      // Draw a roundTopper if needed
+      if (this.rect.roundTopper) {
+        // Circle
+        ctx.fillStyle = rgbToHex(this.rect.color);
+        ctx.beginPath();
+        ctx.arc(0, this.rect.height, this.rect.topWidth / 2, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Triangle on top
+        ctx.fillStyle = rgbToHex(this.rect.color);
+        ctx.beginPath();
+        ctx.moveTo(-this.rect.topWidth / 2, this.rect.height - 1);
+        ctx.lineTo(0, this.rect.height * 1.1);
+        ctx.lineTo(this.rect.topWidth / 2, this.rect.height - 1);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // If there is a "neg", then draw a negative space inside
+      if (this.rect.neg) {
+        ctx.fillStyle = "black";
+        ctx.fillRect(-this.rect.bottomWidth / 4, 0, this.rect.bottomWidth / 2, this.rect.height * this.rect.negRelHeight);
+      }
+
+      // Draw a "bottom" circle
       ctx.fillStyle = rgbToHex(this.rect.color);
       ctx.beginPath();
-      ctx.moveTo(-this.rect.topWidth / 2, this.rect.height - 1);
-      ctx.lineTo(0, this.rect.height * 1.1);
-      ctx.lineTo(this.rect.topWidth / 2, this.rect.height - 1);
+      ctx.arc(0, 0, this.rect.bottomWidth / 2, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.fill();
     }
-
-    // If there is a "neg", then draw a negative space inside
-    if (this.rect.neg) {
-      ctx.fillStyle = "black";
-      ctx.fillRect(-this.rect.bottomWidth / 4, 0, this.rect.bottomWidth / 2, this.rect.height * this.rect.negRelHeight);
-    }
-
-    // Draw a "bottom"
-    ctx.fillStyle = rgbToHex(this.rect.color);
-    ctx.beginPath();
-    ctx.arc(0, 0, this.rect.bottomWidth / 2, 0, 2 * Math.PI);
-    ctx.closePath();
-    ctx.fill();
 
     // Draw each of the children
     for (let c = 0; c < this.children.length; c++) {
@@ -251,11 +256,11 @@ class Child {
 
       // once rotating left
       ctx.rotate(-this.children[c].rotation);
-      this.children[c].render(ctx);
+      this.children[c].render(ctx, pass);
 
       // once rotating right
       ctx.rotate(2 * this.children[c].rotation);
-      this.children[c].render(ctx);
+      this.children[c].render(ctx, pass);
 
       // reset the rotations and translates
       ctx.restore();
@@ -270,7 +275,7 @@ class Finger {
   mainChild: Child;
 
   constructor(seed: string) {
-    this.sym = 8;
+    this.sym = 25;
 
     const gen = random_generator(seed);
 
@@ -288,7 +293,16 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx);
+      this.mainChild.render(ctx, 1);
+    }
+
+    // 2nd Pass renders "ghosts"
+    for (let s = 0; s < this.sym; s++) {
+      // Rotate for this finger. Note that this is incremental for each iteration
+      // so we rotate by the same amount each time.
+      ctx.rotate((2 * Math.PI) / this.sym);
+
+      this.mainChild.render(ctx, 2);
     }
 
     ctx.restore();
