@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 /* eslint-disable camelcase */
 import { sha3_256 } from "js-sha3";
-import { min } from "lodash";
+import { cloneDeep } from "lodash";
 
 const fromHexString = (hexString: string): Uint8Array => {
   let m = hexString.match(/.{1,2}/g);
@@ -92,17 +92,28 @@ type MinMax = {
   max: number;
 };
 
+function cosT(length: number): number {
+  return 1 - Math.cos(length * (Math.PI / 2));
+}
+
+function sinT(length: number): number {
+  return Math.sin(length * (Math.PI / 2));
+}
+
 class Rect {
   bottomWidth: number;
   topWidth: number;
   height: number;
   color: RGB;
+  depth: number;
 
   neg: boolean;
   negRelHeight: number = 0;
   roundTopper: boolean;
 
   constructor(gen: Generator<number>, depth: number) {
+    this.depth = depth;
+
     let widths = this.get_minmax_width_at_depth(depth);
     this.bottomWidth = rb(gen, widths[0].min, widths[0].max);
     this.topWidth = rb(gen, widths[1].min, widths[1].max);
@@ -118,6 +129,25 @@ class Rect {
 
     this.color = random_color_bright(gen);
   }
+
+  effective_rect = (length: number) : Rect => {
+    const f1 = (this.depth % 2 === 0 ? cosT : sinT);
+    const f2 = (this.depth % 2 === 1 ? cosT : sinT);
+
+    let bottomWidth = this.bottomWidth * f2(length);
+    let topWidth = this.topWidth * f2(length);
+    let height = this.height * f1(length);
+
+    if (this.depth > 1) {
+      bottomWidth *= f2(length);
+      topWidth *= f2(length);
+      height *= f1(length);
+    }
+
+    const er = cloneDeep(this);
+
+    return Object.assign(er, {bottomWidth, topWidth, height});
+  };
 
   get_minmax_width_at_depth = (depth: number): MinMax[] => {
     if (depth === 0) {
@@ -172,9 +202,9 @@ class Child {
     let numChildren = 0;
 
     if (depth === 0) {
-      numChildren = rb(gen, 3, 8);
+      numChildren = rb(gen, 3, 9);
     } else if (depth === 1) {
-      numChildren = rb(gen, 0, 1);
+      numChildren = rb(gen, 0, 2);
     }
 
     for (let i = 0; i < numChildren; i++) {
@@ -199,49 +229,51 @@ class Child {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D, pass: number) {
+  render(ctx: CanvasRenderingContext2D, pass: number, length: number) {
     ctx.save();
+    
+    const rect = this.rect.effective_rect(length);
 
     if ((this.isGhost && pass === 2) || (!this.isGhost && pass === 1)) {
       // Draw the base rect
-      ctx.fillStyle = rgbToHex(this.rect.color);
+      ctx.fillStyle = rgbToHex(rect.color);
       ctx.beginPath();
-      ctx.moveTo(-this.rect.bottomWidth/2, 0);
-      ctx.lineTo(-this.rect.topWidth/2, this.rect.height);
-      ctx.lineTo(this.rect.topWidth/2, this.rect.height);
-      ctx.lineTo(this.rect.bottomWidth/2, 0);
+      ctx.moveTo(-rect.bottomWidth/2, 0);
+      ctx.lineTo(-rect.topWidth/2, rect.height);
+      ctx.lineTo(rect.topWidth/2, rect.height);
+      ctx.lineTo(rect.bottomWidth/2, 0);
       ctx.closePath();
-      ctx.fill();
-
+      ctx.fill();      
+      
       // Draw a roundTopper if needed
-      if (this.rect.roundTopper) {
+      if (rect.roundTopper) {
         // Circle
-        ctx.fillStyle = rgbToHex(this.rect.color);
+        ctx.fillStyle = rgbToHex(rect.color);
         ctx.beginPath();
-        ctx.arc(0, this.rect.height, this.rect.topWidth / 2, 0, 2 * Math.PI);
+        ctx.arc(0, rect.height, rect.topWidth / 2, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
       } else {
         // Triangle on top
-        ctx.fillStyle = rgbToHex(this.rect.color);
+        ctx.fillStyle = rgbToHex(rect.color);
         ctx.beginPath();
-        ctx.moveTo(-this.rect.topWidth / 2, this.rect.height - 1);
-        ctx.lineTo(0, this.rect.height * 1.1);
-        ctx.lineTo(this.rect.topWidth / 2, this.rect.height - 1);
+        ctx.moveTo(-rect.topWidth / 2, rect.height - 1);
+        ctx.lineTo(0, rect.height * 1.1);
+        ctx.lineTo(rect.topWidth / 2, rect.height - 1);
         ctx.closePath();
         ctx.fill();
       }
 
       // If there is a "neg", then draw a negative space inside
-      if (this.rect.neg) {
+      if (rect.neg) {
         ctx.fillStyle = "black";
-        ctx.fillRect(-this.rect.bottomWidth / 4, 0, this.rect.bottomWidth / 2, this.rect.height * this.rect.negRelHeight);
+        ctx.fillRect(-rect.bottomWidth / 4, 0, rect.bottomWidth / 2, rect.height * rect.negRelHeight);
       }
 
       // Draw a "bottom" circle
-      ctx.fillStyle = rgbToHex(this.rect.color);
+      ctx.fillStyle = rgbToHex(rect.color);
       ctx.beginPath();
-      ctx.arc(0, 0, this.rect.bottomWidth / 2, 0, 2 * Math.PI);
+      ctx.arc(0, 0, rect.bottomWidth / 2, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.fill();
     }
@@ -251,16 +283,17 @@ class Child {
       ctx.save();
 
       // Move to the relative position
-      ctx.translate(0, this.rect.height * this.children[c].relPos);
+      ctx.translate(0, rect.height * this.children[c].relPos);
       // We draw each child twice,
 
       // once rotating left
-      ctx.rotate(-this.children[c].rotation);
-      this.children[c].render(ctx, pass);
+      const effectiveRotation = this.children[c].rotation * length;
+      ctx.rotate(-effectiveRotation);
+      this.children[c].render(ctx, pass, length);
 
       // once rotating right
-      ctx.rotate(2 * this.children[c].rotation);
-      this.children[c].render(ctx, pass);
+      ctx.rotate(2 * effectiveRotation);
+      this.children[c].render(ctx, pass, length);
 
       // reset the rotations and translates
       ctx.restore();
@@ -275,14 +308,18 @@ class Finger {
   mainChild: Child;
 
   constructor(seed: string) {
-    this.sym = 25;
+    this.sym = 8;
 
     const gen = random_generator(seed);
 
     this.mainChild = new Child(gen, 0);
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+  render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, length: number) {
+    if (length < 0.2 || length > 1.0) {
+      throw new Error(`Wrong Length: ${length}`);
+    }
+
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     ctx.save();
 
@@ -293,7 +330,7 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx, 1);
+      this.mainChild.render(ctx, 1, length);
     }
 
     // 2nd Pass renders "ghosts"
@@ -302,21 +339,12 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx, 2);
+      this.mainChild.render(ctx, 2, length);
     }
 
     ctx.restore();
   }
 }
-
-// function get_random_byte(gen: Generator<number>): number {
-//   let byte = 0;
-//   for (let i = 0; i < 8; i++) {
-//     byte = (byte << 1) | gen.next().value;
-//   }
-
-//   return byte;
-// }
 
 export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   console.log("setup crystal");
@@ -329,7 +357,16 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   const f = new Finger(seed);
 
   if (ctx) {
-    f.render(ctx, canvasWidth, canvasHeight);
+    const r = (length: number) => {
+      if (length > 1.0) {
+        return;
+      }
+
+      f.render(ctx, canvasWidth, canvasHeight, length);
+      setTimeout(() => r(length + 0.005), 32);
+    };
+
+    r(0.3);
   } else {
     console.log("No context");
   }

@@ -8,12 +8,15 @@ import { Navigation } from "./Navigation";
 type CrystalsProps = DappState & DappFunctions & DappContracts & {};
 
 export function Crystals(props: CrystalsProps) {
+  const a = new Uint8Array(4);
+  window.crypto.getRandomValues(a);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [seed, setSeed] = useState("seed");
+  const [seed, setSeed] = useState(BigNumber.from(a));
 
   useLayoutEffect(() => {
     if (canvasRef.current) {
-      setup_crystal(canvasRef.current, seed);
+      setup_crystal(canvasRef.current, seed.toHexString());
     }
   });
 
@@ -32,7 +35,8 @@ export function Crystals(props: CrystalsProps) {
           </Row>
           <Row>
             <Col xs={{ span: 1, offset: 5 }}>
-              <Button onClick={() => setSeed(seed + "1")}>Next</Button>
+              <div>Seed: {seed.toHexString()}</div>
+              <Button onClick={() => setSeed(seed.add(1))}>Next</Button>
             </Col>
           </Row>
         </Container>
