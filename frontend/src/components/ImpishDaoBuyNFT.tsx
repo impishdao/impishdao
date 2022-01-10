@@ -79,10 +79,7 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
         case "SPIRALBITS": {
           if (props.spiralbits && props.buywitheth) {
             if (spiralbitsAllowance.lt(price)) {
-              const approveTx = props.spiralbits.approve(
-                props.buywitheth.address,
-                BigNumber.from(10).pow(18 + 10)
-              );
+              const approveTx = props.spiralbits.approve(props.buywitheth.address, BigNumber.from(10).pow(18 + 10));
               await props.waitForTxConfirmation(approveTx, "Approving");
             }
 
@@ -145,7 +142,7 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
     <>
       {props.nftsWithPrice.length > 0 && (
         <>
-          <Row className="mb-2" style={{ textAlign: "center", padding: "20px", marginTop: '65px' }}>
+          <Row className="mb-2" style={{ textAlign: "center", padding: "20px", marginTop: "65px" }}>
             <h1>RandomWalkNFTs for Sale</h1>
           </Row>
 

@@ -57,8 +57,7 @@ const BeenOutbid = ({
   return (
     <>
       <h1>ImpishDAO has been outbid!</h1>
-      <div className="mb-5" style={{ marginTop: "-20px" }}>
-      </div>
+      <div className="mb-5" style={{ marginTop: "-20px" }}></div>
       {neededInEth.gt(0) && (
         <>
           <div>Additional ETH needed for ImpishDAO to win:</div>
@@ -171,8 +170,7 @@ const WeAreWinning = ({
   return (
     <>
       <h1>ImpishDAO is Winning!</h1>
-      <div className="mb-5" style={{ marginTop: "-20px" }}>
-      </div>
+      <div className="mb-5" style={{ marginTop: "-20px" }}></div>
       <div>ImpishDAO will win</div>
       <h1>ETH {format4Decimals(withdrawalAmount.add(daoBalance))}</h1>
       <div className="usdFaded">{formatUSD(withdrawalAmount.add(daoBalance), lastETHPrice)}</div>
@@ -458,11 +456,13 @@ export function ImpishDAO(props: ImpishDAOProps) {
                 )}
                 {renderScreen === 1 && <Redeem {...props} redeemTokens={redeemTokens} />}
                 {renderScreen === 0 && <Loading />}
-                <h4 className="mt-5">
-                  <Link to="/impishdao/buy" style={{color: "#ffc106"}}>
-                    {props.nftsWithPrice.length} RandomWalk NFTs are available!
-                  </Link>
-                </h4>
+                {props.nftsWithPrice.length > 0 && (
+                  <h4 className="mt-5">
+                    <Link to="/impishdao/buy" style={{ color: "#ffc106" }}>
+                      {props.nftsWithPrice.length} RandomWalk NFTs are available!
+                    </Link>
+                  </h4>
+                )}
               </div>
 
               <Row className="mb-5 mt-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>

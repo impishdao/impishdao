@@ -67,10 +67,10 @@ function random_255(gen: Generator<number>): number {
 
 function rb(gen: Generator<number>, startInc: number, endInc: number): number {
   if (endInc - startInc + 1 > 255) {
-    throw "Range too broad";
+    throw new Error("Range too broad");
   }
 
-  return startInc + (random_255(gen) * (endInc - startInc + 1)) / 255;
+  return startInc + (random_255(gen) * (endInc - startInc)) / 255;
 }
 
 function random_color_bright(gen: Generator<number>): RGB {
@@ -87,52 +87,110 @@ type RGB = {
   b: number;
 };
 
-type Rect = {
-  width: number;
-  height: number;
-  color: RGB;
+type MinMax = {
+  min: number;
+  max: number;
 };
 
-type RGBCartPoint = {
-  xx: number;
-  yy: number;
+class Rect {
+  bottomWidth: number;
+  topWidth: number;
+  height: number;
   color: RGB;
-};
+
+  neg: boolean;
+  negRelHeight: number = 0;
+  topper: boolean;
+
+  constructor(gen: Generator<number>, depth: number) {
+    let widths = this.get_minmax_width_at_depth(depth);
+    this.bottomWidth = rb(gen, widths[0].min, widths[0].max);
+    this.topWidth = rb(gen, widths[1].min, widths[1].max);
+
+    let height = this.get_minmax_height_at_depth(depth);
+    this.height = rb(gen, height.min, height.max);
+
+    this.neg = random_bool(gen);
+    if (this.neg) {
+      this.negRelHeight = 0.5 + rb(gen, 0, 0.75);
+    }
+    this.topper = random_bool(gen);
+
+    this.color = random_color_bright(gen);
+  }
+
+  get_minmax_width_at_depth = (depth: number): MinMax[] => {
+    if (depth === 0) {
+      return [
+        { min: 2, max: 20 },
+        { min: 0, max: 20 },
+      ];
+    } else if (depth === 1) {
+      return [
+        { min: 1, max: 14 },
+        { min: 0, max: 14 },
+      ];
+    } else {
+      return [
+        { min: 1, max: 3 },
+        { min: 0, max: 3 },
+      ];
+    }
+  };
+
+  get_minmax_height_at_depth = (depth: number): MinMax => {
+    if (depth === 0) {
+      return { min: 200, max: 255 };
+    } else if (depth === 1) {
+      return { min: 10, max: 100 };
+    } else {
+      return { min: 1, max: 10 };
+    }
+  };
+}
 
 class Child {
   rect: Rect;
   relPos: number;
   rotation: number;
-  neg: boolean;
-  topper: number;
   depth: number;
 
   children: Child[];
 
   constructor(gen: Generator<number>, depth: number) {
-    const width = depth === 0 ? rb(gen, 2, 20) : depth === 1 ? rb(gen, 1, 14) : rb(gen, 1, 3);
-    const height = depth === 0 ? rb(gen, 200, 255) : depth === 1 ? rb(gen, 10, 100) : rb(gen, 1, 10);
+    // Generate a random Rect.
+    this.rect = new Rect(gen, depth);
 
-    this.rect = { width, height, color: random_color_bright(gen) };
     this.relPos = depth === 0 ? 0 : rb(gen, 1, 10) / 10;
     this.rotation = depth === 0 ? 0 : Math.PI / rb(gen, 1, 6);
-    this.neg = random_bool(gen);
-    this.depth = depth;
-    this.topper = rb(gen, 0, 2);
 
+    this.depth = depth;
+
+    // Gen the chilren, depending on the depth
     this.children = [];
+    let numChildren = 0;
 
     if (depth === 0) {
-      const numChildren = rb(gen, 3, 8);
-      for (let i = 0; i < numChildren; i++) {
-        this.children.push(new Child(gen, depth + 1));
-      }
+      numChildren = rb(gen, 3, 8);
+    } else if (depth === 1) {
+      numChildren = rb(gen, 0, 1);
     }
 
-    if (depth === 1) {
-      const numChildren = rb(gen, 0, 1);
-      for (let i = 0; i < numChildren; i++) {
-        this.children.push(new Child(gen, depth + 1));
+    for (let i = 0; i < numChildren; i++) {
+      this.children.push(new Child(gen, depth + 1));
+    }
+
+    // Generate "ghost children at depth = 0" (Rects that are black)
+    if (depth === 0) {
+      const numGhosts = rb(gen, 0, 2);
+      for (let i = 0; i < numGhosts; i++) {
+        const child = new Child(gen, depth + 1);
+        // Ghost props
+        child.rect.color = { r: 0, g: 0, b: 0};
+        child.rect.neg = false;
+        child.relPos /= 10;
+
+        this.children.push(child);
       }
     }
   }
@@ -142,23 +200,46 @@ class Child {
 
     // Draw the base rect
     ctx.fillStyle = rgbToHex(this.rect.color);
-    ctx.fillRect(-this.rect.width / 2, 0, this.rect.width, this.rect.height);
+    // ctx.fillRect(-this.rect.bottomWidth / 2, 0, this.rect.bottomWidth, this.rect.height);
+    ctx.beginPath();
+    ctx.moveTo(-this.rect.bottomWidth/2, 0);
+    ctx.lineTo(-this.rect.topWidth/2, this.rect.height);
+    ctx.lineTo(this.rect.topWidth/2, this.rect.height);
+    ctx.lineTo(this.rect.bottomWidth/2, 0);
+    ctx.closePath();
+    ctx.fill();
 
     // Draw a topper if needed
-    // if (this.depth === 0) {
+    if (this.rect.topper) {
       // Circle
       ctx.fillStyle = rgbToHex(this.rect.color);
       ctx.beginPath();
-      ctx.arc(0, this.rect.height, this.rect.width / 2, 0, 2 * Math.PI);
+      ctx.arc(0, this.rect.height, this.rect.topWidth / 2, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.fill();
-    // }
+    } else {
+      // Triangle on top
+      ctx.fillStyle = rgbToHex(this.rect.color);
+      ctx.beginPath();
+      ctx.moveTo(-this.rect.topWidth / 2, this.rect.height - 1);
+      ctx.lineTo(0, this.rect.height * 1.1);
+      ctx.lineTo(this.rect.topWidth / 2, this.rect.height - 1);
+      ctx.closePath();
+      ctx.fill();
+    }
 
     // If there is a "neg", then draw a negative space inside
-    if (this.neg) {
+    if (this.rect.neg) {
       ctx.fillStyle = "black";
-      ctx.fillRect(-this.rect.width / 4, 0, this.rect.width / 2, this.rect.height * 0.9);
+      ctx.fillRect(-this.rect.bottomWidth / 4, 0, this.rect.bottomWidth / 2, this.rect.height * this.rect.negRelHeight);
     }
+
+    // Draw a "bottom"
+    ctx.fillStyle = rgbToHex(this.rect.color);
+    ctx.beginPath();
+    ctx.arc(0, 0, this.rect.bottomWidth / 2, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
 
     // Draw each of the children
     for (let c = 0; c < this.children.length; c++) {
@@ -189,10 +270,9 @@ class Finger {
   mainChild: Child;
 
   constructor(seed: string) {
-    this.sym = 15;
+    this.sym = 8;
 
     const gen = random_generator(seed);
-    const mainColor = random_color_bright(gen);
 
     this.mainChild = new Child(gen, 0);
   }
@@ -215,17 +295,18 @@ class Finger {
   }
 }
 
-function get_random_byte(gen: Generator<number>): number {
-  let byte = 0;
-  for (let i = 0; i < 8; i++) {
-    byte = (byte << 1) | gen.next().value;
-  }
+// function get_random_byte(gen: Generator<number>): number {
+//   let byte = 0;
+//   for (let i = 0; i < 8; i++) {
+//     byte = (byte << 1) | gen.next().value;
+//   }
 
-  return byte;
-}
+//   return byte;
+// }
 
 export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   console.log("setup crystal");
+
   const ctx = canvas.getContext("2d");
 
   const canvasWidth = canvas.width;

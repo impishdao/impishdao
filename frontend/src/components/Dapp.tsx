@@ -413,17 +413,18 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route
               path="/crystals"
               element={
-                <Crystals {...this.state}
-                connectWallet={this._connectWallet}
-                readDappState={this.readDappState}
-                readUserData={this.readUserData}
-                showModal={this.showModal}
-                waitForTxConfirmation={this.waitForTxConfirmation}
-                provider={this.provider}
-                impdao={this.impdao}
-                rwnft={this.rwnft}
-                impspiral={this.impspiral}
-                multimint={this.multimint}
+                <Crystals
+                  {...this.state}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
+                  showModal={this.showModal}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
+                  provider={this.provider}
+                  impdao={this.impdao}
+                  rwnft={this.rwnft}
+                  impspiral={this.impspiral}
+                  multimint={this.multimint}
                 />
               }
             />
