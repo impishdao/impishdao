@@ -106,6 +106,7 @@ class Rect {
   height: number;
   color: RGB;
   depth: number;
+  isArc: boolean;
 
   neg: boolean;
   negRelHeight: number = 0;
@@ -114,6 +115,8 @@ class Rect {
   constructor(gen: Generator<number>, depth: number) {
     this.depth = depth;
 
+    this.isArc = false; // depth >= 1 && rb(gen, 0, 2) < 1;
+
     let widths = this.get_minmax_width_at_depth(depth);
     this.bottomWidth = rb(gen, widths[0].min, widths[0].max);
     this.topWidth = rb(gen, widths[1].min, widths[1].max);
@@ -121,7 +124,7 @@ class Rect {
     let height = this.get_minmax_height_at_depth(depth);
     this.height = rb(gen, height.min, height.max);
 
-    this.neg = random_bool(gen);
+    this.neg = !this.isArc && random_bool(gen);
     if (this.neg) {
       this.negRelHeight = 0.5 + rb(gen, 0, 0.75);
     }
@@ -130,9 +133,9 @@ class Rect {
     this.color = random_color_bright(gen);
   }
 
-  effective_rect = (length: number) : Rect => {
-    const f1 = (this.depth % 2 === 0 ? cosT : sinT);
-    const f2 = (this.depth % 2 === 1 ? cosT : sinT);
+  effective_rect = (length: number): Rect => {
+    const f1 = this.depth % 2 === 0 ? cosT : sinT;
+    const f2 = this.depth % 2 === 1 ? cosT : sinT;
 
     let bottomWidth = this.bottomWidth * f2(length);
     let topWidth = this.topWidth * f2(length);
@@ -146,7 +149,7 @@ class Rect {
 
     const er = cloneDeep(this);
 
-    return Object.assign(er, {bottomWidth, topWidth, height});
+    return Object.assign(er, { bottomWidth, topWidth, height });
   };
 
   get_minmax_width_at_depth = (depth: number): MinMax[] => {
@@ -184,7 +187,7 @@ class Child {
   relPos: number;
   rotation: number;
   depth: number;
-  isGhost: boolean = false; 
+  isGhost: boolean = false;
 
   children: Child[];
 
@@ -217,7 +220,7 @@ class Child {
       for (let i = 0; i < numGhosts; i++) {
         const child = new Child(gen, depth + 1);
         // Ghost props
-        child.rect.color = { r: 0, g: 0, b: 0};
+        child.rect.color = { r: 0, g: 0, b: 0 };
         child.rect.topWidth /= 4;
         child.rect.bottomWidth /= 4;
         child.rect.neg = false;
@@ -229,53 +232,72 @@ class Child {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D, pass: number, length: number) {
+  render(ctx: CanvasRenderingContext2D, pass: number, length: number, isLeft: boolean) {
     ctx.save();
-    
+
     const rect = this.rect.effective_rect(length);
 
     if ((this.isGhost && pass === 2) || (!this.isGhost && pass === 1)) {
       // Draw the base rect
-      ctx.fillStyle = rgbToHex(rect.color);
-      ctx.beginPath();
-      ctx.moveTo(-rect.bottomWidth/2, 0);
-      ctx.lineTo(-rect.topWidth/2, rect.height);
-      ctx.lineTo(rect.topWidth/2, rect.height);
-      ctx.lineTo(rect.bottomWidth/2, 0);
-      ctx.closePath();
-      ctx.fill();      
-      
-      // Draw a roundTopper if needed
-      if (rect.roundTopper) {
-        // Circle
+      if (!rect.isArc) {
         ctx.fillStyle = rgbToHex(rect.color);
         ctx.beginPath();
-        ctx.arc(0, rect.height, rect.topWidth / 2, 0, 2 * Math.PI);
+        ctx.moveTo(-rect.bottomWidth / 2, 0);
+        ctx.lineTo(-rect.topWidth / 2, rect.height);
+        ctx.lineTo(rect.topWidth / 2, rect.height);
+        ctx.lineTo(rect.bottomWidth / 2, 0);
         ctx.closePath();
         ctx.fill();
       } else {
-        // Triangle on top
+        // Draw an Arc
+        ctx.strokeStyle = rgbToHex(rect.color);
+        ctx.lineWidth = rect.topWidth/2;
+        ctx.beginPath();
+        
+        const xMul = isLeft ? -1 : 1;
+        const startAng = isLeft ? 0 : Math.PI;
+        let endAngle = (rect.height/20) * Math.PI / 16;
+        endAngle = isLeft ? endAngle : Math.PI - endAngle;
+
+        ctx.arc(xMul * rect.bottomWidth/2, 0, rect.height, startAng, endAngle, !isLeft);
+        ctx.arc(xMul * rect.bottomWidth/2, 0, rect.height, endAngle, startAng, isLeft);
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      // Draw a roundTopper if needed
+      if (!rect.isArc) {
+        if (rect.roundTopper) {
+          // Circle
+          ctx.fillStyle = rgbToHex(rect.color);
+          ctx.beginPath();
+          ctx.arc(0, rect.height, rect.topWidth / 2, 0, 2 * Math.PI);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Triangle on top
+          ctx.fillStyle = rgbToHex(rect.color);
+          ctx.beginPath();
+          ctx.moveTo(-rect.topWidth / 2, rect.height - 1);
+          ctx.lineTo(0, rect.height * 1.1);
+          ctx.lineTo(rect.topWidth / 2, rect.height - 1);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // If there is a "neg", then draw a negative space inside
+        if (rect.neg) {
+          ctx.fillStyle = "black";
+          ctx.fillRect(-rect.bottomWidth / 4, 0, rect.bottomWidth / 2, rect.height * rect.negRelHeight);
+        }
+
+        // Draw a "bottom" circle
         ctx.fillStyle = rgbToHex(rect.color);
         ctx.beginPath();
-        ctx.moveTo(-rect.topWidth / 2, rect.height - 1);
-        ctx.lineTo(0, rect.height * 1.1);
-        ctx.lineTo(rect.topWidth / 2, rect.height - 1);
+        ctx.arc(0, 0, rect.bottomWidth / 2, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
       }
-
-      // If there is a "neg", then draw a negative space inside
-      if (rect.neg) {
-        ctx.fillStyle = "black";
-        ctx.fillRect(-rect.bottomWidth / 4, 0, rect.bottomWidth / 2, rect.height * rect.negRelHeight);
-      }
-
-      // Draw a "bottom" circle
-      ctx.fillStyle = rgbToHex(rect.color);
-      ctx.beginPath();
-      ctx.arc(0, 0, rect.bottomWidth / 2, 0, 2 * Math.PI);
-      ctx.closePath();
-      ctx.fill();
     }
 
     // Draw each of the children
@@ -289,11 +311,11 @@ class Child {
       // once rotating left
       const effectiveRotation = this.children[c].rotation * length;
       ctx.rotate(-effectiveRotation);
-      this.children[c].render(ctx, pass, length);
+      this.children[c].render(ctx, pass, length, true);
 
       // once rotating right
       ctx.rotate(2 * effectiveRotation);
-      this.children[c].render(ctx, pass, length);
+      this.children[c].render(ctx, pass, length, false);
 
       // reset the rotations and translates
       ctx.restore();
@@ -308,7 +330,7 @@ class Finger {
   mainChild: Child;
 
   constructor(seed: string) {
-    this.sym = 8;
+    this.sym = 5;
 
     const gen = random_generator(seed);
 
@@ -330,7 +352,7 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx, 1, length);
+      this.mainChild.render(ctx, 1, length, false);
     }
 
     // 2nd Pass renders "ghosts"
@@ -339,7 +361,7 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx, 2, length);
+      this.mainChild.render(ctx, 2, length, false);
     }
 
     ctx.restore();
