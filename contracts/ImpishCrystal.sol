@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 abstract contract IImpishSpiral is IERC721 {
-
 }
 
 abstract contract ISpiralStaking {
@@ -39,6 +38,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       uint8 generation;
       uint8 sym;
       uint32 seed;
+      uint192 spiralBitsStored;
     }
     // Crystal TokeID => CrystalInfo
     mapping(uint256 => CrystalInfo) public crystals;
@@ -70,7 +70,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
     }
 
     // Increment the entropy
-    function nextEntropy() internal {
+    function _nextEntropy() internal {
       entropy = keccak256(abi.encode(
             block.timestamp,
             blockhash(block.number),
@@ -82,15 +82,16 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       uint32 tokenId = _tokenIdCounter;
       _tokenIdCounter += 1;
 
-      nextEntropy();
+      _nextEntropy();
 
       uint32 seed = uint32(uint256(entropy) & 0xFFFFFF);
-      uint8 sym = uint8(uint256(entropy >> 32) & 0xFF);
+      uint8 sym = uint8((uint256(entropy) >> 32) & 0x03) + 5; // Number between 5 and 8 inclusive
       
       // Newly born crystals always have length 30
       crystals[tokenId] = CrystalInfo(30, gen, sym, seed);      
       _safeMint(msg.sender, tokenId);
     }
+
 
     function safeMint(uint256 spiralTokenId, uint8 gen) external payable nonReentrant {
       // Ensure user owns the spiralTokenID or has it staked
@@ -101,12 +102,13 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       // Make sure this gen has not been minted for the spiral
       require(mintedSpirals[spiralTokenId][gen].minted == false, "AlreadyMintedThisGen");
 
-      // Only the first gen is free
+      // Only 5 gens per Spiral
       require(gen <= 5, "InvalidGen");
 
       // Make sure there was enough ETH sent.
       // Mint prices are [0, 0.01 ether, 0.1 ether, 1 ether, 10 ether];
       uint256 mintPrice = 0;
+      // Only the first gen is free. Each subsequent gen is 10x more expensive
       if (gen > 0) {
         mintPrice = 0.01 ether * uint256(10) ** uint256(gen-1);
       }
@@ -121,8 +123,45 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       _mintCrystal(gen);
     }
 
-    // The following functions are overrides required by Solidity.
+    function grow(uint32 tokenId, uint8 length) external nonReentrant {      
+      require(ownerOf(tokenId) == msg.sender, "NotYoursToGrow");
+      require(crystals[tokenId].length > 0, "DoesntExist");
+      require(crystals[tokenId].length + length <= 100, "TooMuchGrowth");
 
+      // Check if enough SpiralBits were sent
+    }
+
+    function addSym(uint32 tokenId) external nonReentrant {
+      require(ownerOf(tokenId) == msg.sender, "NotYoursToAddSym");
+      require(crystals[tokenId].length > 0, "DoesntExist");
+      require(crystals[tokenId].sym + 1 <= 20, "TooMuchSym");
+      
+      // Check if enough SpiralBits were sent
+
+      // Reduce length proportionally
+    }
+
+    function decSym(uint32 tokenId) external nonReentrant {
+      require(ownerOf(tokenId) == msg.sender, "NotYoursToAddSym");
+      require(crystals[tokenId].length > 0, "DoesntExist");
+      require(crystals[tokenId].sym - 1 >= 3, "TooFewSym");
+
+      // Check if enough SpiralBits were sent
+
+    }
+
+    function shatter(uint32 tokenId) external nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "NotYoursToShatter");
+        require(crystals[tokenId].length > 0, "DoesntExist");
+
+        // Refund the spiralBits
+        uint256 spiralBitsToReturn = crystals[tokenId].spiralBitsStored;
+
+        _burn(tokenId);
+        delete crystals[tokenId];
+    }
+
+    // The following functions are overrides required by Solidity.
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
         override(ERC721, ERC721Enumerable)
