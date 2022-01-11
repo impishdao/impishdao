@@ -100,6 +100,14 @@ function sinT(length: number): number {
   return Math.sin(length * (Math.PI / 2));
 }
 
+function isSmallerFinger(s: number, total: number): boolean {
+  if (total > 7 || total % 2 === 0) {
+    return (s % 2) === 0;
+  }
+
+  return false;
+}
+
 class Rect {
   bottomWidth: number;
   topWidth: number;
@@ -232,7 +240,7 @@ class Child {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D, pass: number, length: number, isLeft: boolean) {
+  render(ctx: CanvasRenderingContext2D, pass: number, length: number) {
     ctx.save();
 
     const rect = this.rect.effective_rect(length);
@@ -253,14 +261,11 @@ class Child {
         ctx.strokeStyle = rgbToHex(rect.color);
         ctx.lineWidth = rect.topWidth/2;
         ctx.beginPath();
-        
-        const xMul = isLeft ? -1 : 1;
-        const startAng = isLeft ? 0 : Math.PI;
-        let endAngle = (rect.height/20) * Math.PI / 16;
-        endAngle = isLeft ? endAngle : Math.PI - endAngle;
 
-        ctx.arc(xMul * rect.bottomWidth/2, 0, rect.height, startAng, endAngle, !isLeft);
-        ctx.arc(xMul * rect.bottomWidth/2, 0, rect.height, endAngle, startAng, isLeft);
+        const angle = (Math.PI / 4) / rect.topWidth; 
+        
+        ctx.arc(0, 0, rect.height, -angle, +angle);
+        ctx.arc(0, 0, rect.height, +angle, -angle, true);
         ctx.closePath();
         ctx.stroke();
       }
@@ -311,11 +316,11 @@ class Child {
       // once rotating left
       const effectiveRotation = this.children[c].rotation * length;
       ctx.rotate(-effectiveRotation);
-      this.children[c].render(ctx, pass, length, true);
+      this.children[c].render(ctx, pass, length);
 
       // once rotating right
       ctx.rotate(2 * effectiveRotation);
-      this.children[c].render(ctx, pass, length, false);
+      this.children[c].render(ctx, pass, length);
 
       // reset the rotations and translates
       ctx.restore();
@@ -330,9 +335,8 @@ class Finger {
   mainChild: Child;
 
   constructor(seed: string) {
-    this.sym = 5;
-
     const gen = random_generator(seed);
+    this.sym = Math.floor(rb(gen, 5, 16));
 
     this.mainChild = new Child(gen, 0);
   }
@@ -347,12 +351,14 @@ class Finger {
 
     // First, move the ctx to the center
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
+
     for (let s = 0; s < this.sym; s++) {
       // Rotate for this finger. Note that this is incremental for each iteration
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx, 1, length, false);
+      const oddEvenLength = (isSmallerFinger(s, this.sym) ? cosT(length) : length);
+      this.mainChild.render(ctx, 1, oddEvenLength);
     }
 
     // 2nd Pass renders "ghosts"
@@ -361,7 +367,8 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      this.mainChild.render(ctx, 2, length, false);
+      const oddEvenLength = (isSmallerFinger(s, this.sym) ? cosT(length) : length);
+      this.mainChild.render(ctx, 2, oddEvenLength);
     }
 
     ctx.restore();
