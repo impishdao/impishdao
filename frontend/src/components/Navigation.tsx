@@ -55,6 +55,10 @@ export function Navigation(props: NavigationProps) {
           <LinkContainer to="/impishdao">
             <Nav.Link>ImpishDAO</Nav.Link>
           </LinkContainer>
+          <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
+          <LinkContainer to="/crystals">
+            <Nav.Link>Crystals</Nav.Link>
+          </LinkContainer>
           {expandSection === 3 && (
             <>
               <LinkContainer to="/impishdao/buy">

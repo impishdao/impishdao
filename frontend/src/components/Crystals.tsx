@@ -1,9 +1,10 @@
 import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button, Card, Col, Container, ListGroup, Row } from "react-bootstrap";
-import { DappContracts, DappFunctions, DappState, SpiralsState } from "../AppState";
+import { Col, Container, Row } from "react-bootstrap";
+import { DappContracts, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
+import { secondsToDhms } from "./utils";
 
 type CrystalsProps = DappState & DappFunctions & DappContracts & {};
 
@@ -13,6 +14,20 @@ export function Crystals(props: CrystalsProps) {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [seed, setSeed] = useState(BigNumber.from(a));
+
+  const [timeRemaining, setTimeRemaining] = useState(1642453200 - (Date.now()/1000));
+
+  // Countdown timer.
+  useEffect(() => {
+    const timerID = setInterval(() => {
+      setTimeRemaining(timeRemaining - 60);
+    }, 1000 * 60);
+
+    return function cleanup() {
+      clearInterval(timerID);
+    };
+  }, [timeRemaining]);
+
 
   useLayoutEffect(() => {
     if (canvasRef.current) {
@@ -25,20 +40,20 @@ export function Crystals(props: CrystalsProps) {
       <Navigation {...props} />
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
-        <h1>Current Crystal</h1>
+        <h1>Chapter 3: Impish Crystals</h1>
 
-        <Container className="mt-5 mb-5">
+        <Container className="mt-2 mb-5">
+        <Row className="mb-2">
+          <div>
+            Crystals will be available in <span style={{ color: "#ffd454" }}>{secondsToDhms(timeRemaining)}</span>
+          </div>
+        </Row>
+
           <Row>
             <Col xs={12}>
-              <canvas ref={canvasRef} width="650px" height="650px" style={{ border: "solid 1px white" }}></canvas>
+              <canvas ref={canvasRef} width="650px" height="650px"></canvas>
             </Col>
-          </Row>
-          <Row>
-            <Col xs={{ span: 1, offset: 5 }}>
-              <div>Seed: {seed.toHexString()}</div>
-              <Button onClick={() => setSeed(seed.add(1))}>Next</Button>
-            </Col>
-          </Row>
+          </Row>          
         </Container>
       </div>
     </>

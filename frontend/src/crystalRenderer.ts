@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 /* eslint-disable camelcase */
+import { BigNumber } from "ethers";
 import { sha3_256 } from "js-sha3";
 import { cloneDeep } from "lodash";
 
@@ -377,25 +378,39 @@ class Finger {
 
 export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   console.log("setup crystal");
+  if (canvas.getAttribute("crystalPresent") === "1") {
+    return;
+  }
+
+  canvas.setAttribute("crystalPresent", "1");
 
   const ctx = canvas.getContext("2d");
 
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  const f = new Finger(seed);
+  let f = new Finger(seed);
 
   if (ctx) {
-    const r = (length: number) => {
-      if (length > 1.0) {
+    let length = 0.3;
+
+    // Update every frame
+    setInterval(() => {
+      if (length > 1.2) {
+        seed = BigNumber.from(seed).add(1).toHexString();
+        f = new Finger(seed);
+        length = 0.3;
+
         return;
       }
 
-      f.render(ctx, canvasWidth, canvasHeight, length);
-      setTimeout(() => r(length + 0.005), 32);
-    };
+      if (length <= 1.0) {
+        f.render(ctx, canvasWidth, canvasHeight, length);
+      }
+      
+      length += 0.004;
+    }, 40); // Every 40 ms for a 24fps
 
-    r(0.3);
   } else {
     console.log("No context");
   }
