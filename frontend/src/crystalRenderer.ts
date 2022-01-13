@@ -103,7 +103,7 @@ function sinT(length: number): number {
 
 function isSmallerFinger(s: number, total: number): boolean {
   if (total > 7 || total % 2 === 0) {
-    return (s % 2) === 0;
+    return s % 2 === 0;
   }
 
   return false;
@@ -260,11 +260,11 @@ class Child {
       } else {
         // Draw an Arc
         ctx.strokeStyle = rgbToHex(rect.color);
-        ctx.lineWidth = rect.topWidth/2;
+        ctx.lineWidth = rect.topWidth / 2;
         ctx.beginPath();
 
-        const angle = (Math.PI / 4) / rect.topWidth; 
-        
+        const angle = Math.PI / 4 / rect.topWidth;
+
         ctx.arc(0, 0, rect.height, -angle, +angle);
         ctx.arc(0, 0, rect.height, +angle, -angle, true);
         ctx.closePath();
@@ -358,7 +358,7 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      const oddEvenLength = (isSmallerFinger(s, this.sym) ? cosT(length) : length);
+      const oddEvenLength = isSmallerFinger(s, this.sym) ? cosT(length) : length;
       this.mainChild.render(ctx, 1, oddEvenLength);
     }
 
@@ -368,7 +368,7 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      const oddEvenLength = (isSmallerFinger(s, this.sym) ? cosT(length) : length);
+      const oddEvenLength = isSmallerFinger(s, this.sym) ? cosT(length) : length;
       this.mainChild.render(ctx, 2, oddEvenLength);
     }
 
@@ -407,10 +407,9 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
       if (length <= 1.0) {
         f.render(ctx, canvasWidth, canvasHeight, length);
       }
-      
+
       length += 0.004;
     }, 40); // Every 40 ms for a 24fps
-
   } else {
     console.log("No context");
   }
