@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
+import { Col, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { DappContracts, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
@@ -98,11 +98,15 @@ export function Crystals(props: CrystalsProps) {
             There are 4 things you can do with a Crystal.
             <ol>
               <li style={{color: "#ffd454" }}>Grow</li>
-              Each crystal starts out small, and can be grown by feeding it $SPIRALBITS tokens. Crystals can grow to a maximum size. Half of the $SPIRALBITS are burned, and the rest are stored inside the crystal.
+              Each crystal starts out small, and can be grown by feeding it $SPIRALBITS tokens. The amount of $SPIRALBITS needed to grow a crystal depends on the number of Symmetries it has.
+              
+              Crystals start off with a size of 30, and can grow to a maximum size of 100. Half of the $SPIRALBITS used to grow Crystals are
+              burned, and the rest are stored inside the crystal.
               <br/><br/>
               <li style={{color: "#ffd454" }}>Add Symmetry</li>
               Every crystal has a certain number of symmetries, usually between 5 and 8. You can add more symmetries by spending $SPIRALBITS,
-              upto a maximum of 20 symmetries per Crystal.<br/><br/> Adding Symmetries can reduce the size of a Crystal by a bit, as the $SPIRALBITS stored in it are redistributed among the new Symmetries. 
+              upto a maximum of 20 symmetries per Crystal.<br/><br/> Adding Symmetries means Crystals need more $SPIRALBITS to grow, 
+              but their capicity to store $SPIRALBITS also increases proportionally.
               Adding one symmetry costs 20k $SPIRALBITS. All the $SPIRALBITS used to add symmetries are burned.
               <br/><br/>
               <li style={{color: "#ffd454" }}>Reduce Symmetry</li>
