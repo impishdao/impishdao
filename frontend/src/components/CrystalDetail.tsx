@@ -13,7 +13,7 @@ type CrystalInfo = {
   size: number;
   generation: number;
   sym: number;
-  seed: number;
+  seed: BigNumber;
   spiralBitsStored: BigNumber;
   owner: string;
 };
@@ -33,7 +33,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
   useEffect(() => {
     if (canvasDetailRef.current && crystalInfo) {
       console.log(crystalInfo);
-      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(16), crystalInfo.sym, crystalInfo.size / 100);
+      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(), crystalInfo.sym, crystalInfo.size / 100);
     }
   }, [crystalInfo]);
 
@@ -53,7 +53,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
       .then((d) => d.json())
       .then((j) => {
         const attributes = j.attributes;
-        setCrystalInfo({ ...attributes });
+        setCrystalInfo({
+          ...attributes,
+          seed: BigNumber.from(attributes.seed),
+          spiralBitsStored: BigNumber.from(attributes.spiralBitsStored),
+        });
       });
   }, [id, refreshCounter]);
 
@@ -74,7 +78,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     setGrowBy(n.toString());
-  }
+  };
 
   const validateAddSym = (s: string) => {
     if (isNaN(parseInt(s))) {
@@ -93,8 +97,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     setAddSym(n.toString());
-  }
-
+  };
 
   const validateReduceSym = (s: string) => {
     if (isNaN(parseInt(s))) {
@@ -113,7 +116,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     setReduceSym(n.toString());
-  }
+  };
 
   const spiralBitsNeededToGrow = (): BigNumber => {
     if (crystalInfo) {
@@ -121,7 +124,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     return BigNumber.from(0);
-  }
+  };
 
   const spiralBitsNeededToAddSym = (): BigNumber => {
     if (crystalInfo) {
@@ -129,8 +132,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     return BigNumber.from(0);
-  }
-
+  };
 
   const spiralBitsNeededToReduceSym = (): BigNumber => {
     if (crystalInfo) {
@@ -138,7 +140,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     return BigNumber.from(0);
-  }
+  };
 
   const growCrystal = async () => {
     if (props.selectedAddress && props.crystal && props.spiralbits) {
@@ -185,7 +187,6 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
   };
 
-
   return (
     <>
       <Navigation {...props} />
@@ -197,7 +198,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
               {props.selectedAddress && (
                 <>
                   <Tabs>
-                    <Tab eventKey="Grow" title="Grow Crystal">
+                    <Tab eventKey="Grow" title="Grow">
                       <div>
                         You can grow your crystal by feeding it SPIRALBITS. Half of the $SPIRALBITS are stored inside
                         the Crystal (and the other half are burned)
@@ -222,8 +223,10 @@ export function CrystalDetail(props: CrystalDetailProps) {
                       </div>
                     </Tab>
                     <Tab eventKey="Add" title="Add Symmetry">
-                      <div>Adding a symmetry increases the complexity of the Crystal, but will need more SPIRALBITS to grow. Your Crystal will also 
-                        shrink proportioanlly</div>
+                      <div>
+                        Adding a symmetry increases the complexity of the Crystal, but will need more SPIRALBITS to
+                        grow. Your Crystal will also shrink proportioanlly
+                      </div>
 
                       <div style={{ display: "flex", gap: "10px" }}>
                         <InputGroup>
@@ -244,7 +247,9 @@ export function CrystalDetail(props: CrystalDetailProps) {
                       </div>
                     </Tab>
                     <Tab eventKey="Reduce" title="Reduce Symmetry">
-                    <div>Reducing symmetry decreases the complexity of the Crystal and needs fewer SPIRALBITS to grow.</div>
+                      <div>
+                        Reducing symmetry decreases the complexity of the Crystal and needs fewer SPIRALBITS to grow.
+                      </div>
 
                       <div style={{ display: "flex", gap: "10px" }}>
                         <InputGroup>
@@ -293,6 +298,10 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   <tr>
                     <td>SPIRALBITS stored</td>
                     <td>{formatkmb(crystalInfo?.spiralBitsStored)}</td>
+                  </tr>
+                  <tr>
+                    <td>Seed</td>
+                    <td>{crystalInfo?.seed.toHexString()}</td>
                   </tr>
                 </tbody>
               </Table>
