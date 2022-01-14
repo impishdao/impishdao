@@ -426,7 +426,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
             />
 
             <Route
-              path="/crystals"
+              path="/crystals/*"
               element={
                 <Crystals
                   {...this.state}

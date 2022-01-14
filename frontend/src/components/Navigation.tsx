@@ -21,6 +21,8 @@ export function Navigation(props: NavigationProps) {
     expandSection = 2;
   } else if (loc.pathname === "/impishdao" || loc.pathname.startsWith("/impishdao")) {
     expandSection = 3;
+  } else if (loc.pathname === "/crystals" || loc.pathname.startsWith("/crystals")) {
+    expandSection = 4;
   }
 
   return (
@@ -79,7 +81,7 @@ export function Navigation(props: NavigationProps) {
         {props.selectedAddress && (
           <>
             <div style={{ marginRight: "10px" }}>
-              {(expandSection === 1 || expandSection === 2) && (
+              {(expandSection === 1 || expandSection === 2 || expandSection === 4) && (
                 <OverlayTrigger
                   placement="bottom"
                   overlay={

@@ -376,14 +376,7 @@ class Finger {
   }
 }
 
-export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
-  console.log("setup crystal");
-  if (canvas.getAttribute("crystalPresent") === "1") {
-    return;
-  }
-
-  canvas.setAttribute("crystalPresent", "1");
-
+export function setup_crystal(canvas: HTMLCanvasElement, seed: string, size: number) {
   const ctx = canvas.getContext("2d");
 
   const canvasWidth = canvas.width;
@@ -392,24 +385,26 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string) {
   let f = new Finger(seed);
 
   if (ctx) {
-    let length = 0.3;
+    // let length = 0.3;
 
-    // Update every frame
-    setInterval(() => {
-      if (length > 1.2) {
-        seed = BigNumber.from(seed).add(1).toHexString();
-        f = new Finger(seed);
-        length = 0.3;
+    // // Update every frame
+    // setInterval(() => {
+    //   if (length > 1.2) {
+    //     seed = BigNumber.from(seed).add(1).toHexString();
+    //     f = new Finger(seed);
+    //     length = 0.3;
 
-        return;
-      }
+    //     return;
+    //   }
 
-      if (length <= 1.0) {
-        f.render(ctx, canvasWidth, canvasHeight, length);
-      }
+    //   if (length <= 1.0) {
+    //     f.render(ctx, canvasWidth, canvasHeight, length);
+    //   }
 
-      length += 0.004;
-    }, 40); // Every 40 ms for a 24fps
+    //   length += 0.004;
+    // }, 40); // Every 40 ms for a 24fps
+
+    f.render(ctx, canvasWidth, canvasHeight, size);
   } else {
     console.log("No context");
   }

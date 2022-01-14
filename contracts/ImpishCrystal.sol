@@ -32,13 +32,13 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
     address public spiralStaking;
     address public SpiralBits;
 
-    // How many spiralbits it takes to grow per length per sym
-    uint192 constant public SPIRALBITS_PER_SYM_PER_LENGTH = 1000 ether;
+    // How many spiralbits it takes to grow per size per sym
+    uint192 constant public SPIRALBITS_PER_SYM_PER_SIZE = 1000 ether;
     uint256 constant public SPIRALBITS_PER_SYM = 20000 ether;
 
     // Struct that has info about a Crystal
     struct CrystalInfo {
-      uint8 length;
+      uint8 size;
       uint8 generation;
       uint8 sym;
       uint32 seed;
@@ -139,13 +139,13 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
     }
 
 
-    function grow(uint32 tokenId, uint8 length) external nonReentrant {      
+    function grow(uint32 tokenId, uint8 size) external nonReentrant {      
       require(ownerOf(tokenId) == msg.sender, "NotYoursToGrow");
-      require(crystals[tokenId].length > 0, "DoesntExist");
-      require(crystals[tokenId].length + length <= 100, "TooMuchGrowth");
+      require(crystals[tokenId].size > 0, "DoesntExist");
+      require(crystals[tokenId].size + size <= 100, "TooMuchGrowth");
 
       // Check if enough SpiralBits were sent
-      uint256 SpiralBitsNeeded = length * crystals[tokenId].sym * SPIRALBITS_PER_SYM_PER_LENGTH;
+      uint256 SpiralBitsNeeded = uint256(size) * uint256(crystals[tokenId].sym) * SPIRALBITS_PER_SYM_PER_SIZE;
       require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
 
       // Transfer the SpiralBits in
@@ -156,14 +156,14 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       ERC20Burnable(SpiralBits).burn(SpiralBitsNeeded - spiralBitsToStore);
       crystals[tokenId].spiralBitsStored += uint192(spiralBitsToStore);
 
-      crystals[tokenId].length += length;
+      crystals[tokenId].size += size;
     }
 
     function addSym(uint32 tokenId, uint8 numSymstoAdd) external nonReentrant {
       require(ownerOf(tokenId) == msg.sender, "NotYoursToAddSym");
 
       CrystalInfo memory c = crystals[tokenId];
-      require(c.length > 0, "DoesntExist");
+      require(c.size > 0, "DoesntExist");
       require(c.sym + numSymstoAdd <= 20, "TooMuchSym");
       
       // Check if enough SpiralBits were sent
@@ -171,21 +171,21 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
 
       // Reduce length proportionally
-      uint8 newLength = uint8( uint256(c.length) * uint256(c.sym) / uint256(c.sym + numSymstoAdd) );
+      uint8 newLength = uint8( uint256(c.size) * uint256(c.sym) / uint256(c.sym + numSymstoAdd) );
       require(newLength >= 30, "CrystalWouldBeTooSmall");
 
       // Burn ALL the SpiralBits
       IERC20(SpiralBits).transferFrom(msg.sender, address(this), SpiralBitsNeeded);
       ERC20Burnable(SpiralBits).burn(SpiralBitsNeeded);
 
-      // Record the new length
-      crystals[tokenId].length = newLength;
+      // Record the new size
+      crystals[tokenId].size = newLength;
       crystals[tokenId].sym += numSymstoAdd;
     }
 
     function decSym(uint32 tokenId, uint8 numSymstoRemove) external nonReentrant {
       require(ownerOf(tokenId) == msg.sender, "NotYoursToAddSym");
-      require(crystals[tokenId].length > 0, "DoesntExist");
+      require(crystals[tokenId].size > 0, "DoesntExist");
       require(crystals[tokenId].sym - numSymstoRemove >= 3, "TooFewSym");
 
       // Check if enough SpiralBits were sent
@@ -202,7 +202,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
     function shatter(uint32 tokenId) external nonReentrant {
         require(ownerOf(tokenId) == msg.sender, "NotYoursToShatter");
-        require(crystals[tokenId].length > 0, "DoesntExist");
+        require(crystals[tokenId].size > 0, "DoesntExist");
 
         uint256 spiralBitsToReturn = crystals[tokenId].spiralBitsStored;
 

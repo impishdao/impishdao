@@ -35,7 +35,6 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
     const r = await Promise.all(
       ownedSpirals.concat(stakedSpirals).map(async (spiralId: BigNumber) => {
         const mintedBitField = BigNumber.from(await _crystal.mintedSpiralsForSpiral(spiralId)).toNumber();
-        console.log(`Minted Bits for ${spiralId.toNumber()} is ${mintedBitField}`);
 
         // Extract the bit fields
         const minted = [];
@@ -50,7 +49,41 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       })
     );
 
-    console.log(r);
     res.send(r);
+  });
+
+  type CrystalInfo = {
+    size: number;
+    generation: number;
+    sym: number;
+    seed: number;
+    spiralBitsStored: BigNumber;
+    owner: string;
+  };
+  app.get("/crystalapi/crystal/metadata/:id", async (req, res) => {
+    try {
+      const id = BigNumber.from(req.params.id);
+      const crystalInfo: CrystalInfo = await _crystal.crystals(id);
+      const owner = await _crystal.ownerOf(id);
+
+      const r = {
+        image: ``,
+        description: "ImpishDAO Crystals",
+        attributes: {
+          size: crystalInfo.size,
+          generation: crystalInfo.generation,
+          sym: crystalInfo.sym,
+          seed: BigNumber.from(crystalInfo.seed),
+          spiralBitsStored: crystalInfo.spiralBitsStored,
+          owner,
+        },
+      };
+
+      res.contentType("application/json");
+      res.send(JSON.stringify(r));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Something went wrong generating metadata");
+    }
   });
 }
