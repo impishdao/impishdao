@@ -101,4 +101,5 @@ export type DappContracts = {
   spiralstaking?: Contract;
   rwnftstaking?: Contract;
   buywitheth?: Contract;
+  crystal?: Contract;
 };

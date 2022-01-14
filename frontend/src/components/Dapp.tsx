@@ -16,6 +16,7 @@ import SpiralStakingArtifact from "../contracts/spiralstaking.json";
 import RWNFTStakingArtifact from "../contracts/rwnftstaking.json";
 import MultiMintArtifact from "../contracts/multimint.json";
 import BuyWithEtherArtifact from "../contracts/buywithether.json";
+import Crystal from "../contracts/crystal.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
@@ -71,6 +72,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
   rwnftstaking?: Contract;
   spiralbits?: Contract;
   buywitheth?: Contract;
+  crystal?: Contract;
 
   constructor(props: DappProps) {
     super(props);
@@ -154,6 +156,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
       BuyWithEtherArtifact.abi,
       this.provider.getSigner(0)
     );
+
+    // Impish Crystals
+    this.crystal = new ethers.Contract(contractAddresses.Crystal, Crystal.abi, this.provider.getSigner(0));
 
     this.readDappState();
     this.readUserData();
@@ -271,7 +276,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
         this.setState({ lastETHPrice });
       });
 
-    fetch("/api")
+    fetch("/impishdaoapi")
       .then((r) => r.json())
       .then((data) => {
         if (data.contractState === undefined) {
@@ -361,6 +366,20 @@ export class Dapp extends React.Component<DappProps, DappState> {
   };
 
   render() {
+    const contracts = {
+      provider: this.provider,
+      rwnft: this.rwnft,
+      impdao: this.impdao,
+      impspiral: this.impspiral,
+      spiralmarket: this.spiralmarket,
+      multimint: this.multimint,
+      spiralbits: this.spiralbits,
+      spiralstaking: this.spiralstaking,
+      rwnftstaking: this.rwnftstaking,
+      buywitheth: this.buywitheth,
+      crystal: this.crystal,
+    };
+
     return (
       <BrowserRouter>
         <Container>
@@ -396,16 +415,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <ImpishDAO
                   {...this.state}
+                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   waitForTxConfirmation={this.waitForTxConfirmation}
                   showModal={this.showModal}
-                  provider={this.provider}
-                  impdao={this.impdao}
-                  rwnft={this.rwnft}
-                  spiralbits={this.spiralbits}
-                  buywitheth={this.buywitheth}
                 />
               }
             />
@@ -415,16 +430,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <Crystals
                   {...this.state}
+                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   showModal={this.showModal}
                   waitForTxConfirmation={this.waitForTxConfirmation}
-                  provider={this.provider}
-                  impdao={this.impdao}
-                  rwnft={this.rwnft}
-                  impspiral={this.impspiral}
-                  multimint={this.multimint}
                 />
               }
             />
@@ -434,16 +445,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <ImpishSpiral
                   {...this.state}
+                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   showModal={this.showModal}
                   waitForTxConfirmation={this.waitForTxConfirmation}
-                  provider={this.provider}
-                  impdao={this.impdao}
-                  rwnft={this.rwnft}
-                  impspiral={this.impspiral}
-                  multimint={this.multimint}
                 />
               }
             />
@@ -453,17 +460,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <SpiralStaking
                   {...this.state}
+                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   showModal={this.showModal}
                   waitForTxConfirmation={this.waitForTxConfirmation}
-                  provider={this.provider}
-                  rwnft={this.rwnft}
-                  spiralbits={this.spiralbits}
-                  impspiral={this.impspiral}
-                  spiralstaking={this.spiralstaking}
-                  rwnftstaking={this.rwnftstaking}
                 />
               }
             />
@@ -483,9 +485,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <SpiralDetail
                   {...this.state}
+                  {...contracts}
                   showModal={this.showModal}
-                  spiralmarket={this.spiralmarket}
-                  impishspiral={this.impspiral}
                   connectWallet={() => this._connectWallet()}
                 />
               }

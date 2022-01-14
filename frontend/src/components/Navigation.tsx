@@ -54,7 +54,7 @@ export function Navigation(props: NavigationProps) {
           <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
           <LinkContainer to="/impishdao">
             <Nav.Link>ImpishDAO</Nav.Link>
-          </LinkContainer>          
+          </LinkContainer>
           {expandSection === 3 && (
             <>
               <LinkContainer to="/impishdao/buy">

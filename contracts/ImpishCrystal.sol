@@ -102,41 +102,42 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       _safeMint(msg.sender, tokenId);
     }
 
-    function safeMint(uint256 spiralTokenId, uint8 gen) public payable nonReentrant {
-      // Ensure user owns the spiralTokenID or has it staked
-      (, address spiralOwner) = ISpiralStaking(spiralStaking).stakedTokenOwners(spiralTokenId);
-      require(IERC721(spirals).ownerOf(spiralTokenId) == msg.sender 
-          || spiralOwner == msg.sender, "NotOwnerOrStaker");
-
-      // Make sure this gen has not been minted for the spiral
-      require(mintedSpirals[spiralTokenId][gen].minted == false, "AlreadyMintedThisGen");
-
+    function mintCrystals(uint32[] calldata spiralTokenIds, uint8 gen) public payable nonReentrant {
       // Only 5 gens per Spiral
       require(gen <= 5, "InvalidGen");
 
       // Make sure there was enough ETH sent.
       // Mint prices are [0, 0.01 ether, 0.1 ether, 1 ether, 10 ether];
       uint256 mintPrice = 0;
+      
       // Only the first gen is free. Each subsequent gen is 10x more expensive
       if (gen > 0) {
         mintPrice = 0.01 ether * uint256(10) ** uint256(gen-1);
       }
-      require (msg.value == mintPrice, "NotEnoughEth");
+      require (msg.value == mintPrice * spiralTokenIds.length, "NotEnoughETH");
 
       // All the ETH is dev fee
       (bool success, ) = owner().call{value: address(this).balance}("");
       require(success, "TransferFailed");
 
-      // Mark this spiral's gen as minted. The tokenID will be the current tokenId counter
-      mintedSpirals[spiralTokenId][gen] = MintedSpiralInfo(true, _tokenIdCounter);
-      _mintCrystal(gen);
-    }
-
-    function mintAllGen0ForUser(uint32[] calldata spiralTokenIds) external {
       for (uint256 i = 0; i < spiralTokenIds.length; i++) {
-        safeMint(spiralTokenIds[i], 0);
+        uint256 spiralTokenId = uint256(spiralTokenIds[i]);
+        
+        // Ensure user owns the spiralTokenID or has it staked
+        (, address spiralOwner) = ISpiralStaking(spiralStaking).stakedTokenOwners(spiralTokenId);
+        require(IERC721(spirals).ownerOf(spiralTokenId) == msg.sender 
+            || spiralOwner == msg.sender, "NotOwnerOrStaker");
+
+        // Make sure this gen has not been minted for the spiral
+        require(mintedSpirals[spiralTokenId][gen].minted == false, "AlreadyMintedThisGen");
+
+        
+        // Mark this spiral's gen as minted. The tokenID will be the current tokenId counter
+        mintedSpirals[spiralTokenId][gen] = MintedSpiralInfo(true, _tokenIdCounter);
+        _mintCrystal(gen);
       }
     }
+
 
     function grow(uint32 tokenId, uint8 length) external nonReentrant {      
       require(ownerOf(tokenId) == msg.sender, "NotYoursToGrow");
@@ -227,6 +228,14 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
             result[i] = tokenOfOwnerByIndex(_owner, i);
         }
         return result;
+    }
+
+    // Returns a bitmap of all spirals generated for this spiralTokenId
+    function mintedSpiralsForSpiral(uint256 spiralTokenId) public view returns (uint256 mintedBitMap) {
+      for (uint256 i = 0; i < 5; i++) {
+        bool isMinted = mintedSpirals[spiralTokenId][i].minted;
+        mintedBitMap = (mintedBitMap << 1) | (isMinted ? 1 : 0);
+      }
     }
 
     // The following functions are overrides required by Solidity.
