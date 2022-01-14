@@ -335,9 +335,12 @@ class Finger {
   sym: number;
   mainChild: Child;
 
-  constructor(seed: string) {
+  constructor(seed: string, sym: number) {
     const gen = random_generator(seed);
-    this.sym = Math.floor(rb(gen, 5, 16));
+    if (sym < 3 || sym > 20) {
+      throw new Error(`Bad number of Sym: ${sym}`);
+    }
+    this.sym = sym;
 
     this.mainChild = new Child(gen, 0);
   }
@@ -376,13 +379,13 @@ class Finger {
   }
 }
 
-export function setup_crystal(canvas: HTMLCanvasElement, seed: string, size: number) {
+export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: number, size: number) {
   const ctx = canvas.getContext("2d");
 
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  let f = new Finger(seed);
+  let f = new Finger(seed, sym);
 
   if (ctx) {
     // let length = 0.3;

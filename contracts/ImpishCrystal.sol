@@ -167,7 +167,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       require(c.sym + numSymstoAdd <= 20, "TooMuchSym");
       
       // Check if enough SpiralBits were sent
-      uint256 SpiralBitsNeeded = SPIRALBITS_PER_SYM * numSymstoAdd;
+      uint256 SpiralBitsNeeded = SPIRALBITS_PER_SYM * uint256(numSymstoAdd);
       require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
 
       // Reduce length proportionally
@@ -189,7 +189,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       require(crystals[tokenId].sym - numSymstoRemove >= 3, "TooFewSym");
 
       // Check if enough SpiralBits were sent
-      uint256 SpiralBitsNeeded = SPIRALBITS_PER_SYM * numSymstoRemove;
+      uint256 SpiralBitsNeeded = SPIRALBITS_PER_SYM * uint256(numSymstoRemove);
       require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
 
       // Burn ALL the SpiralBits

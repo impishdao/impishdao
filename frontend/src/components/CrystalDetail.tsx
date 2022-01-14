@@ -7,8 +7,6 @@ import { setup_crystal } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
 import { formatkmb, retryTillSucceed } from "./utils";
 
-const growCostPerSize = ethers.utils.parseEther("20000");
-
 type CrystalDetailProps = DappState & DappFunctions & DappContracts & {};
 
 type CrystalInfo = {
@@ -29,11 +27,13 @@ export function CrystalDetail(props: CrystalDetailProps) {
   const [approvalNeeded, setApprovalNeeded] = useState(true);
 
   const [growBy, setGrowBy] = useState("1");
+  const [addSym, setAddSym] = useState("1");
+  const [reduceSym, setReduceSym] = useState("1");
 
   useEffect(() => {
     if (canvasDetailRef.current && crystalInfo) {
       console.log(crystalInfo);
-      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(16), crystalInfo.size / 100);
+      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(16), crystalInfo.sym, crystalInfo.size / 100);
     }
   }, [crystalInfo]);
 
@@ -76,9 +76,65 @@ export function CrystalDetail(props: CrystalDetailProps) {
     setGrowBy(n.toString());
   }
 
+  const validateAddSym = (s: string) => {
+    if (isNaN(parseInt(s))) {
+      return;
+    }
+
+    const n = parseInt(s);
+
+    if (n < 0) {
+      return;
+    }
+
+    // Max size
+    if (crystalInfo && n + crystalInfo.sym > 20) {
+      return;
+    }
+
+    setAddSym(n.toString());
+  }
+
+
+  const validateReduceSym = (s: string) => {
+    if (isNaN(parseInt(s))) {
+      return;
+    }
+
+    const n = parseInt(s);
+
+    if (n < 0) {
+      return;
+    }
+
+    // Max size
+    if (crystalInfo && crystalInfo.sym - n < 3) {
+      return;
+    }
+
+    setReduceSym(n.toString());
+  }
+
   const spiralBitsNeededToGrow = (): BigNumber => {
     if (crystalInfo) {
-      return growCostPerSize.mul(crystalInfo.sym * parseInt(growBy));
+      return ethers.utils.parseEther("1000").mul(crystalInfo.sym * parseInt(growBy));
+    }
+
+    return BigNumber.from(0);
+  }
+
+  const spiralBitsNeededToAddSym = (): BigNumber => {
+    if (crystalInfo) {
+      return ethers.utils.parseEther("20000").mul(addSym);
+    }
+
+    return BigNumber.from(0);
+  }
+
+
+  const spiralBitsNeededToReduceSym = (): BigNumber => {
+    if (crystalInfo) {
+      return ethers.utils.parseEther("20000").mul(reduceSym);
     }
 
     return BigNumber.from(0);
@@ -98,6 +154,37 @@ export function CrystalDetail(props: CrystalDetailProps) {
       setRefreshCounter(refreshCounter + 1);
     }
   };
+
+  const doAddSym = async () => {
+    if (props.selectedAddress && props.crystal && props.spiralbits) {
+      // Check for approval needed first
+      if (approvalNeeded) {
+        await props.waitForTxConfirmation(
+          props.spiralbits.approve(props.crystal.address, ethers.utils.parseEther("2000000000")),
+          "Approving SPIRALBITS"
+        );
+      }
+
+      await props.waitForTxConfirmation(props.crystal.addSym(id, parseInt(addSym)), "Adding Symmetry to Crystal");
+      setRefreshCounter(refreshCounter + 1);
+    }
+  };
+
+  const doReduceSym = async () => {
+    if (props.selectedAddress && props.crystal && props.spiralbits) {
+      // Check for approval needed first
+      if (approvalNeeded) {
+        await props.waitForTxConfirmation(
+          props.spiralbits.approve(props.crystal.address, ethers.utils.parseEther("2000000000")),
+          "Approving SPIRALBITS"
+        );
+      }
+
+      await props.waitForTxConfirmation(props.crystal.decSym(id, parseInt(reduceSym)), "Reduce Symmetry of Crystal");
+      setRefreshCounter(refreshCounter + 1);
+    }
+  };
+
 
   return (
     <>
@@ -135,10 +222,47 @@ export function CrystalDetail(props: CrystalDetailProps) {
                       </div>
                     </Tab>
                     <Tab eventKey="Add" title="Add Symmetry">
-                      <div>Add</div>
+                      <div>Adding a symmetry increases the complexity of the Crystal, but will need more SPIRALBITS to grow. Your Crystal will also 
+                        shrink proportioanlly</div>
+
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <InputGroup>
+                          <InputGroup.Text>Add Symmetries</InputGroup.Text>
+                          <FormControl
+                            type="number"
+                            value={addSym}
+                            onChange={(e) => validateAddSym(e.currentTarget.value)}
+                          />
+                        </InputGroup>
+                        <Button variant="warning" onClick={doAddSym}>
+                          Add
+                        </Button>
+                      </div>
+
+                      <div>
+                        Adding {addSym} Symmetries will cost SPIRALBITS {formatkmb(spiralBitsNeededToAddSym())}{" "}
+                      </div>
                     </Tab>
                     <Tab eventKey="Reduce" title="Reduce Symmetry">
-                      <div>Reduce</div>
+                    <div>Reducing symmetry decreases the complexity of the Crystal and needs fewer SPIRALBITS to grow.</div>
+
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <InputGroup>
+                          <InputGroup.Text>Reduce Symmetries</InputGroup.Text>
+                          <FormControl
+                            type="number"
+                            value={reduceSym}
+                            onChange={(e) => validateReduceSym(e.currentTarget.value)}
+                          />
+                        </InputGroup>
+                        <Button variant="warning" onClick={doReduceSym}>
+                          Reduce
+                        </Button>
+                      </div>
+
+                      <div>
+                        Reducing {reduceSym} Symmetries will cost SPIRALBITS {formatkmb(spiralBitsNeededToReduceSym())}{" "}
+                      </div>
                     </Tab>
                     <Tab eventKey="Shatter" title="Shatter">
                       <div>Shatter</div>
