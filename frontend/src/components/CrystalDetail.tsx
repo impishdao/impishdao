@@ -343,7 +343,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   padding: "10px",
                 }}
               >
-                <canvas ref={canvasDetailRef} width="650px" height="650px" style={{ cursor: "pointer" }}></canvas>
+                <canvas ref={canvasDetailRef} width="500px" height="500px" style={{ cursor: "pointer" }}></canvas>
               </div>
 
               <div

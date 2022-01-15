@@ -452,9 +452,21 @@ class Finger {
     this.mainChild = new Child(gen, 0, generation);
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, length: number) {
+  render(orig_ctx: CanvasRenderingContext2D, orig_canvasWidth: number, orig_canvasHeight: number, length: number) {
     if (length < 0.2 || length > 1.0) {
       throw new Error(`Wrong Length: ${length}`);
+    }
+
+    const newCanvas = document.createElement("canvas");
+    newCanvas.width = 700;
+    newCanvas.height = 700;
+
+    const canvasWidth = newCanvas.width;
+    const canvasHeight = newCanvas.height;
+
+    const ctx = newCanvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("No Context!");
     }
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -483,6 +495,18 @@ class Finger {
     }
 
     ctx.restore();
+
+    // Render this on the main canvas, scaled
+    const scale = orig_canvasWidth / 700;
+    orig_ctx.resetTransform();
+
+    orig_ctx.clearRect(0, 0, orig_canvasWidth, orig_canvasHeight);
+    orig_ctx.rect(0, 0, orig_canvasWidth, orig_canvasHeight);
+    orig_ctx.fillStyle = "black";
+    orig_ctx.fill();
+
+    orig_ctx.scale(scale, scale);
+    orig_ctx.drawImage(newCanvas, 0, 0);
   }
 }
 
@@ -492,7 +516,7 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: numb
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  let f = new Finger(seed, sym, 3);
+  let f = new Finger(seed, sym, generation);
 
   if (ctx) {
     // let length = 0.3;

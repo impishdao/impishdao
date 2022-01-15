@@ -12,6 +12,17 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
   const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
   const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
 
+  app.get("/crystalapi/wallet/:address", async (req, res) => {
+    const address = req.params.address;
+
+    try {
+      const wallet = (await _crystal.walletOfOwner(address)) as Array<BigNumber>;
+      res.send(wallet);
+    } catch (err) {
+      res.status(500).send("Something went wrong fetch address NFTs");
+    }
+  });
+
   // Return a list of all mintable crystals for all the Spirals owned or staked by this address
   app.get("/crystalapi/getmintable/:address", async (req, res) => {
     let address = "";
@@ -40,7 +51,6 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
         const minted = [];
         for (let i = 0; i < 5; i++) {
           const bit = (mintedBitField >> i) & 1;
-          console.log(`Bit ${i} is ${bit}`);
           minted.push(bit);
         }
         minted.reverse();
@@ -56,27 +66,36 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
     size: number;
     generation: number;
     sym: number;
-    seed: number;
+    seed: BigNumber;
     spiralBitsStored: BigNumber;
     owner: string;
   };
+  const crystalMetadataCache = new Map<number, CrystalInfo>();
   app.get("/crystalapi/crystal/metadata/:id", async (req, res) => {
     try {
       const id = BigNumber.from(req.params.id);
-      const crystalInfo: CrystalInfo = await _crystal.crystals(id);
-      const owner = await _crystal.ownerOf(id);
 
-      const r = {
-        image: ``,
-        description: "ImpishDAO Crystals",
-        attributes: {
+      let attributes;
+      if (crystalMetadataCache.has(id.toNumber())) {
+        attributes = crystalMetadataCache.get(id.toNumber());
+      } else {
+        const crystalInfo: CrystalInfo = await _crystal.crystals(id);
+        const owner = await _crystal.ownerOf(id);
+
+        attributes = {
           size: crystalInfo.size,
           generation: crystalInfo.generation,
           sym: crystalInfo.sym,
           seed: BigNumber.from(crystalInfo.seed),
           spiralBitsStored: crystalInfo.spiralBitsStored,
           owner,
-        },
+        };
+        crystalMetadataCache.set(id.toNumber(), attributes);
+      }
+      const r = {
+        image: ``,
+        description: "ImpishDAO Crystals",
+        attributes,
       };
 
       res.contentType("application/json");
@@ -86,4 +105,13 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       res.status(500).send("Something went wrong generating metadata");
     }
   });
+
+  // Event listner
+  _crystal.on(
+    _crystal.filters.CrystalChangeEvent(),
+    async (tokenId: number, eventType: number, size: number, event: any) => {
+      console.log(`New Crystal Event ${tokenId} type: ${eventType} size: ${size}`);
+      crystalMetadataCache.delete(tokenId);
+    }
+  )
 }

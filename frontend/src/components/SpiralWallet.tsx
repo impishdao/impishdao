@@ -6,11 +6,12 @@ import { DappContracts, DappState, SpiralDetail } from "../AppState";
 import { Navigation } from "./Navigation";
 import { range, retryTillSucceed } from "./utils";
 
-type SpiraWalletProps = DappState & DappContracts & {
-  connectWallet: () => void;
-};
+type SpiraWalletProps = DappState &
+  DappContracts & {
+    connectWallet: () => void;
+  };
 
-const getSeedsForSpiralTokenIds = async (tokenIds: Array<BigNumber>) : Promise<Array<SpiralDetail>> => {
+const getSeedsForSpiralTokenIds = async (tokenIds: Array<BigNumber>): Promise<Array<SpiralDetail>> => {
   const spiralDetails = await Promise.all(
     tokenIds.map(async (t) => {
       try {
@@ -30,7 +31,7 @@ const getSeedsForSpiralTokenIds = async (tokenIds: Array<BigNumber>) : Promise<A
   filtered.sort((a, b) => b.tokenId.toNumber() - a.tokenId.toNumber());
 
   return filtered;
-}
+};
 
 export function SpiralWallet(props: SpiraWalletProps) {
   const { address } = useParams();
@@ -58,7 +59,6 @@ export function SpiralWallet(props: SpiraWalletProps) {
           setStakedSpirals(spiralDetails);
         })();
       });
-    
   }, [address]);
 
   const allSpirals = spirals.concat(stakedSpirals);
@@ -112,12 +112,15 @@ export function SpiralWallet(props: SpiraWalletProps) {
                   >
                     <Card.Img variant="top" src={imgurl} style={{ width: "300px", height: "300px" }} />
                     <Card.Body>
-                      <Card.Title>#{s.tokenId.toString()} {s.indirectOwner && <>(Staked)</>}</Card.Title>
+                      <Card.Title>
+                        #{s.tokenId.toString()} {s.indirectOwner && <>(Staked)</>}
+                      </Card.Title>
                     </Card.Body>
                   </Card>
                 </Col>
               );
             })}
+            {allSpirals.length === 0 && <Col xs={12}>Nothing here</Col>}
           </Row>
           <PageList />
         </Container>
