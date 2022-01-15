@@ -2,19 +2,12 @@ import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Card, Col, Container, ListGroup, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { DappState, SpiralsState } from "../AppState";
+import { DappState, SpiralDetail, SpiralsState } from "../AppState";
 import { Navigation } from "./Navigation";
 import { format4Decimals, formatUSD, range, secondsToDhms, THREE_DAYS, trimAddress } from "./utils";
 
 type Top10Props = DappState & {
   connectWallet: () => void;
-};
-
-type SpiralDetail = {
-  tokenId: BigNumber;
-  seed: string;
-  owner: string;
-  indirectOwner?: string;
 };
 
 export function Top10(props: Top10Props) {

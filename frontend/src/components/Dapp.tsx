@@ -472,7 +472,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route
               path="/spirals/wallet/:address"
-              element={<SpiralWallet {...this.state} connectWallet={this._connectWallet} />}
+              element={<SpiralWallet {...this.state} connectWallet={this._connectWallet} {...contracts} />}
             />
 
             <Route

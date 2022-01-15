@@ -103,3 +103,11 @@ export type DappContracts = {
   buywitheth?: Contract;
   crystal?: Contract;
 };
+
+
+export type SpiralDetail = {
+  tokenId: BigNumber;
+  seed: string;
+  owner: string;
+  indirectOwner?: string;
+};

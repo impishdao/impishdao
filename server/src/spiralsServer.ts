@@ -43,6 +43,17 @@ export function setupSpirals(
     }
   });
 
+  app.get("/spiralapi/stakedwallet/:address", async (req, res) => {
+    const address = req.params.address;
+
+    try {
+      const wallet = (await _spiralstaking.walletOfOwner(address)) as Array<BigNumber>;
+      res.send(wallet);
+    } catch (err) {
+      res.status(500).send("Something went wrong fetch address NFTs");
+    }
+  });
+
   app.get("/spiralapi/wallet/:address", async (req, res) => {
     const address = req.params.address;
 
