@@ -88,6 +88,8 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
             entropy));
     }
 
+    event CrystalChangeEvent(uint32 indexed crystalTokenId, uint8 indexed eventType, uint8 size);
+    
     function _mintCrystal(uint8 gen) internal {      
       uint32 tokenId = _tokenIdCounter;
       _tokenIdCounter += 1;
@@ -100,6 +102,8 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       // Newly born crystals always have length 30, and have 0 SPIRALBITS stored.
       crystals[tokenId] = CrystalInfo(30, gen, sym, seed, 0);      
       _safeMint(msg.sender, tokenId);
+
+      emit CrystalChangeEvent(tokenId, 0, 0);
     }
 
     function mintCrystals(uint32[] calldata spiralTokenIds, uint8 gen) public payable nonReentrant {
@@ -113,13 +117,13 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       // Only the first gen is free. Each subsequent gen is 10x more expensive
       if (gen > 0) {
         mintPrice = 0.01 ether * uint256(10) ** uint256(gen-1);
+        require (msg.value == mintPrice * spiralTokenIds.length, "NotEnoughETH");
+
+        // All the ETH is dev fee
+        (bool success, ) = owner().call{value: address(this).balance}("");
+        require(success, "TransferFailed");
       }
-      require (msg.value == mintPrice * spiralTokenIds.length, "NotEnoughETH");
-
-      // All the ETH is dev fee
-      (bool success, ) = owner().call{value: address(this).balance}("");
-      require(success, "TransferFailed");
-
+      
       for (uint256 i = 0; i < spiralTokenIds.length; i++) {
         uint256 spiralTokenId = uint256(spiralTokenIds[i]);
         
@@ -156,6 +160,8 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       crystals[tokenId].spiralBitsStored += uint192(spiralBitsToStore);
 
       crystals[tokenId].size += size;
+
+      emit CrystalChangeEvent(tokenId, 1, size);
     }
 
     function addSym(uint32 tokenId, uint8 numSymstoAdd) external nonReentrant {
@@ -180,6 +186,8 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       // Record the new size
       crystals[tokenId].size = newLength;
       crystals[tokenId].sym += numSymstoAdd;
+
+      emit CrystalChangeEvent(tokenId, 2, numSymstoAdd);
     }
 
     function decSym(uint32 tokenId, uint8 numSymstoRemove) external nonReentrant {
@@ -197,6 +205,8 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
       // Record the new length
       crystals[tokenId].sym -= numSymstoRemove;
+
+      emit CrystalChangeEvent(tokenId, 3, numSymstoRemove);
     }
 
     function shatter(uint32 tokenId) external nonReentrant {
@@ -210,6 +220,8 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
         // Refund the spiralBits
         IERC20(SpiralBits).transferFrom(address(this), msg.sender, spiralBitsToReturn);
+
+        emit CrystalChangeEvent(tokenId, 4, 0);
     }
 
     // Returns a list of token Ids owned by _owner.
