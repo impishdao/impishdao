@@ -104,7 +104,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
     function mintCrystals(uint32[] calldata spiralTokenIds, uint8 gen) public payable nonReentrant {
       // Only 5 gens per Spiral
-      require(gen <= 5, "InvalidGen");
+      require(gen < 5, "InvalidGen");
 
       // Make sure there was enough ETH sent.
       // Mint prices are [0, 0.01 ether, 0.1 ether, 1 ether, 10 ether];
@@ -131,7 +131,6 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
         // Make sure this gen has not been minted for the spiral
         require(mintedSpirals[spiralTokenId][gen].minted == false, "AlreadyMintedThisGen");
 
-        
         // Mark this spiral's gen as minted. The tokenID will be the current tokenId counter
         mintedSpirals[spiralTokenId][gen] = MintedSpiralInfo(true, _tokenIdCounter);
         _mintCrystal(gen);
