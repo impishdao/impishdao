@@ -66,7 +66,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
       // Mint 100 at startup for marketing and giveaways
       for (uint8 i = 0; i < 100; i++) {
-        _mintCrystal(6);  // Initial tokens are 6th gen
+        _mintCrystal(0);  // Initial tokens are 0 gen
       }
     }
 
@@ -95,7 +95,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       _nextEntropy();
 
       uint32 seed = uint32(uint256(entropy) & 0xFFFFFF);
-      uint8 sym = uint8((uint256(entropy) >> 32) & 0x03) + 5; // Number between 5 and 8 inclusive
+      uint8 sym = uint8((uint256(entropy) >> 32) & 0x03) + 5 + gen; // Number between 5 and 8 inclusive
       
       // Newly born crystals always have length 30, and have 0 SPIRALBITS stored.
       crystals[tokenId] = CrystalInfo(30, gen, sym, seed, 0);      
