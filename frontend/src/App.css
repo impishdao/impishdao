@@ -10,6 +10,10 @@ div#root {
 button.connect {
 }
 
+button.colorwhite {
+  color: #fff;
+}
+
 button.address {
   background-color: #040404;
   color: #f0f0f0;

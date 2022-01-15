@@ -199,11 +199,43 @@ export function CrystalDetail(props: CrystalDetailProps) {
         <h1>Crystal #{id}</h1>
         <Container>
           <Row>
-            <Col xs={5}>
+            <Col xs={5} style={{ textAlign: "left" }}>
+              <h5 className="mt-3" style={{ color: "#ffd454" }}>
+                Properties
+              </h5>
+              <Table style={{ color: "white" }}>
+                <tbody>
+                  <tr>
+                    <td>Size</td>
+                    <td>{crystalInfo?.size} %</td>
+                  </tr>
+                  <tr>
+                    <td>Symmetries</td>
+                    <td>{crystalInfo?.sym}</td>
+                  </tr>
+                  <tr>
+                    <td>Generation</td>
+                    <td>{crystalInfo?.generation}</td>
+                  </tr>
+                  <tr>
+                    <td>SPIRALBITS stored</td>
+                    <td>{formatkmb(crystalInfo?.spiralBitsStored)}</td>
+                  </tr>
+                </tbody>
+              </Table>
+
+              <h5 className="mt-3" style={{ color: "#ffd454" }}>
+                Owner
+              </h5>
+              <div>{crystalInfo?.owner}</div>
+
               {props.selectedAddress && (
                 <>
-                  <Tabs>
-                    <Tab eventKey="Grow" title="Grow">
+                  <h5 className="mt-5" style={{ color: "#ffd454" }}>
+                    Manage Crystal
+                  </h5>
+                  <Tabs className="mt-3">
+                    <Tab eventKey="Grow" title="Grow" tabClassName="colorwhite">
                       <div>
                         You can grow your crystal by feeding it SPIRALBITS. Half of the $SPIRALBITS are stored inside
                         the Crystal (and the other half are burned)
@@ -227,7 +259,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         Growing by {growBy} will cost SPIRALBITS {formatkmb(spiralBitsNeededToGrow())}{" "}
                       </div>
                     </Tab>
-                    <Tab eventKey="Add" title="Add Symmetry">
+                    <Tab eventKey="Add" title="Add Symmetry" tabClassName="colorwhite">
                       <div>
                         Adding a symmetry increases the complexity of the Crystal, but will need more SPIRALBITS to
                         grow. Your Crystal will also shrink proportioanlly
@@ -251,7 +283,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         Adding {addSym} Symmetries will cost SPIRALBITS {formatkmb(spiralBitsNeededToAddSym())}{" "}
                       </div>
                     </Tab>
-                    <Tab eventKey="Reduce" title="Reduce Symmetry">
+                    <Tab eventKey="Reduce" title="Reduce Symmetry" tabClassName="colorwhite">
                       <div>
                         Reducing symmetry decreases the complexity of the Crystal and needs fewer SPIRALBITS to grow.
                       </div>
@@ -274,7 +306,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         Reducing {reduceSym} Symmetries will cost SPIRALBITS {formatkmb(spiralBitsNeededToReduceSym())}{" "}
                       </div>
                     </Tab>
-                    <Tab eventKey="Shatter" title="Shatter">
+                    <Tab eventKey="Shatter" title="Shatter" tabClassName="colorwhite">
                       <div>Shatter</div>
                     </Tab>
                   </Tabs>
@@ -286,30 +318,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
               <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
                 <canvas ref={canvasDetailRef} width="650px" height="650px" style={{ cursor: "pointer" }}></canvas>
               </div>
-              <Table style={{ color: "white" }}>
-                <tbody>
-                  <tr>
-                    <td>Size</td>
-                    <td>{crystalInfo?.size}</td>
-                  </tr>
-                  <tr>
-                    <td>Symmetries</td>
-                    <td>{crystalInfo?.sym}</td>
-                  </tr>
-                  <tr>
-                    <td>Generation</td>
-                    <td>{crystalInfo?.generation}</td>
-                  </tr>
-                  <tr>
-                    <td>SPIRALBITS stored</td>
-                    <td>{formatkmb(crystalInfo?.spiralBitsStored)}</td>
-                  </tr>
-                  <tr>
-                    <td>Seed</td>
-                    <td>{crystalInfo?.seed.toHexString()}</td>
-                  </tr>
-                </tbody>
-              </Table>
+
               <div
                 style={{
                   display: "flex",
