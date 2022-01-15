@@ -30,17 +30,17 @@ export function CrystalDetail(props: CrystalDetailProps) {
   const [addSym, setAddSym] = useState("1");
   const [reduceSym, setReduceSym] = useState("1");
 
+  const [previewSize, setPreviewSize] = useState<number | undefined>();
+  const [previewSym, setPreviewSym] = useState<number | undefined>();
+
   useEffect(() => {
     if (canvasDetailRef.current && crystalInfo) {
-      setup_crystal(
-        canvasDetailRef.current,
-        crystalInfo.seed.toString(),
-        crystalInfo.sym,
-        crystalInfo.generation,
-        crystalInfo.size / 100
-      );
+      let size = previewSize || crystalInfo.size;
+      let sym = previewSym || crystalInfo.sym;
+
+      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(), sym, crystalInfo.generation, size / 100);
     }
-  }, [crystalInfo]);
+  }, [crystalInfo, previewSize, previewSym]);
 
   // Check for approval for Spending by Crystals
   useEffect(() => {
@@ -64,6 +64,9 @@ export function CrystalDetail(props: CrystalDetailProps) {
           spiralBitsStored: BigNumber.from(attributes.spiralBitsStored),
         });
       });
+
+    setPreviewSym(undefined);
+    setPreviewSize(undefined);
   }, [id, refreshCounter]);
 
   const validateGrowBy = (s: string) => {
@@ -82,6 +85,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
       return;
     }
 
+    if (n && crystalInfo) {
+      setPreviewSize(n + crystalInfo.size);
+    } else {
+      setPreviewSize(undefined);
+    }
     setGrowBy(n.toString());
   };
 
@@ -101,6 +109,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
       return;
     }
 
+    if (n && crystalInfo) {
+      setPreviewSym(n + crystalInfo.sym);
+    } else {
+      setPreviewSym(undefined);
+    }
     setAddSym(n.toString());
   };
 
@@ -120,6 +133,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
       return;
     }
 
+    if (n && crystalInfo) {
+      setPreviewSym(crystalInfo.sym - n);
+    } else {
+      setPreviewSym(undefined);
+    }
     setReduceSym(n.toString());
   };
 
@@ -236,74 +254,76 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   </h5>
                   <Tabs className="mt-3">
                     <Tab eventKey="Grow" title="Grow" tabClassName="colorwhite">
-                      <div>
-                        You can grow your crystal by feeding it SPIRALBITS. Half of the $SPIRALBITS are stored inside
-                        the Crystal (and the other half are burned)
+                      <div style={{ fontSize: "0.9rem", marginTop: "10px" }}>
+                        Grow your crystal by feeding it SPIRALBITS. Half of the $SPIRALBITS are stored inside the
+                        Crystal (and the other half are burned)
                       </div>
 
-                      <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ display: "flex", gap: "30px", marginTop: "10px" }}>
                         <InputGroup>
                           <InputGroup.Text>Grow Size By</InputGroup.Text>
                           <FormControl
                             type="number"
+                            style={{ textAlign: "right" }}
                             value={growBy}
                             onChange={(e) => validateGrowBy(e.currentTarget.value)}
                           />
+                          <Button>Max</Button>
                         </InputGroup>
                         <Button variant="warning" onClick={growCrystal}>
                           Grow
                         </Button>
                       </div>
 
-                      <div>
-                        Growing by {growBy} will cost SPIRALBITS {formatkmb(spiralBitsNeededToGrow())}{" "}
-                      </div>
+                      <div style={{ marginTop: "10px" }}>Cost: {formatkmb(spiralBitsNeededToGrow())} SPIRALBITS</div>
                     </Tab>
                     <Tab eventKey="Add" title="Add Symmetry" tabClassName="colorwhite">
-                      <div>
+                      <div style={{ fontSize: "0.9rem", marginTop: "10px" }}>
                         Adding a symmetry increases the complexity of the Crystal, but will need more SPIRALBITS to
-                        grow. Your Crystal will also shrink proportioanlly
+                        grow. Your Crystal will also shrink proportionally
                       </div>
 
-                      <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ display: "flex", gap: "30px", marginTop: "10px" }}>
                         <InputGroup>
                           <InputGroup.Text>Add Symmetries</InputGroup.Text>
                           <FormControl
                             type="number"
+                            style={{ textAlign: "right" }}
                             value={addSym}
                             onChange={(e) => validateAddSym(e.currentTarget.value)}
                           />
+                          <Button>Max</Button>
                         </InputGroup>
                         <Button variant="warning" onClick={doAddSym}>
                           Add
                         </Button>
                       </div>
 
-                      <div>
-                        Adding {addSym} Symmetries will cost SPIRALBITS {formatkmb(spiralBitsNeededToAddSym())}{" "}
-                      </div>
+                      <div style={{ marginTop: "10px" }}>Cost: {formatkmb(spiralBitsNeededToAddSym())} SPIRALBITS</div>
                     </Tab>
                     <Tab eventKey="Reduce" title="Reduce Symmetry" tabClassName="colorwhite">
-                      <div>
+                      <div style={{ fontSize: "0.9rem", marginTop: "10px" }}>
                         Reducing symmetry decreases the complexity of the Crystal and needs fewer SPIRALBITS to grow.
                       </div>
 
-                      <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ display: "flex", gap: "30px", marginTop: "10px" }}>
                         <InputGroup>
                           <InputGroup.Text>Reduce Symmetries</InputGroup.Text>
                           <FormControl
                             type="number"
+                            style={{ textAlign: "right" }}
                             value={reduceSym}
                             onChange={(e) => validateReduceSym(e.currentTarget.value)}
                           />
+                          <Button>Max</Button>
                         </InputGroup>
                         <Button variant="warning" onClick={doReduceSym}>
                           Reduce
                         </Button>
                       </div>
 
-                      <div>
-                        Reducing {reduceSym} Symmetries will cost SPIRALBITS {formatkmb(spiralBitsNeededToReduceSym())}{" "}
+                      <div style={{ marginTop: "10px" }}>
+                        Cost: {formatkmb(spiralBitsNeededToReduceSym())} SPIRALBITS
                       </div>
                     </Tab>
                     <Tab eventKey="Shatter" title="Shatter" tabClassName="colorwhite">
@@ -314,8 +334,15 @@ export function CrystalDetail(props: CrystalDetailProps) {
               )}
             </Col>
             <Col xs={7}>
-              <div>Crystal #{id}</div>
-              <div style={{ border: "solid 1px", borderRadius: "10px", padding: "10px" }}>
+              {(previewSize || previewSym) && <div>PREVIEW</div>}
+              {!(previewSize || previewSym) && <div>Crystal #</div>}
+              <div
+                style={{
+                  border: `solid ${previewSym || previewSize ? "3px #ffd454" : "1px white"}`,
+                  borderRadius: "10px",
+                  padding: "10px",
+                }}
+              >
                 <canvas ref={canvasDetailRef} width="650px" height="650px" style={{ cursor: "pointer" }}></canvas>
               </div>
 
