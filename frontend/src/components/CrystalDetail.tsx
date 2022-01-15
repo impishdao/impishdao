@@ -32,8 +32,13 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
   useEffect(() => {
     if (canvasDetailRef.current && crystalInfo) {
-      console.log(crystalInfo);
-      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(), crystalInfo.sym, crystalInfo.size / 100);
+      setup_crystal(
+        canvasDetailRef.current,
+        crystalInfo.seed.toString(),
+        crystalInfo.sym,
+        crystalInfo.generation,
+        crystalInfo.size / 100
+      );
     }
   }, [crystalInfo]);
 

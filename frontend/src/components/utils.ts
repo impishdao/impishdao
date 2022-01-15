@@ -78,7 +78,7 @@ export function trimAddress(address: string): string {
 export function retryTillSucceed(fn: () => Promise<void>, ctr?: number) {
   if (ctr && ctr > 10) {
     console.log("Giving up after 10 tries");
-    return ;
+    return;
   }
 
   (async () => {

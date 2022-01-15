@@ -74,11 +74,11 @@ function rb(gen: Generator<number>, startInc: number, endInc: number): number {
   return startInc + (random_255(gen) * (endInc - startInc)) / 255;
 }
 
-function random_color_bright(gen: Generator<number>): RGB {
+function random_color_bright(gen: Generator<number>, generation: number): RGB {
   return {
-    r: Math.floor(rb(gen, 100, 255)),
-    g: Math.floor(rb(gen, 100, 255)),
-    b: Math.floor(rb(gen, 100, 255)),
+    r: Math.floor(rb(gen, 100 - 10 * generation, 255 - 5 * generation)),
+    g: Math.floor(rb(gen, 100 - 10 * generation, 255 - 5 * generation)),
+    b: Math.floor(rb(gen, 100 - 10 * generation, 255 - 5 * generation)),
   };
 }
 
@@ -109,22 +109,53 @@ function isSmallerFinger(s: number, total: number): boolean {
   return false;
 }
 
+type RectType = "rect" | "halfcircle" | "lolli" | "star";
+type FillType = "solid" | "gradient";
+
 class Rect {
   bottomWidth: number;
   topWidth: number;
   height: number;
   color: RGB;
   depth: number;
-  isArc: boolean;
+  type: RectType;
+  fillType: FillType;
 
   neg: boolean;
   negRelHeight: number = 0;
   roundTopper: boolean;
 
-  constructor(gen: Generator<number>, depth: number) {
+  constructor(gen: Generator<number>, depth: number, generation: number) {
     this.depth = depth;
+    this.type = "rect";
 
-    this.isArc = false; // depth >= 1 && rb(gen, 0, 2) < 1;
+    if (generation < 3) {
+      this.fillType = "solid";
+    } else {
+      this.fillType = "gradient";
+    }
+
+    if (depth >= 1) {
+      switch (generation) {
+        case 0: {
+          this.type = "rect";
+          break;
+        }
+        case 1: {
+          this.type = rb(gen, 0, 1) < 0.7 ? "rect" : "halfcircle";
+          break;
+        }
+        case 2: {
+          this.type = rb(gen, 0, 1) < 0.3 ? "rect" : rb(gen, 0, 1) < 0.7 ? "halfcircle" : "lolli";
+          break;
+        }
+        case 3: {
+          this.type =
+            rb(gen, 0, 1) < 0.2 ? "rect" : rb(gen, 0, 1) < 0.5 ? "star" : rb(gen, 0, 1) < 0.5 ? "halfcircle" : "lolli";
+          break;
+        }
+      }
+    }
 
     let widths = this.get_minmax_width_at_depth(depth);
     this.bottomWidth = rb(gen, widths[0].min, widths[0].max);
@@ -133,13 +164,13 @@ class Rect {
     let height = this.get_minmax_height_at_depth(depth);
     this.height = rb(gen, height.min, height.max);
 
-    this.neg = !this.isArc && random_bool(gen);
+    this.neg = random_bool(gen);
     if (this.neg) {
       this.negRelHeight = 0.5 + rb(gen, 0, 0.75);
     }
     this.roundTopper = random_bool(gen);
 
-    this.color = random_color_bright(gen);
+    this.color = random_color_bright(gen, generation);
   }
 
   effective_rect = (length: number): Rect => {
@@ -200,9 +231,9 @@ class Child {
 
   children: Child[];
 
-  constructor(gen: Generator<number>, depth: number) {
+  constructor(gen: Generator<number>, depth: number, generation: number) {
     // Generate a random Rect.
-    this.rect = new Rect(gen, depth);
+    this.rect = new Rect(gen, depth, generation);
 
     this.relPos = depth === 0 ? 0 : rb(gen, 1, 10) / 10;
     this.rotation = depth === 0 ? 0 : Math.PI / rb(gen, 1, 8);
@@ -214,20 +245,20 @@ class Child {
     let numChildren = 0;
 
     if (depth === 0) {
-      numChildren = rb(gen, 3, 9);
+      numChildren = rb(gen, 3, 9 + generation);
     } else if (depth === 1) {
-      numChildren = rb(gen, 0, 2);
+      numChildren = rb(gen, 0, 2 + generation);
     }
 
     for (let i = 0; i < numChildren; i++) {
-      this.children.push(new Child(gen, depth + 1));
+      this.children.push(new Child(gen, depth + 1, generation));
     }
 
     // Generate "ghost children at depth = 0" (Rects that are black)
     if (depth === 0) {
-      const numGhosts = rb(gen, 0, 2);
+      const numGhosts = rb(gen, 0, 2 + generation);
       for (let i = 0; i < numGhosts; i++) {
-        const child = new Child(gen, depth + 1);
+        const child = new Child(gen, depth + 1, generation);
         // Ghost props
         child.rect.color = { r: 0, g: 0, b: 0 };
         child.rect.topWidth /= 4;
@@ -241,69 +272,145 @@ class Child {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D, pass: number, length: number) {
-    ctx.save();
+  draw_star(ctx: CanvasRenderingContext2D, pass: number, length: number) {
+    const rect = this.rect.effective_rect(length);
 
+    const cx = 0;
+    const cy = rect.height;
+    const outerRadius = rect.bottomWidth;
+    const innerRadius = rect.bottomWidth / 3;
+    const spikes = 6;
+
+    var rot = (Math.PI / 2) * 3;
+    var x = cx;
+    var y = cy;
+    var step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+      x = cx + Math.cos(rot) * outerRadius;
+      y = cy + Math.sin(rot) * outerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerRadius;
+      y = cy + Math.sin(rot) * innerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.fillStyle = rgbToHex(rect.color);
+    ctx.fill();
+  }
+
+  draw_rect(ctx: CanvasRenderingContext2D, pass: number, length: number) {
     const rect = this.rect.effective_rect(length);
 
     if ((this.isGhost && pass === 2) || (!this.isGhost && pass === 1)) {
       // Draw the base rect
-      if (!rect.isArc) {
+      if (rect.fillType === "solid") {
+        ctx.fillStyle = rgbToHex(rect.color);
+      } else {
+        const g = ctx.createLinearGradient(0, 0, 0, rect.height);
+        g.addColorStop(0, rgbToHex(rect.color));
+        g.addColorStop(1, "white");
+        ctx.fillStyle = g;
+      }
+      ctx.beginPath();
+      ctx.moveTo(-rect.bottomWidth / 2, 0);
+      ctx.lineTo(-rect.topWidth / 2, rect.height);
+      ctx.lineTo(rect.topWidth / 2, rect.height);
+      ctx.lineTo(rect.bottomWidth / 2, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw a roundTopper if needed
+      if (rect.roundTopper) {
+        // Circle
         ctx.fillStyle = rgbToHex(rect.color);
         ctx.beginPath();
-        ctx.moveTo(-rect.bottomWidth / 2, 0);
-        ctx.lineTo(-rect.topWidth / 2, rect.height);
-        ctx.lineTo(rect.topWidth / 2, rect.height);
-        ctx.lineTo(rect.bottomWidth / 2, 0);
+        ctx.arc(0, rect.height, rect.topWidth / 2, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
       } else {
-        // Draw an Arc
-        ctx.strokeStyle = rgbToHex(rect.color);
-        ctx.lineWidth = rect.topWidth / 2;
-        ctx.beginPath();
-
-        const angle = Math.PI / 4 / rect.topWidth;
-
-        ctx.arc(0, 0, rect.height, -angle, +angle);
-        ctx.arc(0, 0, rect.height, +angle, -angle, true);
-        ctx.closePath();
-        ctx.stroke();
-      }
-
-      // Draw a roundTopper if needed
-      if (!rect.isArc) {
-        if (rect.roundTopper) {
-          // Circle
-          ctx.fillStyle = rgbToHex(rect.color);
-          ctx.beginPath();
-          ctx.arc(0, rect.height, rect.topWidth / 2, 0, 2 * Math.PI);
-          ctx.closePath();
-          ctx.fill();
-        } else {
-          // Triangle on top
-          ctx.fillStyle = rgbToHex(rect.color);
-          ctx.beginPath();
-          ctx.moveTo(-rect.topWidth / 2, rect.height - 1);
-          ctx.lineTo(0, rect.height * 1.1);
-          ctx.lineTo(rect.topWidth / 2, rect.height - 1);
-          ctx.closePath();
-          ctx.fill();
-        }
-
-        // If there is a "neg", then draw a negative space inside
-        if (rect.neg) {
-          ctx.fillStyle = "black";
-          ctx.fillRect(-rect.bottomWidth / 4, 0, rect.bottomWidth / 2, rect.height * rect.negRelHeight);
-        }
-
-        // Draw a "bottom" circle
+        // Triangle on top
         ctx.fillStyle = rgbToHex(rect.color);
         ctx.beginPath();
-        ctx.arc(0, 0, rect.bottomWidth / 2, 0, 2 * Math.PI);
+        ctx.moveTo(-rect.topWidth / 2, rect.height - 1);
+        ctx.lineTo(0, rect.height * 1.1);
+        ctx.lineTo(rect.topWidth / 2, rect.height - 1);
         ctx.closePath();
         ctx.fill();
       }
+
+      // If there is a "neg", then draw a negative space inside
+      if (rect.neg) {
+        ctx.fillStyle = "black";
+        ctx.fillRect(-rect.bottomWidth / 4, 0, rect.bottomWidth / 2, rect.height * rect.negRelHeight);
+      }
+
+      // Draw a "bottom" circle
+      ctx.fillStyle = rgbToHex(rect.color);
+      ctx.beginPath();
+      ctx.arc(0, 0, rect.bottomWidth / 2, 0, 2 * Math.PI);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  draw_halfcircle(ctx: CanvasRenderingContext2D, pass: number, length: number) {
+    const rect = this.rect.effective_rect(length);
+
+    if ((this.isGhost && pass === 2) || (!this.isGhost && pass === 1)) {
+      // Draw an Arc
+      ctx.strokeStyle = rgbToHex(rect.color);
+      ctx.lineWidth = rect.topWidth / 2;
+
+      ctx.beginPath();
+
+      ctx.arc(0, 0, rect.height, Math.PI / 4, (3 * Math.PI) / 4);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+
+  draw_lolli(ctx: CanvasRenderingContext2D, pass: number, length: number) {
+    const rect = this.rect.effective_rect(length);
+
+    if ((this.isGhost && pass === 2) || (!this.isGhost && pass === 1)) {
+      // Draw an circle at the top
+      ctx.strokeStyle = rgbToHex(rect.color);
+      ctx.lineWidth = rect.topWidth / 4;
+
+      // Circle on top
+      ctx.beginPath();
+      ctx.arc(0, rect.height, rect.bottomWidth * 2, 0, 2 * Math.PI);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Line to top
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, rect.height - rect.bottomWidth * 2);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+
+  render(ctx: CanvasRenderingContext2D, pass: number, length: number) {
+    ctx.save();
+
+    const rect = this.rect.effective_rect(length);
+    if (rect.type === "rect") {
+      this.draw_rect(ctx, pass, length);
+    } else if (rect.type === "halfcircle") {
+      this.draw_halfcircle(ctx, pass, length);
+    } else if (rect.type === "lolli") {
+      this.draw_lolli(ctx, pass, length);
+    } else if (rect.type === "star") {
+      this.draw_star(ctx, pass, length);
     }
 
     // Draw each of the children
@@ -335,14 +442,14 @@ class Finger {
   sym: number;
   mainChild: Child;
 
-  constructor(seed: string, sym: number) {
+  constructor(seed: string, sym: number, generation: number) {
     const gen = random_generator(seed);
     if (sym < 3 || sym > 20) {
       throw new Error(`Bad number of Sym: ${sym}`);
     }
     this.sym = sym;
 
-    this.mainChild = new Child(gen, 0);
+    this.mainChild = new Child(gen, 0, generation);
   }
 
   render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, length: number) {
@@ -379,13 +486,13 @@ class Finger {
   }
 }
 
-export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: number, size: number) {
+export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: number, generation: number, size: number) {
   const ctx = canvas.getContext("2d");
 
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  let f = new Finger(seed, sym);
+  let f = new Finger(seed, sym, 3);
 
   if (ctx) {
     // let length = 0.3;
