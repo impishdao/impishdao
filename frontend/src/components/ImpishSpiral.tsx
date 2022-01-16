@@ -145,7 +145,7 @@ export function ImpishSpiral(props: SpiralProps) {
             "Yay!",
             <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>,
             () => {
-              nav(`/spirals/wallet/${props.selectedAddress}`);
+              nav(`/wallet/${props.selectedAddress}/spirals`);
             }
           );
         }

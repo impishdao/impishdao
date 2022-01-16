@@ -19,11 +19,11 @@ export function Navigation(props: NavigationProps) {
     expandSection = 1;
   } else if (loc.pathname === "/spiralstaking" || loc.pathname.startsWith("/spiralstaking/")) {
     expandSection = 2;
-  } else if (loc.pathname === "/impishdao" || loc.pathname.startsWith("/impishdao")) {
-    expandSection = 3;
   } else if (loc.pathname === "/crystals" || loc.pathname.startsWith("/crystals")) {
+    expandSection = 3;
+  } else if (loc.pathname === "/impishdao" || loc.pathname.startsWith("/impishdao")) {
     expandSection = 4;
-  }
+  } 
 
   return (
     <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
@@ -41,11 +41,6 @@ export function Navigation(props: NavigationProps) {
               <LinkContainer to="/spirals/marketplace">
                 <Nav.Link>Marketplace</Nav.Link>
               </LinkContainer>
-              {props.selectedAddress && (
-                <LinkContainer to={`/spirals/wallet/${props.selectedAddress}`}>
-                  <Nav.Link>Wallet</Nav.Link>
-                </LinkContainer>
-              )}
             </>
           )}
 
@@ -53,11 +48,17 @@ export function Navigation(props: NavigationProps) {
           <LinkContainer to="/spiralstaking">
             <Nav.Link>Staking</Nav.Link>
           </LinkContainer>
+
+          <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
+          <LinkContainer to="/crystals">
+            <Nav.Link>Crystals</Nav.Link>
+          </LinkContainer>
+
           <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
           <LinkContainer to="/impishdao">
             <Nav.Link>ImpishDAO</Nav.Link>
           </LinkContainer>
-          {expandSection === 3 && (
+          {expandSection === 4 && (
             <>
               <LinkContainer to="/impishdao/buy">
                 <Nav.Link>NFTs for Sale</Nav.Link>
@@ -65,20 +66,6 @@ export function Navigation(props: NavigationProps) {
               <LinkContainer to="/impishdao/faq">
                 <Nav.Link>FAQ</Nav.Link>
               </LinkContainer>
-            </>
-          )}
-
-          <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-          <LinkContainer to="/crystals">
-            <Nav.Link>Crystals</Nav.Link>
-          </LinkContainer>
-          {expandSection === 4 && (
-            <>
-              {props.selectedAddress && (
-                <LinkContainer to={`/crystals/wallet/${props.selectedAddress}`}>
-                  <Nav.Link>Wallet</Nav.Link>
-                </LinkContainer>
-              )}
             </>
           )}
         </Nav>
@@ -89,8 +76,13 @@ export function Navigation(props: NavigationProps) {
         )}
         {props.selectedAddress && (
           <>
+            <LinkContainer to={`/wallet/${props.selectedAddress}/${expandSection === 4 ? 'crystals' : 'spirals'}`} style={{color: 'white'}}>
+              <Nav.Link>Wallet</Nav.Link>
+            </LinkContainer>
+            <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
+          
             <div style={{ marginRight: "10px" }}>
-              {(expandSection === 1 || expandSection === 2 || expandSection === 4) && (
+              {(expandSection !== 4) && (
                 <OverlayTrigger
                   placement="bottom"
                   overlay={
@@ -100,7 +92,7 @@ export function Navigation(props: NavigationProps) {
                   <span>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</span>
                 </OverlayTrigger>
               )}
-              {expandSection === 3 && <span>{format4Decimals(props.impishTokenBalance)} IMPISH</span>}
+              {expandSection === 4 && <span>{format4Decimals(props.impishTokenBalance)} IMPISH</span>}
             </div>
             <Button className="address" variant="warning">
               {props.selectedAddress}

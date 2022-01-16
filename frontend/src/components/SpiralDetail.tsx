@@ -535,7 +535,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                 <div
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    nav(`/spirals/wallet/${indirectOwner || owner}`);
+                    nav(`/wallet/${indirectOwner || owner}/spirals`);
                   }}
                 >
                   {indirectOwner && <span> {indirectOwner} (Staked) </span>}

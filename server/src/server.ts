@@ -193,7 +193,7 @@ app.get("/impishdaoapi", async (req, res) => {
 
             return { tokenId, price };
           } catch (e) {
-            console.log(`Error ${e}`);
+            console.log(`nftsWithPrice Error ${e}`);
             return {};
           }
         })

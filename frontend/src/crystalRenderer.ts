@@ -1,6 +1,5 @@
 /* eslint-disable no-undef */
 /* eslint-disable camelcase */
-import { BigNumber } from "ethers";
 import { sha3_256 } from "js-sha3";
 import { cloneDeep } from "lodash";
 

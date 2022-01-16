@@ -101,7 +101,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
     if (n && crystalInfo) {
       // Remember that adding a sym also reduces the length
-      const newSize = crystalInfo.size * crystalInfo.sym / (crystalInfo.sym + n);
+      const newSize = (crystalInfo.size * crystalInfo.sym) / (crystalInfo.sym + n);
       if (newSize < 30) {
         return;
       }
@@ -176,7 +176,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
       const newSize = crystalInfo.size + parseInt(growBy);
       const newSpiralBitsStored = crystalInfo.spiralBitsStored.add(spiralBitsNeededToGrow().div(2));
-      setCrystalInfo({...crystalInfo, size: newSize, spiralBitsStored: newSpiralBitsStored});
+      setCrystalInfo({ ...crystalInfo, size: newSize, spiralBitsStored: newSpiralBitsStored });
     }
   };
 
@@ -191,10 +191,10 @@ export function CrystalDetail(props: CrystalDetailProps) {
       }
 
       await props.waitForTxConfirmation(props.crystal.addSym(id, parseInt(addSym)), "Adding Symmetry to Crystal");
-      
+
       const newSym = crystalInfo.sym + parseInt(addSym);
-      const newSize = crystalInfo.size * crystalInfo.sym / newSym;
-      setCrystalInfo({...crystalInfo, size: Math.floor(newSize), sym: newSym});
+      const newSize = (crystalInfo.size * crystalInfo.sym) / newSym;
+      setCrystalInfo({ ...crystalInfo, size: Math.floor(newSize), sym: newSym });
     }
   };
 
@@ -209,9 +209,9 @@ export function CrystalDetail(props: CrystalDetailProps) {
       }
 
       await props.waitForTxConfirmation(props.crystal.decSym(id, parseInt(reduceSym)), "Reduce Symmetry of Crystal");
-      
+
       const newSize = crystalInfo.sym - parseInt(reduceSym);
-      setCrystalInfo({...crystalInfo, sym: newSize});
+      setCrystalInfo({ ...crystalInfo, sym: newSize });
     }
   };
 
@@ -252,7 +252,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
               </h5>
               <div>
                 {crystalInfo && (
-                  <Link to={`/crystals/wallet/${crystalInfo.owner}`} style={{ color: "white", textDecoration: "none" }}>
+                  <Link to={`/wallet/${crystalInfo.owner}/crystals`} style={{ color: "white", textDecoration: "none" }}>
                     {crystalInfo?.owner}
                   </Link>
                 )}

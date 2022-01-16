@@ -26,13 +26,13 @@ import React from "react";
 import { DappState, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
-import { SpiralWallet } from "./SpiralWallet";
 import { SpiralDetail } from "./SpiralDetail";
 import { Top10 } from "./Top10";
 import { Marketplace } from "./Marketplace";
 import { SpiralStaking } from "./SpiralStaking";
 import { cloneDeep } from "lodash";
 import { Crystals } from "./Crystals";
+import { CrystalWallet } from "./Wallet";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -471,8 +471,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
             />
 
             <Route
-              path="/spirals/wallet/:address"
-              element={<SpiralWallet {...this.state} connectWallet={this._connectWallet} {...contracts} />}
+              path="/wallet/:address/:type"
+              element={<CrystalWallet {...this.state} connectWallet={this._connectWallet} {...contracts} />}
             />
 
             <Route
