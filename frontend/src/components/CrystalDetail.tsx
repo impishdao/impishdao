@@ -175,7 +175,8 @@ export function CrystalDetail(props: CrystalDetailProps) {
       await props.waitForTxConfirmation(props.crystal.grow(id, parseInt(growBy)), "Growing Crystal");
 
       const newSize = crystalInfo.size + parseInt(growBy);
-      setCrystalInfo({...crystalInfo, size: newSize});
+      const newSpiralBitsStored = crystalInfo.spiralBitsStored.add(spiralBitsNeededToGrow().div(2));
+      setCrystalInfo({...crystalInfo, size: newSize, spiralBitsStored: newSpiralBitsStored});
     }
   };
 
