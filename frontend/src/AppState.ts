@@ -111,3 +111,14 @@ export type SpiralDetail = {
   owner: string;
   indirectOwner?: string;
 };
+
+
+export type CrystalInfo = {
+  tokenId: BigNumber;
+  size: number;
+  generation: number;
+  sym: number;
+  seed: BigNumber;
+  spiralBitsStored: BigNumber;
+  owner: string;
+};

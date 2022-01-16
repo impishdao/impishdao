@@ -452,9 +452,9 @@ class Finger {
     this.mainChild = new Child(gen, 0, generation);
   }
 
-  render(orig_ctx: CanvasRenderingContext2D, orig_canvasWidth: number, orig_canvasHeight: number, length: number) {
-    if (length < 0.2 || length > 1.0) {
-      throw new Error(`Wrong Length: ${length}`);
+  render(size: number) {
+    if (size < 0.2 || size > 1.0) {
+      throw new Error(`Wrong Length: ${size}`);
     }
 
     const newCanvas = document.createElement("canvas");
@@ -480,7 +480,7 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      const oddEvenLength = isSmallerFinger(s, this.sym) ? cosT(length) : length;
+      const oddEvenLength = isSmallerFinger(s, this.sym) ? cosT(size) : size;
       this.mainChild.render(ctx, 1, oddEvenLength);
     }
 
@@ -490,11 +490,17 @@ class Finger {
       // so we rotate by the same amount each time.
       ctx.rotate((2 * Math.PI) / this.sym);
 
-      const oddEvenLength = isSmallerFinger(s, this.sym) ? cosT(length) : length;
+      const oddEvenLength = isSmallerFinger(s, this.sym) ? cosT(size) : size;
       this.mainChild.render(ctx, 2, oddEvenLength);
     }
 
     ctx.restore();
+
+    return newCanvas;
+  }
+
+  renderToCanvas(orig_ctx: CanvasRenderingContext2D, orig_canvasWidth: number, orig_canvasHeight: number, length: number) {
+    const newCanvas = this.render(length);
 
     // Render this on the main canvas, scaled
     const scale = orig_canvasWidth / 700;
@@ -519,27 +525,16 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: numb
   let f = new Finger(seed, sym, generation);
 
   if (ctx) {
-    // let length = 0.3;
-
-    // // Update every frame
-    // setInterval(() => {
-    //   if (length > 1.2) {
-    //     seed = BigNumber.from(seed).add(1).toHexString();
-    //     f = new Finger(seed);
-    //     length = 0.3;
-
-    //     return;
-    //   }
-
-    //   if (length <= 1.0) {
-    //     f.render(ctx, canvasWidth, canvasHeight, length);
-    //   }
-
-    //   length += 0.004;
-    // }, 40); // Every 40 ms for a 24fps
-
-    f.render(ctx, canvasWidth, canvasHeight, size);
+    f.renderToCanvas(ctx, canvasWidth, canvasHeight, size);
   } else {
     console.log("No context");
   }
+}
+
+export function crystal_image(seed: string, sym: number, generation: number, size: number) {
+  let f = new Finger(seed, sym, generation);
+
+  const newCanvas = f.render(size);
+
+  return newCanvas.toDataURL("image/png");
 }

@@ -2,21 +2,12 @@ import { ethers, BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Col, Container, FormControl, InputGroup, Row, Tab, Table, Tabs } from "react-bootstrap";
 import { useParams } from "react-router-dom";
-import { DappContracts, DappFunctions, DappState } from "../AppState";
+import { CrystalInfo, DappContracts, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
 import { formatkmb, retryTillSucceed } from "./utils";
 
 type CrystalDetailProps = DappState & DappFunctions & DappContracts & {};
-
-type CrystalInfo = {
-  size: number;
-  generation: number;
-  sym: number;
-  seed: BigNumber;
-  spiralBitsStored: BigNumber;
-  owner: string;
-};
 
 export function CrystalDetail(props: CrystalDetailProps) {
   const { id } = useParams();
@@ -38,7 +29,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
       let size = previewSize || crystalInfo.size;
       let sym = previewSym || crystalInfo.sym;
 
-      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toString(), sym, crystalInfo.generation, size / 100);
+      setup_crystal(canvasDetailRef.current, crystalInfo.seed.toHexString(), sym, crystalInfo.generation, size / 100);
     }
   }, [crystalInfo, previewSize, previewSym]);
 

@@ -4,6 +4,7 @@ import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
 import { Link, Route, Routes } from "react-router-dom";
 import { DappContracts, DappFunctions, DappState } from "../AppState";
 import { CrystalDetail } from "./CrystalDetail";
+import { CrystalWallet } from "./CrystalWallet";
 import { Navigation } from "./Navigation";
 import { format4Decimals, range } from "./utils";
 
@@ -311,6 +312,8 @@ export function Crystals(props: CrystalsProps) {
         />
 
         <Route path="detail/:id" element={<CrystalDetail {...props} />} />
+
+        <Route path="wallet/:address" element={<CrystalWallet {...props} />} />
       </Routes>
     </>
   );

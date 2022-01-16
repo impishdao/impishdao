@@ -72,6 +72,15 @@ export function Navigation(props: NavigationProps) {
           <LinkContainer to="/crystals">
             <Nav.Link>Crystals</Nav.Link>
           </LinkContainer>
+          {expandSection === 4 && (
+            <>
+            {props.selectedAddress && (
+              <LinkContainer to={`/crystals/wallet/${props.selectedAddress}`}>
+                <Nav.Link>Wallet</Nav.Link>
+              </LinkContainer>
+            )}
+            </>
+          )}
         </Nav>
         {!props.selectedAddress && (
           <Button className="connect" variant="warning" onClick={props.connectWallet}>
