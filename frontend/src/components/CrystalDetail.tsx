@@ -13,7 +13,6 @@ export function CrystalDetail(props: CrystalDetailProps) {
   const { id } = useParams();
   const canvasDetailRef = useRef<HTMLCanvasElement>(null);
 
-  const [refreshCounter, setRefreshCounter] = useState(0);
   const [crystalInfo, setCrystalInfo] = useState<CrystalInfo | undefined>();
   const [approvalNeeded, setApprovalNeeded] = useState(true);
 
@@ -42,7 +41,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
         setApprovalNeeded(currentAllowance.eq(0));
       }
     });
-  }, [props.crystal, props.selectedAddress, props.spiralbits, refreshCounter]);
+  }, [props.crystal, props.selectedAddress, props.spiralbits]);
 
   useLayoutEffect(() => {
     fetch(`/crystalapi/crystal/metadata/${id}`)
@@ -58,7 +57,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
     setPreviewSym(undefined);
     setPreviewSize(undefined);
-  }, [id, refreshCounter]);
+  }, [id]);
 
   const validateGrowBy = (s: string) => {
     if (isNaN(parseInt(s))) {
@@ -101,6 +100,13 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
 
     if (n && crystalInfo) {
+      // Remember that adding a sym also reduces the length
+      const newSize = crystalInfo.size * crystalInfo.sym / (crystalInfo.sym + n);
+      if (newSize < 30) {
+        return;
+      }
+
+      setPreviewSize(newSize);
       setPreviewSym(n + crystalInfo.sym);
     } else {
       setPreviewSym(undefined);
@@ -157,7 +163,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const growCrystal = async () => {
-    if (props.selectedAddress && props.crystal && props.spiralbits) {
+    if (props.selectedAddress && props.crystal && props.spiralbits && crystalInfo) {
       // Check for approval needed first
       if (approvalNeeded) {
         await props.waitForTxConfirmation(
@@ -167,12 +173,14 @@ export function CrystalDetail(props: CrystalDetailProps) {
       }
 
       await props.waitForTxConfirmation(props.crystal.grow(id, parseInt(growBy)), "Growing Crystal");
-      setRefreshCounter(refreshCounter + 1);
+
+      const newSize = crystalInfo.size + parseInt(growBy);
+      setCrystalInfo({...crystalInfo, size: newSize});
     }
   };
 
   const doAddSym = async () => {
-    if (props.selectedAddress && props.crystal && props.spiralbits) {
+    if (props.selectedAddress && props.crystal && props.spiralbits && crystalInfo) {
       // Check for approval needed first
       if (approvalNeeded) {
         await props.waitForTxConfirmation(
@@ -182,12 +190,15 @@ export function CrystalDetail(props: CrystalDetailProps) {
       }
 
       await props.waitForTxConfirmation(props.crystal.addSym(id, parseInt(addSym)), "Adding Symmetry to Crystal");
-      setRefreshCounter(refreshCounter + 1);
+      
+      const newSym = crystalInfo.sym + parseInt(addSym);
+      const newSize = crystalInfo.size * crystalInfo.sym / newSym;
+      setCrystalInfo({...crystalInfo, size: Math.floor(newSize), sym: newSym});
     }
   };
 
   const doReduceSym = async () => {
-    if (props.selectedAddress && props.crystal && props.spiralbits) {
+    if (props.selectedAddress && props.crystal && props.spiralbits && crystalInfo) {
       // Check for approval needed first
       if (approvalNeeded) {
         await props.waitForTxConfirmation(
@@ -197,7 +208,9 @@ export function CrystalDetail(props: CrystalDetailProps) {
       }
 
       await props.waitForTxConfirmation(props.crystal.decSym(id, parseInt(reduceSym)), "Reduce Symmetry of Crystal");
-      setRefreshCounter(refreshCounter + 1);
+      
+      const newSize = crystalInfo.sym - parseInt(reduceSym);
+      setCrystalInfo({...crystalInfo, sym: newSize});
     }
   };
 
