@@ -74,11 +74,11 @@ export function Navigation(props: NavigationProps) {
           </LinkContainer>
           {expandSection === 4 && (
             <>
-            {props.selectedAddress && (
-              <LinkContainer to={`/crystals/wallet/${props.selectedAddress}`}>
-                <Nav.Link>Wallet</Nav.Link>
-              </LinkContainer>
-            )}
+              {props.selectedAddress && (
+                <LinkContainer to={`/crystals/wallet/${props.selectedAddress}`}>
+                  <Nav.Link>Wallet</Nav.Link>
+                </LinkContainer>
+              )}
             </>
           )}
         </Nav>

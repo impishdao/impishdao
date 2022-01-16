@@ -113,5 +113,5 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       console.log(`New Crystal Event ${tokenId} type: ${eventType} size: ${size}`);
       crystalMetadataCache.delete(tokenId);
     }
-  )
+  );
 }

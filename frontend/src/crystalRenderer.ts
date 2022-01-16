@@ -499,7 +499,12 @@ class Finger {
     return newCanvas;
   }
 
-  renderToCanvas(orig_ctx: CanvasRenderingContext2D, orig_canvasWidth: number, orig_canvasHeight: number, length: number) {
+  renderToCanvas(
+    orig_ctx: CanvasRenderingContext2D,
+    orig_canvasWidth: number,
+    orig_canvasHeight: number,
+    length: number
+  ) {
     const newCanvas = this.render(length);
 
     // Render this on the main canvas, scaled

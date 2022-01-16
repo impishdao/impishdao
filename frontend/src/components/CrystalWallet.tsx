@@ -46,7 +46,7 @@ const getMetadataForCrystalTokenIds = async (tokenIds: Array<BigNumber>): Promis
 
 export function CrystalWallet(props: CrystalWalletProps) {
   const { address } = useParams();
-  const [crystals, setCrystals] = useState<Array<CrystalInfo>>([]);
+  const [crystals, setCrystals] = useState<Array<CrystalInfo> | undefined>();
   const [startPage, setStartPage] = useState(0);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export function CrystalWallet(props: CrystalWalletProps) {
 
   const nav = useNavigate();
   const PAGE_SIZE = 12;
-  const numPages = Math.floor(allSpirals.length / PAGE_SIZE) + 1;
+  const numPages = allSpirals ? Math.floor(allSpirals.length / PAGE_SIZE) + 1 : 0;
 
   const PageList = () => {
     return (
@@ -100,26 +100,30 @@ export function CrystalWallet(props: CrystalWalletProps) {
         <Container className="mt-5 mb-5">
           <PageList />
           <Row>
-            {allSpirals.slice(startPage * PAGE_SIZE, startPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
-              return (
-                <Col md={4} key={s.seed.toString()} className="mb-3">
-                  <Card
-                    style={{ width: "320px", padding: "10px", borderRadius: "5px", cursor: "pointer" }}
-                    onClick={() => {
-                      nav(`/crystals/detail/${s.tokenId.toString()}`);
-                    }}
-                  >
-                    <Card.Img variant="top" src={crystal_image(s.seed.toHexString(), s.sym, s.generation, s.size/100)} style={{ width: "300px", height: "300px" }} />
-                    <Card.Body>
-                      <Card.Title>
-                        #{s.tokenId.toString()}
-                      </Card.Title>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              );
-            })}
-            {allSpirals.length === 0 && <Col xs={12}>Nothing here</Col>}
+            {allSpirals &&
+              allSpirals.slice(startPage * PAGE_SIZE, startPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
+                return (
+                  <Col md={4} key={s.seed.toString()} className="mb-3">
+                    <Card
+                      style={{ width: "320px", padding: "10px", borderRadius: "5px", cursor: "pointer" }}
+                      onClick={() => {
+                        nav(`/crystals/detail/${s.tokenId.toString()}`);
+                      }}
+                    >
+                      <Card.Img
+                        variant="top"
+                        src={crystal_image(s.seed.toHexString(), s.sym, s.generation, s.size / 100)}
+                        style={{ width: "300px", height: "300px" }}
+                      />
+                      <Card.Body>
+                        <Card.Title>#{s.tokenId.toString()}</Card.Title>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                );
+              })}
+            {allSpirals && allSpirals.length === 0 && <Col xs={12}>Nothing here</Col>}
+            {allSpirals === undefined && <Col xs={12}>Loading...</Col>}
           </Row>
           <PageList />
         </Container>

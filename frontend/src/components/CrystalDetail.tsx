@@ -1,7 +1,7 @@
 import { ethers, BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Col, Container, FormControl, InputGroup, Row, Tab, Table, Tabs } from "react-bootstrap";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { CrystalInfo, DappContracts, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
@@ -236,7 +236,13 @@ export function CrystalDetail(props: CrystalDetailProps) {
               <h5 className="mt-3" style={{ color: "#ffd454" }}>
                 Owner
               </h5>
-              <div>{crystalInfo?.owner}</div>
+              <div>
+                {crystalInfo && (
+                  <Link to={`/crystals/wallet/${crystalInfo.owner}`} style={{ color: "white", textDecoration: "none" }}>
+                    {crystalInfo?.owner}
+                  </Link>
+                )}
+              </div>
 
               {props.selectedAddress && (
                 <>
@@ -326,7 +332,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
             </Col>
             <Col xs={7}>
               {(previewSize || previewSym) && <div>PREVIEW</div>}
-              {!(previewSize || previewSym) && <div>Crystal #</div>}
+              {!(previewSize || previewSym) && <div>Crystal #{id}</div>}
               <div
                 style={{
                   border: `solid ${previewSym || previewSize ? "3px #ffd454" : "1px white"}`,
