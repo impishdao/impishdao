@@ -1,7 +1,7 @@
 import { BigNumber, ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useNavigate } from "react-router-dom";
 import { DappContracts, DappFunctions, DappState } from "../AppState";
 import { CrystalDetail } from "./CrystalDetail";
 import { Navigation } from "./Navigation";
@@ -34,6 +34,8 @@ export function Crystals(props: CrystalsProps) {
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
+  const nav = useNavigate();
+  
   const countMintableAtEachGen = (minted: Minted[]) => {
     let mintableAtEachGen: Array<Array<BigNumber>> = [[], [], [], [], []];
     for (let i = 0; i < minted.length; i++) {
@@ -93,7 +95,7 @@ export function Crystals(props: CrystalsProps) {
         "Yay!",
         <div>You successfully minted {numCrystals} Crystals. You can now view them in your wallet.</div>,
         () => {
-          // nav(`/crystal/detail/${id}`);
+          nav(`/wallet/${props.selectedAddress}/crystals`);
         }
       );
       setRefreshCounter(refreshCounter + 1);
