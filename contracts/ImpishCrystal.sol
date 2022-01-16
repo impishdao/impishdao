@@ -149,7 +149,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
       // Check if enough SpiralBits were sent
       uint256 SpiralBitsNeeded = uint256(size) * uint256(crystals[tokenId].sym) * SPIRALBITS_PER_SYM_PER_SIZE;
-      require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
+      require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnough SPIRALBITS");
 
       // Transfer the SpiralBits in
       IERC20(SpiralBits).transferFrom(msg.sender, address(this), SpiralBitsNeeded);
@@ -173,7 +173,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       
       // Check if enough SpiralBits were sent
       uint256 SpiralBitsNeeded = SPIRALBITS_PER_SYM * uint256(numSymstoAdd);
-      require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
+      require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnough SPIRALBITS");
 
       // Reduce length proportionally
       uint8 newLength = uint8( uint256(c.size) * uint256(c.sym) / uint256(c.sym + numSymstoAdd) );
@@ -197,7 +197,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
 
       // Check if enough SpiralBits were sent
       uint256 SpiralBitsNeeded = SPIRALBITS_PER_SYM * uint256(numSymstoRemove);
-      require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnoughSB");
+      require(IERC20(SpiralBits).balanceOf(msg.sender) >= SpiralBitsNeeded, "NotEnough SPIRALBITS");
 
       // Burn ALL the SpiralBits
       IERC20(SpiralBits).transferFrom(msg.sender, address(this), SpiralBitsNeeded);
@@ -219,7 +219,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
         delete crystals[tokenId];
 
         // Refund the spiralBits
-        IERC20(SpiralBits).transferFrom(address(this), msg.sender, spiralBitsToReturn);
+        IERC20(SpiralBits).transfer(msg.sender, spiralBitsToReturn);
 
         emit CrystalChangeEvent(tokenId, 4, 0);
     }

@@ -3,7 +3,6 @@
 import { Button, Card, Col, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
 import { DappContracts, DappFunctions, DappState } from "../AppState";
 import { formatkmb, pad, range, retryTillSucceed } from "./utils";
-import { Web3Provider } from "@ethersproject/providers";
 import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Navigation } from "./Navigation";
@@ -183,13 +182,7 @@ const StakingPageDisplay = ({
   );
 };
 
-type SpiralStakingProps = DappState &
-  DappFunctions &
-  DappContracts & {
-    provider?: Web3Provider;
-
-    waitForTxConfirmation: (tx: Promise<any>, title?: string) => Promise<void>;
-  };
+type SpiralStakingProps = DappState & DappFunctions & DappContracts & {};
 
 type SpiralDetail = {
   tokenId: BigNumber;

@@ -23,7 +23,7 @@ export function Navigation(props: NavigationProps) {
     expandSection = 3;
   } else if (loc.pathname === "/impishdao" || loc.pathname.startsWith("/impishdao")) {
     expandSection = 4;
-  } 
+  }
 
   return (
     <Navbar fixed="top" style={{ borderBottom: "1px solid #fff" }} variant="dark" bg="dark">
@@ -76,13 +76,16 @@ export function Navigation(props: NavigationProps) {
         )}
         {props.selectedAddress && (
           <>
-            <LinkContainer to={`/wallet/${props.selectedAddress}/${expandSection === 4 ? 'crystals' : 'spirals'}`} style={{color: 'white'}}>
+            <LinkContainer
+              to={`/wallet/${props.selectedAddress}/${expandSection === 4 ? "crystals" : "spirals"}`}
+              style={{ color: "white" }}
+            >
               <Nav.Link>Wallet</Nav.Link>
             </LinkContainer>
             <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-          
+
             <div style={{ marginRight: "10px" }}>
-              {(expandSection !== 4) && (
+              {expandSection !== 4 && (
                 <OverlayTrigger
                   placement="bottom"
                   overlay={

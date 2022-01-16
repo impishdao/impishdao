@@ -23,7 +23,7 @@ import { Web3Provider } from "@ethersproject/providers";
 import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import { DappState, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
+import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralDetail } from "./SpiralDetail";
@@ -355,14 +355,23 @@ export class Dapp extends React.Component<DappProps, DappState> {
     return id;
   };
 
-  waitForTxConfirmation = async (tx: Promise<any>, title?: string) => {
+  waitForTxConfirmation = async (tx: Promise<any>, title?: string): Promise<boolean> => {
     const id = this.showToast(title || "Sending Tx", <span>Waiting for confirmations...</span>);
+    let success = true;
     try {
       const t = await tx;
       await t.wait();
+    } catch (e: any) {
+      if (e?.code !== ERROR_CODE_TX_REJECTED_BY_USER) {
+        // User cancelled, so do nothing
+        this.showModal("Error Sending Tx", <div>{e?.data?.message || e?.message}</div>);
+        success = false;
+      }
     } finally {
       this.hideToast(id);
     }
+
+    return success;
   };
 
   render() {

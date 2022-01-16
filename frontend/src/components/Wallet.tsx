@@ -145,7 +145,7 @@ export function CrystalWallet(props: CrystalWalletProps) {
         <h5 style={{ color: "#ffd454" }}>{address}</h5>
 
         <Row className="mb-5 mt-5" style={{ backgroundColor: "#222", padding: "20px" }}>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
               <div>Show</div>
               <Dropdown>
@@ -160,17 +160,11 @@ export function CrystalWallet(props: CrystalWalletProps) {
               </Dropdown>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div>
-                {formatkmb(props.spiralBitsBalance)} SPIRALBITS
-              </div>
+              <div>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</div>
               <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-              <div>
-                {formatkmb(props.impishTokenBalance)} IMPISH
-              </div>
+              <div>{formatkmb(props.impishTokenBalance)} IMPISH</div>
               <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-              <div>
-                {formatkmb(props.ethBalance)} ETH
-              </div>
+              <div>{formatkmb(props.ethBalance)} ETH</div>
             </div>
           </div>
         </Row>
