@@ -153,6 +153,11 @@ class Rect {
             rb(gen, 0, 1) < 0.2 ? "rect" : rb(gen, 0, 1) < 0.5 ? "star" : rb(gen, 0, 1) < 0.5 ? "halfcircle" : "lolli";
           break;
         }
+        case 4: {
+          this.type =
+            rb(gen, 0, 1) < 0.1 ? "rect" : rb(gen, 0, 1) < 0.4 ? "star" : rb(gen, 0, 1) < 0.5 ? "halfcircle" : "lolli";
+          break;
+        }
       }
     }
 
