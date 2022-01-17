@@ -1,6 +1,6 @@
 /* eslint-disable node/no-missing-import */
 import { expect } from "chai";
-import { ethers, network, waffle } from "hardhat";
+import { ethers } from "hardhat";
 
 import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
@@ -8,7 +8,6 @@ import type { ImpishSpiral } from "../typechain/ImpishSpiral";
 import type { ImpishCrystal } from "../typechain/ImpishCrystal";
 import type { SpiralStaking } from "../typechain/SpiralStaking";
 import type { SpiralBits } from "../typechain/SpiralBits";
-import { BigNumber } from "ethers";
 
 type FixtureType = {
   impishSpiral: ImpishSpiral;
@@ -19,7 +18,7 @@ type FixtureType = {
   spiralStaking: SpiralStaking;
 };
 
-describe.only("ImpishSpiral", function () {
+describe("ImpishSpiral", function () {
   async function loadContracts(): Promise<FixtureType> {
     const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
     const RandomWalkNFT = await ethers.getContractFactory("RandomWalkNFT");
@@ -51,7 +50,7 @@ describe.only("ImpishSpiral", function () {
   }
 
   it("Initial + later mints", async function () {
-    const { impishSpiral, impdao, rwnft, crystal } = await loadContracts();
+    const { impishSpiral, crystal } = await loadContracts();
     const [signer, otherSigner] = await ethers.getSigners();
 
     // Assert the first 100 crystals were minted to the wallet
@@ -60,14 +59,14 @@ describe.only("ImpishSpiral", function () {
 
     for (let i = 0; i < 100; i++) {
       const crystalInfo = await crystal.crystals(0);
-      expect(crystalInfo.size).to.be.equals(30);
+      expect(crystalInfo.size).to.be.equals(70);
       expect(crystalInfo.generation).to.be.equals(0);
       expect(crystalInfo.sym).to.be.closeTo(6, 2);
       expect(crystalInfo.spiralBitsStored).to.be.equals(0);
     }
 
     // Mint a new Spiral
-    let spiralTokenId = await impishSpiral._tokenIdCounter();
+    const spiralTokenId = await impishSpiral._tokenIdCounter();
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
     await crystal.mintCrystals([spiralTokenId], 0);
     const crystalTokenId = 100;
@@ -142,7 +141,7 @@ describe.only("ImpishSpiral", function () {
   });
 
   it("Staked mints", async function () {
-    const { impishSpiral, impdao, rwnft, spiralStaking, crystal } = await loadContracts();
+    const { impishSpiral, spiralStaking, crystal } = await loadContracts();
     const [signer, otherSigner] = await ethers.getSigners();
 
     // Assert the first 100 crystals were minted to the wallet
@@ -150,7 +149,7 @@ describe.only("ImpishSpiral", function () {
     expect(initial.length).to.be.equals(100);
 
     // Mint a new Spiral and stake it
-    let spiralTokenId = await impishSpiral._tokenIdCounter();
+    const spiralTokenId = await impishSpiral._tokenIdCounter();
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
     await impishSpiral.setApprovalForAll(spiralStaking.address, true);
     await spiralStaking.stakeNFTs([spiralTokenId]);
@@ -168,11 +167,11 @@ describe.only("ImpishSpiral", function () {
   });
 
   it("Ether is sent to dev", async function () {
-    const { impishSpiral, impdao, rwnft, spiralStaking, crystal } = await loadContracts();
+    const { impishSpiral, crystal } = await loadContracts();
     const [signer, otherSigner] = await ethers.getSigners();
 
     // Mint gen 1, and make sure it sends the ETH to the wallet
-    let spiralTokenId = await impishSpiral._tokenIdCounter();
+    const spiralTokenId = await impishSpiral._tokenIdCounter();
     await impishSpiral.connect(otherSigner).mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
     const expectedPrices = [
@@ -186,5 +185,60 @@ describe.only("ImpishSpiral", function () {
         await crystal.connect(otherSigner).mintCrystals([spiralTokenId], i + 1, { value: expectedPrices[i] })
       ).to.changeEtherBalance(signer, expectedPrices[i]);
     }
+  });
+
+  it("Grows, changes syms and shatters", async function () {
+    const { impishSpiral, spiralbits, crystal } = await loadContracts();
+    const [signer, otherSigner] = await ethers.getSigners();
+
+    // Assert the first 100 crystals were minted to the wallet
+    const initial = await crystal.walletOfOwner(signer.address);
+    expect(initial.length).to.be.equals(100);
+
+    // Mint a new Spiral and mint a crystal
+    const spiralTokenId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    const crystalTokenId = await crystal._tokenIdCounter();
+    await crystal.mintCrystals([spiralTokenId], 0);
+
+    // Approve
+    await spiralbits.approve(crystal.address, ethers.utils.parseEther("2000000000"));
+
+    // Growing it more than 70 fails
+    await expect(crystal.grow(crystalTokenId, 71)).to.be.revertedWith("TooMuchGrowth");
+
+    // Can't grow someone else's
+    await expect(crystal.connect(otherSigner).grow(crystalTokenId, 1)).to.be.revertedWith("NotYoursToGrow");
+
+    // Can grow, transfer, and the other guy can grow
+    const sym = (await crystal.crystals(crystalTokenId)).sym;
+    await expect(() => crystal.grow(crystalTokenId, 10)).to.changeTokenBalance(
+      spiralbits,
+      crystal,
+      ethers.utils.parseEther("1000").mul(10).mul(sym).div(2)
+    );
+    expect((await crystal.crystals(crystalTokenId)).size).to.be.equal(40);
+
+    // transfer
+    await crystal.transferFrom(signer.address, otherSigner.address, crystalTokenId);
+    expect(await crystal.ownerOf(crystalTokenId)).to.be.equals(otherSigner.address);
+    await spiralbits.transfer(otherSigner.address, ethers.utils.parseEther("1000000"));
+
+    // Now otherguy can grow it and we can't
+    await expect(crystal.grow(crystalTokenId, 1)).to.be.revertedWith("NotYoursToGrow");
+    await spiralbits.connect(otherSigner).approve(crystal.address, ethers.utils.parseEther("1000000000"));
+    await crystal.connect(otherSigner).grow(crystalTokenId, 10);
+    expect((await crystal.crystals(crystalTokenId)).size).to.be.equal(50);
+
+    // Only we can shatter
+    await expect(crystal.shatter(crystalTokenId)).to.be.revertedWith("NotYoursToShatter");
+
+    // Shattreing recovers 50% of the spiralbits
+    const spiralbitsexpected = (await crystal.crystals(crystalTokenId)).spiralBitsStored;
+    await expect(() => crystal.connect(otherSigner).shatter(crystalTokenId)).to.changeTokenBalance(
+      spiralbits,
+      otherSigner,
+      spiralbitsexpected
+    );
   });
 });
