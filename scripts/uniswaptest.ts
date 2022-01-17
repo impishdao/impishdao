@@ -76,11 +76,20 @@ async function main() {
   console.log(`Before SPIRALBITS: ${ethers.utils.formatEther(await spiralbits.balanceOf(signer.address))}`);
 
   const tokenId = 2322;
-  // const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true, {value: ethers.utils.parseEther("1")});
-  // const tx = await buywithether.buyRwNFTFromDaoWithEthDirect(tokenId, true, {value: ethers.utils.parseEther("1")});
+  // const tx = await buywithether.buyRwNFTFromDaoWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true, {
+  //   value: ethers.utils.parseEther("1"),
+  // });
+  // const tx = await buywithether.buyRwNFTFromDaoWithEthDirect(tokenId, true, { value: ethers.utils.parseEther("1") });
   // const tx = await buywithether.buyRwNFTFromDaoWithEth(tokenId, true, { value: ethers.utils.parseEther("1") });
-  // const tx = await buywithether.buySpiralFromMarketWithSpiralBits(tokenId, ethers.utils.parseEther("100000000"), true);
-  const tx = await buywithether.buyRwNFTFromRWMarket(222, tokenId, ethers.utils.parseEther("0.05"),  ethers.utils.parseEther("100000000"), true);
+  // const tx = await buywithether.buySpiralFromMarketWithSpiralBits(
+  //   tokenId, ethers.utils.parseEther("100000000"), true);
+  const tx = await buywithether.buyRwNFTFromRWMarket(
+    222,
+    tokenId,
+    ethers.utils.parseEther("0.05"),
+    ethers.utils.parseEther("100000000"),
+    true
+  );
   await tx.wait();
 
   const rwnftstaking = new ethers.Contract(RWNFTStaking_address, RwnftStaking.interface, signer);

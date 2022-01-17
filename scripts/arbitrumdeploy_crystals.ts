@@ -14,18 +14,21 @@ async function main() {
   console.log(`Deploying from ${signer.address}`);
 
   // We get the contract to deploy
-  const swapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
-  const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
-  const buywithether = await BuyWithEther.deploy(swapRouter);
-  await buywithether.deployed();
+  const ImpishCrystal = await ethers.getContractFactory("ImpishCrystal");
+  const impishcrystal = await ImpishCrystal.deploy(
+    contractAddresses.ImpishSpiral,
+    contractAddresses.SpiralStaking,
+    contractAddresses.SpiralBits
+  );
+  await impishcrystal.deployed();
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(buywithether);
+  saveFrontendFiles(impishcrystal);
 
-  console.log("BuyWithEther deployed to:", buywithether.address);
+  console.log("Impish Crystals deployed to:", impishcrystal.address);
 }
 
-function saveFrontendFiles(buywithether: Contract) {
+function saveFrontendFiles(impishcrystal: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -40,7 +43,7 @@ function saveFrontendFiles(buywithether: Contract) {
 
   const newContractAddressStr = JSON.stringify(
     Object.assign(contractAddresses, {
-      BuyWithEther: buywithether.address,
+      Crystal: impishcrystal.address,
     }),
     undefined,
     2
@@ -49,9 +52,9 @@ function saveFrontendFiles(buywithether: Contract) {
   fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
   fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
 
-  const buywithEtherArtifact = artifacts.readArtifactSync("BuyWithEther");
-  fs.writeFileSync(contractsDir + "/buywithether.json", JSON.stringify(buywithEtherArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/buywithether.json", JSON.stringify(buywithEtherArtifact, null, 2));
+  const ImpishCrystalArtifact = artifacts.readArtifactSync("ImpishCrystal");
+  fs.writeFileSync(contractsDir + "/crystal.json", JSON.stringify(ImpishCrystalArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/crystal.json", JSON.stringify(ImpishCrystalArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
