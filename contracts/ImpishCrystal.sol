@@ -67,6 +67,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       // Mint 100 at startup for marketing and giveaways
       for (uint8 i = 0; i < 100; i++) {
         _mintCrystal(0);  // Initial tokens are 0 gen
+        crystals[i].size = 70; // With size 70
       }
     }
 
