@@ -31,9 +31,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
         setup_crystal(canvasDetailRef.current, crystalInfo.seed.toHexString(), sym, crystalInfo.generation, size / 100);
       } else {
-        canvasDetailRef.current
-          .getContext("2d")
-          ?.clearRect(0, 0, canvasDetailRef.current.width, canvasDetailRef.current.height);
+        const ctx = canvasDetailRef.current
+          .getContext("2d");
+
+        ctx?.resetTransform();
+        ctx?.clearRect(0, 0, canvasDetailRef.current.width, canvasDetailRef.current.height);
       }
     }
   }, [crystalInfo, previewSize, previewSym]);
@@ -438,7 +440,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   </tr>
                   <tr>
                     <td>Generation</td>
-                    <td>{crystalInfo?.generation}</td>
+                    <td>Gen{crystalInfo?.generation}</td>
                   </tr>
                   <tr>
                     <td>SPIRALBITS stored</td>
