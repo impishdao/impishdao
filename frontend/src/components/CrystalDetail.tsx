@@ -297,6 +297,8 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
   };
 
+  console.log(`${props.selectedAddress} - ${crystalInfo?.owner}`);
+
   return (
     <>
       <Navigation {...props} />
@@ -329,7 +331,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   </>
                 )}
 
-                {props.selectedAddress && (
+                {props.selectedAddress && props.selectedAddress.toLowerCase() === crystalInfo?.owner.toLowerCase() && (
                   <>
                     <Tabs className="mt-3">
                       <Tab eventKey="Grow" title="Grow" tabClassName="colorwhite">

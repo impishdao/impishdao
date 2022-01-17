@@ -568,7 +568,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                     </thead>
                     <tbody>
                       <tr>
-                        {mintedCrystals.map((crystalId) => {
+                        {mintedCrystals.map((crystalId, i) => {
                           let item;
                           if (crystalId >= 0) {
                             item = (
@@ -580,7 +580,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                             item = <span style={{ color: "white" }}>Not Minted</span>;
                           }
 
-                          return <td key={crystalId}>{item}</td>;
+                          return <td key={i}>{item}</td>;
                         })}
                       </tr>
                     </tbody>

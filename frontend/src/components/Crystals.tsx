@@ -157,7 +157,7 @@ export function Crystals(props: CrystalsProps) {
                       <>
                         <Row className="mb-2" style={{ textAlign: "center" }}>
                           <div>
-                            You can mint{" "}
+                            You can mint up to{" "}
                             <span style={{ fontSize: "+2rem", color: "#ffd454" }}>
                               {nextMintable.count} Gen{nextMintable?.gen}
                             </span>{" "}
