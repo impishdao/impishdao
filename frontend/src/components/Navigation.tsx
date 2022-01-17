@@ -77,7 +77,7 @@ export function Navigation(props: NavigationProps) {
         {props.selectedAddress && (
           <>
             <LinkContainer
-              to={`/wallet/${props.selectedAddress}/${expandSection === 4 ? "crystals" : "spirals"}`}
+              to={`/wallet/${props.selectedAddress}/${expandSection === 3 ? "crystals" : "spirals"}`}
               style={{ color: "white" }}
             >
               <Nav.Link>Wallet</Nav.Link>

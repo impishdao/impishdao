@@ -577,7 +577,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
                               </Link>
                             );
                           } else {
-                            item = <span style={{color: 'white'}}>Not Minted</span>;
+                            item = <span style={{ color: "white" }}>Not Minted</span>;
                           }
 
                           return <td key={crystalId}>{item}</td>;

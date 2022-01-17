@@ -1,6 +1,6 @@
 import { ethers, BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button, Col, Container, FormControl, InputGroup, Row, Tab, Table, Tabs } from "react-bootstrap";
+import { Alert, Button, Col, Container, FormControl, InputGroup, Row, Tab, Table, Tabs } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import { CrystalInfo, DappContracts, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
@@ -31,8 +31,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
         setup_crystal(canvasDetailRef.current, crystalInfo.seed.toHexString(), sym, crystalInfo.generation, size / 100);
       } else {
-        const ctx = canvasDetailRef.current
-          .getContext("2d");
+        const ctx = canvasDetailRef.current.getContext("2d");
 
         ctx?.resetTransform();
         ctx?.clearRect(0, 0, canvasDetailRef.current.width, canvasDetailRef.current.height);
@@ -356,6 +355,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         </div>
 
                         <div style={{ marginTop: "10px" }}>Cost: {formatkmb(spiralBitsNeededToGrow())} SPIRALBITS</div>
+                        {spiralBitsNeededToGrow().gt(props.spiralBitsBalance) && (
+                          <Alert className="mt-3" variant="danger">
+                            Not Enough SPIRALBITS
+                          </Alert>
+                        )}
                       </Tab>
                       <Tab eventKey="Add" title="Add Symmetry" tabClassName="colorwhite">
                         <div style={{ fontSize: "0.9rem", marginTop: "10px" }}>
@@ -383,6 +387,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         <div style={{ marginTop: "10px" }}>
                           Cost: {formatkmb(spiralBitsNeededToAddSym())} SPIRALBITS
                         </div>
+                        {spiralBitsNeededToAddSym().gt(props.spiralBitsBalance) && (
+                          <Alert className="mt-3" variant="danger">
+                            Not Enough SPIRALBITS
+                          </Alert>
+                        )}
                       </Tab>
                       <Tab eventKey="Reduce" title="Reduce Symmetry" tabClassName="colorwhite">
                         <div style={{ fontSize: "0.9rem", marginTop: "10px" }}>
@@ -408,6 +417,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         <div style={{ marginTop: "10px" }}>
                           Cost: {formatkmb(spiralBitsNeededToReduceSym())} SPIRALBITS
                         </div>
+                        {spiralBitsNeededToReduceSym().gt(props.spiralBitsBalance) && (
+                          <Alert className="mt-3" variant="danger">
+                            Not Enough SPIRALBITS
+                          </Alert>
+                        )}
                       </Tab>
                       <Tab eventKey="Shatter" title="Shatter" tabClassName="colorwhite">
                         <div style={{ fontSize: "0.9rem", marginTop: "10px" }}>
