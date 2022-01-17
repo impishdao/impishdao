@@ -1,7 +1,7 @@
 import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Alert, Badge, Button, Col, Container, Form, ListGroup, Modal, Row } from "react-bootstrap";
-import { useNavigate, useParams } from "react-router-dom";
+import { Alert, Badge, Button, Col, Container, Form, ListGroup, Modal, Row, Table } from "react-bootstrap";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
 import { Navigation } from "./Navigation";
@@ -209,6 +209,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
   const [owner, setOwner] = useState("");
   const [indirectOwner, setIndirectOwner] = useState();
   const [spiralState, setSpiralState] = useState<SpiralsState | undefined>();
+  const [mintedCrystals, setMintedCrystals] = useState<Array<number>>([]);
 
   const [listingPrice, setListingPrice] = useState(BigNumber.from(0));
   // const [listingOwner, setListingOwner] = useState("");
@@ -266,6 +267,12 @@ export function SpiralDetail(props: SpiralDetailProps) {
         if (canvasDetailRef.current) {
           setup_image(canvasDetailRef.current, `detail${id}`, seed);
         }
+      });
+
+    fetch(`/crystalapi/mintedforspiral/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setMintedCrystals(data);
       });
   }, [id]);
 
@@ -547,9 +554,42 @@ export function SpiralDetail(props: SpiralDetailProps) {
                 </h5>
                 <div>{seed}</div>
 
+                <h5 className="mt-3" style={{ color: "#ffd454" }}>
+                  Crystals Minted
+                </h5>
+                <div>
+                  <Table>
+                    <thead>
+                      <tr style={{ color: "white" }}>
+                        {[0, 1, 2, 3, 4].map((gen) => {
+                          return <th key={gen}>Gen{gen}</th>;
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {mintedCrystals.map((crystalId) => {
+                          let item;
+                          if (crystalId >= 0) {
+                            item = (
+                              <Link to={`/crystals/detail/${crystalId}`} style={{ color: "#ffd454" }}>
+                                {crystalId}
+                              </Link>
+                            );
+                          } else {
+                            item = <span style={{color: 'white'}}>Not Minted</span>;
+                          }
+
+                          return <td key={crystalId}>{item}</td>;
+                        })}
+                      </tr>
+                    </tbody>
+                  </Table>
+                </div>
+
                 {isWinning && (
                   <>
-                    <h5 className="mt-3" style={{ color: "#ffd454" }}>
+                    <h5 className="mt-5" style={{ color: "#ffd454" }}>
                       Winning Position #{winningPosition}
                     </h5>
                     <div>

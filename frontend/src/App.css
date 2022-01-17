@@ -52,6 +52,12 @@ div.withSpiralBackground {
   min-height: 800px;
 }
 
+div.withCrystalBackground {
+  background-image: url("crystalsbg.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  min-height: 600px;
+}
 
 div.withSpiralBackgroundMultiSpiral {
   background-image: url("multibg.png");

@@ -23,6 +23,21 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
     }
   });
 
+  app.get("/crystalapi/mintedforspiral/:spiralTokenId", async (req, res) => {
+    let spiralTokenId = req.params.spiralTokenId;
+
+    const mintedTokenIds = await Promise.all([0, 1, 2, 3, 4].map(async (gen) => {
+      const {minted, tokenId} = await _crystal.mintedSpirals(spiralTokenId, gen);
+      if (minted) {
+        return tokenId as number;
+      } else {
+        return -1;
+      }
+    }));
+
+    res.send(mintedTokenIds);
+  });
+
   // Return a list of all mintable crystals for all the Spirals owned or staked by this address
   app.get("/crystalapi/getmintable/:address", async (req, res) => {
     let address = "";

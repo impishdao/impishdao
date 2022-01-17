@@ -44,7 +44,7 @@ contract ImpishCrystal is ERC721, ERC721Enumerable, ERC721Burnable, Ownable, Ree
       uint32 seed;
       uint192 spiralBitsStored;
     }
-    // Crystal TokeID => CrystalInfo
+    // Crystal TokenID => CrystalInfo
     mapping(uint256 => CrystalInfo) public crystals;
 
     // SpiralTokenID -> bitMap of generations, indicating of token was

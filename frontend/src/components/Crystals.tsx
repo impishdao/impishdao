@@ -35,7 +35,7 @@ export function Crystals(props: CrystalsProps) {
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   const nav = useNavigate();
-  
+
   const countMintableAtEachGen = (minted: Minted[]) => {
     let mintableAtEachGen: Array<Array<BigNumber>> = [[], [], [], [], []];
     for (let i = 0; i < minted.length; i++) {
@@ -111,54 +111,119 @@ export function Crystals(props: CrystalsProps) {
           path=""
           element={
             <>
-              <Row style={{ textAlign: "center" }}>
-                <h1 style={{ marginTop: "-50px", paddingTop: "100px" }}>Chapter 3: Impish Crystals</h1>
-              </Row>
-              <Row className="mb-2" style={{ textAlign: "center" }}>
-                <div>
-                  You can mint {nextMintable.count} Gen {nextMintable?.gen} Impish Crystals
-                  {nextMintable.eachMintCost.eq(0) && <span> for Free!</span>}
-                  {nextMintable.eachMintCost.gt(0) && (
-                    <span> at {format4Decimals(nextMintable.eachMintCost)} ETH each.</span>
+              <div
+                className="withCrystalBackground"
+                style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}
+              >
+                <Row style={{ textAlign: "center" }}>
+                  <h1 style={{ marginTop: "-50px", paddingTop: "100px" }}>Chapter 3: Impish Crystals</h1>
+                </Row>
+                <Row>
+                  {!props.selectedAddress && (
+                    <div style={{ marginTop: "50px", marginBottom: "100px" }}>
+                      <div>
+                        Connect your Metamask wallet
+                        <br />
+                        to mint Crystals
+                      </div>
+                      <br />
+                      <Button className="connect" variant="warning" onClick={props.connectWallet}>
+                        Connect Wallet
+                      </Button>
+                    </div>
                   )}
-                </div>
-              </Row>
+                </Row>
+                {props.selectedAddress && (
+                  <>
+                    {nextMintable.count === 0 && (
+                      <div style={{ marginTop: "50px", marginBottom: "100px" }}>
+                        <div>
+                          You don't have any Spirals that can be minted into Crystals.
+                          <br />
+                          Please{" "}
+                          <Link to="/spirals" style={{ color: "#ffd454" }}>
+                            mint some Spirals
+                          </Link>{" "}
+                          or buy some at the{" "}
+                          <Link style={{ color: "#ffd454" }} to="/spirals/marketplace">
+                            Marketplace
+                          </Link>
+                        </div>
+                        <br />
+                      </div>
+                    )}
 
-              <Row className="justify-content-md-center">
-                <Col xs={6} style={{ textAlign: "center" }}>
-                  <h5>Mint Impish Crystals</h5>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "flex-end",
-                      justifyContent: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <FloatingLabel label="Number of Crystals" style={{ color: "black", width: "200px" }}>
-                      <Form.Select
-                        value={numCrystals.toString()}
-                        onChange={(e) => setNumCrystals(parseInt(e.currentTarget.value))}
-                      >
-                        {range(nextMintable.count, 1).map((n) => {
-                          return (
-                            <option key={n} value={n}>
-                              {n}
-                            </option>
-                          );
-                        })}
-                      </Form.Select>
-                    </FloatingLabel>
-                    <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={mintCrystal}>
-                      Mint for{" "}
-                      {nextMintable.eachMintCost.eq(0)
-                        ? "ETH 0"
-                        : `ETH ${format4Decimals(nextMintable.eachMintCost.mul(numCrystals))}`}
-                    </Button>
-                  </div>
-                </Col>
-              </Row>
+                    {nextMintable.count > 0 && (
+                      <>
+                        <Row className="mb-2" style={{ textAlign: "center" }}>
+                          <div>
+                            You can mint{" "}
+                            <span style={{ fontSize: "+2rem", color: "#ffd454" }}>
+                              {nextMintable.count} Gen{nextMintable?.gen}
+                            </span>{" "}
+                            Impish Crystals
+                            {nextMintable.eachMintCost.eq(0) && (
+                              <>
+                                {" "}
+                                for <span style={{ fontSize: "+2rem", color: "#ffd454" }}>Free!</span>
+                              </>
+                            )}
+                            {nextMintable.eachMintCost.gt(0) && (
+                              <>
+                                {" "}
+                                at{" "}
+                                <span style={{ fontSize: "+2rem", color: "#ffd454" }}>
+                                  {format4Decimals(nextMintable.eachMintCost)} ETH
+                                </span>{" "}
+                                each.
+                              </>
+                            )}
+                          </div>
+                        </Row>
+                        <Row className="justify-content-md-center mt-4">
+                          <Col xs={6} style={{ textAlign: "center" }}>
+                            <h5>Mint Impish Crystals</h5>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                alignItems: "flex-end",
+                                justifyContent: "center",
+                                gap: "10px",
+                              }}
+                            >
+                              <FloatingLabel label="Number of Crystals" style={{ color: "black", width: "200px" }}>
+                                <Form.Select
+                                  value={numCrystals.toString()}
+                                  onChange={(e) => setNumCrystals(parseInt(e.currentTarget.value))}
+                                >
+                                  {range(nextMintable.count, 1).map((n) => {
+                                    return (
+                                      <option key={n} value={n}>
+                                        {n}
+                                      </option>
+                                    );
+                                  })}
+                                </Form.Select>
+                              </FloatingLabel>
+                              <Button
+                                style={{ marginTop: "10px", height: "58px" }}
+                                variant="warning"
+                                onClick={mintCrystal}
+                              >
+                                Mint for{" "}
+                                {nextMintable.eachMintCost.eq(0)
+                                  ? "ETH 0"
+                                  : `ETH ${format4Decimals(nextMintable.eachMintCost.mul(numCrystals))}`}
+                              </Button>
+                            </div>
+                          </Col>
+                        </Row>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
 
               <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
                 <h1>FAQ</h1>
