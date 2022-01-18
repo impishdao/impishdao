@@ -100,7 +100,20 @@ export function CrystalDetail(props: CrystalDetailProps) {
       maxGrowBy = availableSize + crystalInfo.size > 100 ? 100 - crystalInfo.size : availableSize;
     }
 
-    validateGrowBy(maxGrowBy.toString());
+    // slowly grow to max so as to show an animation
+    if (crystalInfo && maxGrowBy > 0) {
+      let startMaxSize =0;
+      const timerId = setInterval(() => {
+        startMaxSize += 1;
+        if (startMaxSize <= maxGrowBy) {
+          validateGrowBy(startMaxSize.toString());
+        } else {
+          clearInterval(timerId);
+        }
+      }, 40)
+    } else {
+      validateGrowBy(maxGrowBy.toString());
+    }
   };
 
   const setMaxAddSyn = () => {
@@ -296,8 +309,6 @@ export function CrystalDetail(props: CrystalDetailProps) {
       }
     }
   };
-
-  console.log(`${props.selectedAddress} - ${crystalInfo?.owner}`);
 
   return (
     <>
