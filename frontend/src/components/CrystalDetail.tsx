@@ -102,7 +102,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
     // slowly grow to max so as to show an animation
     if (crystalInfo && maxGrowBy > 0) {
-      let startMaxSize =0;
+      let startMaxSize = 0;
       const timerId = setInterval(() => {
         startMaxSize += 1;
         if (startMaxSize <= maxGrowBy) {
@@ -110,7 +110,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
         } else {
           clearInterval(timerId);
         }
-      }, 40)
+      }, 40);
     } else {
       validateGrowBy(maxGrowBy.toString());
     }
@@ -370,7 +370,14 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         <div style={{ marginTop: "10px" }}>Cost: {formatkmb(spiralBitsNeededToGrow())} SPIRALBITS</div>
                         {spiralBitsNeededToGrow().gt(props.spiralBitsBalance) && (
                           <Alert className="mt-3" variant="danger">
-                            Not Enough SPIRALBITS
+                            Not Enough SPIRALBITS. Buy on{" "}
+                            <a
+                              href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x650a9960673688ba924615a2d28c39a8e015fb19"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Uniswap
+                            </a>
                           </Alert>
                         )}
                       </Tab>
@@ -402,7 +409,14 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         </div>
                         {spiralBitsNeededToAddSym().gt(props.spiralBitsBalance) && (
                           <Alert className="mt-3" variant="danger">
-                            Not Enough SPIRALBITS
+                            Not Enough SPIRALBITS. Buy on{" "}
+                            <a
+                              href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x650a9960673688ba924615a2d28c39a8e015fb19"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Uniswap
+                            </a>
                           </Alert>
                         )}
                       </Tab>
@@ -432,7 +446,14 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         </div>
                         {spiralBitsNeededToReduceSym().gt(props.spiralBitsBalance) && (
                           <Alert className="mt-3" variant="danger">
-                            Not Enough SPIRALBITS
+                            Not Enough SPIRALBITS. Buy on{" "}
+                            <a
+                              href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x650a9960673688ba924615a2d28c39a8e015fb19"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Uniswap
+                            </a>
                           </Alert>
                         )}
                       </Tab>
