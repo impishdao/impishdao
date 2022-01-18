@@ -19,8 +19,10 @@ export function CrystalDetail(props: CrystalDetailProps) {
   const [refreshDataCounter, setRefreshDataCounter] = useState(0);
 
   const [growBy, setGrowBy] = useState("1");
-  const [addSym, setAddSym] = useState("1");
-  const [reduceSym, setReduceSym] = useState("1");
+  const [addSym, setAddSym] = useState("0");
+  const [reduceSym, setReduceSym] = useState("0");
+
+  const [addSymErrorMsg, setAddSymErrorMsg] = useState<string | undefined>();
 
   const [previewSize, setPreviewSize] = useState<number | undefined>();
   const [previewSym, setPreviewSym] = useState<number | undefined>();
@@ -156,6 +158,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
     // Max size
     if (crystalInfo && n + crystalInfo.sym > 20) {
+      setAddSymErrorMsg("Crystal already has max symmetries");
       return;
     }
 
@@ -163,15 +166,17 @@ export function CrystalDetail(props: CrystalDetailProps) {
       // Remember that adding a sym also reduces the length
       const newSize = (crystalInfo.size * crystalInfo.sym) / (crystalInfo.sym + n);
       if (newSize < 30) {
+        setAddSymErrorMsg("Crystal is too small. Grow the Crystal first");
         return;
       }
 
-      console.log(`New size: ${newSize}`);
       setPreviewSize(newSize);
       setPreviewSym(n + crystalInfo.sym);
     } else {
       setPreviewSym(undefined);
     }
+
+    setAddSymErrorMsg(undefined);
     setAddSym(n.toString());
   };
 
@@ -229,6 +234,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
     setReduceSym("0");
     setPreviewSize(undefined);
     setPreviewSym(undefined);
+    setAddSymErrorMsg(undefined);
   };
 
   const approveSpiralBits = async (): Promise<boolean> => {
@@ -324,7 +330,6 @@ export function CrystalDetail(props: CrystalDetailProps) {
     <>
       <Navigation {...props} />
 
-
       <TransferAddressModal
         show={transferAddressModalShowing}
         nft={props.crystal}
@@ -335,7 +340,6 @@ export function CrystalDetail(props: CrystalDetailProps) {
         }}
         selectedAddress={props.selectedAddress}
       />
-
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Crystal #{id}</h1>
@@ -431,6 +435,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
                         <div style={{ marginTop: "10px" }}>
                           Cost: {formatkmb(spiralBitsNeededToAddSym())} SPIRALBITS
                         </div>
+                        {addSymErrorMsg && (
+                          <Alert className="mt-3" variant="danger"  onClose={() => setAddSymErrorMsg(undefined)} dismissible>
+                            {addSymErrorMsg}
+                          </Alert>
+                        )}
                         {spiralBitsNeededToAddSym().gt(props.spiralBitsBalance) && (
                           <Alert className="mt-3" variant="danger">
                             Not Enough SPIRALBITS. Buy on{" "}
@@ -550,7 +559,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   justifyContent: "center",
                 }}
               >
-                {(props.selectedAddress && crystalInfo?.owner.toLowerCase() === props.selectedAddress?.toLowerCase()) && (
+                {props.selectedAddress && crystalInfo?.owner.toLowerCase() === props.selectedAddress?.toLowerCase() && (
                   <Button variant="dark" onClick={() => setTransferAddressModalShowing(true)}>
                     Transfer
                   </Button>
