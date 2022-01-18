@@ -241,6 +241,8 @@ app.use("/spiralstaking", express.static(path.join(__dirname, "index.html")));
 app.use("/crystals", express.static(path.join(__dirname, "index.html")));
 app.use("/crystals/*", express.static(path.join(__dirname, "index.html")));
 
+app.use("/wallet/*", express.static(path.join(__dirname, "index.html")));
+
 app.use("/impishdao", express.static(path.join(__dirname, "index.html")));
 app.use("/impishdao/*", express.static(path.join(__dirname, "index.html")));
 
