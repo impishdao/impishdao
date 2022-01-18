@@ -121,6 +121,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
     if (props.spiralBitsBalance && crystalInfo) {
       const availableSym = Math.floor(props.spiralBitsBalance.div(ethers.utils.parseEther("20000")).toNumber());
       maxAddSym = availableSym + crystalInfo.sym > 20 ? 20 - crystalInfo.sym : availableSym;
+
+      // Make sure that maxAddSym doesn't reduce length to below 30
+      while ((crystalInfo.size * crystalInfo.sym) / (crystalInfo.sym + maxAddSym) < 30 && maxAddSym > 0) {
+        maxAddSym -= 1;
+      }
     }
 
     validateAddSym(maxAddSym.toString());
@@ -159,6 +164,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
         return;
       }
 
+      console.log(`New size: ${newSize}`);
       setPreviewSize(newSize);
       setPreviewSym(n + crystalInfo.sym);
     } else {
