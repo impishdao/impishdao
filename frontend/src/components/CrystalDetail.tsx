@@ -504,7 +504,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
               </Table>
             </Col>
             <Col xs={7}>
-              {(previewSize || previewSym) && <div>PREVIEW</div>}
+              {(previewSize || previewSym) && <div>PREVIEW <span style={{textDecoration: 'underline', cursor: 'pointer'}} onClick={resetManageVars}>(reset)</span></div>}
               {!(previewSize || previewSym) && <div>Crystal #{id}</div>}
               <div
                 style={{
