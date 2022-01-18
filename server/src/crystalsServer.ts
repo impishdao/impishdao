@@ -129,4 +129,11 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       crystalMetadataCache.delete(tokenId);
     }
   );
+
+  _crystal.on(
+    _crystal.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
+      console.log(`Crystal transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
+      crystalMetadataCache.delete(tokenId.toNumber());
+    }
+  )
 }

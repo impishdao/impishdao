@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { CrystalInfo, DappContracts, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
+import { TransferAddressModal } from "./NFTTransferModal";
 import { formatkmb, retryTillSucceed } from "./utils";
 
 type CrystalDetailProps = DappState & DappFunctions & DappContracts & {};
@@ -15,6 +16,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
   const [crystalInfo, setCrystalInfo] = useState<CrystalInfo | undefined>();
   const [approvalNeeded, setApprovalNeeded] = useState(true);
+  const [refreshDataCounter, setRefreshDataCounter] = useState(0);
 
   const [growBy, setGrowBy] = useState("1");
   const [addSym, setAddSym] = useState("1");
@@ -64,7 +66,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
     setPreviewSym(undefined);
     setPreviewSize(undefined);
-  }, [id]);
+  }, [id, refreshDataCounter]);
 
   const validateGrowBy = (s: string) => {
     if (isNaN(parseInt(s))) {
@@ -316,9 +318,25 @@ export function CrystalDetail(props: CrystalDetailProps) {
     }
   };
 
+  const [transferAddressModalShowing, setTransferAddressModalShowing] = useState(false);
+
   return (
     <>
       <Navigation {...props} />
+
+
+      <TransferAddressModal
+        show={transferAddressModalShowing}
+        nft={props.crystal}
+        tokenId={BigNumber.from(id)}
+        close={() => {
+          setTransferAddressModalShowing(false);
+          setTimeout(() => setRefreshDataCounter(refreshDataCounter + 1), 3 * 1000);
+        }}
+        selectedAddress={props.selectedAddress}
+      />
+
+
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Crystal #{id}</h1>
         <Container>
@@ -504,7 +522,14 @@ export function CrystalDetail(props: CrystalDetailProps) {
               </Table>
             </Col>
             <Col xs={7}>
-              {(previewSize || previewSym) && <div>PREVIEW <span style={{textDecoration: 'underline', cursor: 'pointer'}} onClick={resetManageVars}>(reset)</span></div>}
+              {(previewSize || previewSym) && (
+                <div>
+                  PREVIEW{" "}
+                  <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={resetManageVars}>
+                    (reset)
+                  </span>
+                </div>
+              )}
               {!(previewSize || previewSym) && <div>Crystal #{id}</div>}
               <div
                 style={{
@@ -525,11 +550,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   justifyContent: "center",
                 }}
               >
-                {/* {(props.selectedAddress && crystalInfo?.owner.toLowerCase() === props.selectedAddress?.toLowerCase()) && (
+                {(props.selectedAddress && crystalInfo?.owner.toLowerCase() === props.selectedAddress?.toLowerCase()) && (
                   <Button variant="dark" onClick={() => setTransferAddressModalShowing(true)}>
                     Transfer
                   </Button>
-                )} */}
+                )}
               </div>
             </Col>
 
