@@ -12,12 +12,6 @@ type Minted = {
   minted: Array<number>;
 };
 
-type NextMintable = {
-  gen: number;
-  count: number;
-  eachMintCost: BigNumber;
-};
-
 const mintCostsForEachGen = [
   BigNumber.from(0),
   ethers.utils.parseEther("0.01"),
@@ -29,9 +23,9 @@ const mintCostsForEachGen = [
 type CrystalsProps = DappState & DappFunctions & DappContracts & {};
 export function Crystals(props: CrystalsProps) {
   const [numCrystals, setNumCrystals] = useState(1);
+  const [mintGen, setMintGen] = useState(0);
   const [mintableAtEachGen, setMintableAtEachGen] = useState<BigNumber[][]>([]);
-  const [nextMintable, setNextMintable] = useState<NextMintable>({ gen: 0, count: 0, eachMintCost: BigNumber.from(0) });
-
+  
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   const nav = useNavigate();
@@ -50,6 +44,20 @@ export function Crystals(props: CrystalsProps) {
   };
 
   useEffect(() => {
+    if (mintableAtEachGen) {
+      for (let i = 0 ; i < mintableAtEachGen.length; i++) {
+        if (mintableAtEachGen[i]?.length > 0) {
+          console.log(`Setting mintGen to ${i}`);
+          setMintGen(i);
+          return;
+        }
+      }
+    }
+
+    setMintGen(-1);
+  }, [mintableAtEachGen]);
+
+  useEffect(() => {
     if (props.selectedAddress) {
       fetch(`/crystalapi/getmintable/${props.selectedAddress}`)
         .then((d) => d.json())
@@ -64,17 +72,6 @@ export function Crystals(props: CrystalsProps) {
           }
 
           const mintable = countMintableAtEachGen(minted);
-
-          // Find the first gen that is mintable
-          for (let i = 0; i < 5; i++) {
-            if (mintable[i].length > 0) {
-              const gen = i;
-              const count = mintable[i].length;
-              const eachMintCost = mintCostsForEachGen[gen];
-              setNextMintable({ gen, count, eachMintCost });
-              break;
-            }
-          }
           setMintableAtEachGen(mintable);
         });
     }
@@ -83,22 +80,28 @@ export function Crystals(props: CrystalsProps) {
   const mintCrystal = async () => {
     if (props.crystal) {
       // Mint numCrystals from the mintable list.
-      const spiralTokenIds = mintableAtEachGen[nextMintable.gen].slice(0, numCrystals);
-      const value = nextMintable.eachMintCost.mul(spiralTokenIds.length);
+      const spiralTokenIds = mintableAtEachGen[mintGen]?.slice(0, numCrystals);
+      if (!spiralTokenIds || spiralTokenIds.length === 0) {
+        console.log("No Spirals found to mint");
+        return;
+      }
+      const value =  mintCostsForEachGen[mintGen].mul(spiralTokenIds.length);
 
-      await props.waitForTxConfirmation(
-        props.crystal.mintCrystals(spiralTokenIds, nextMintable.gen, { value }),
+      const success = await props.waitForTxConfirmation(
+        props.crystal.mintCrystals(spiralTokenIds, mintGen, { value }),
         "Minting Crystals"
       );
 
-      props.showModal(
-        "Yay!",
-        <div>You successfully minted {numCrystals} Crystals. You can now view them in your wallet.</div>,
-        () => {
-          nav(`/wallet/${props.selectedAddress}/crystals`);
-        }
-      );
-      setRefreshCounter(refreshCounter + 1);
+      if (success) {
+        props.showModal(
+          "Yay!",
+          <div>You successfully minted {numCrystals} Crystals. You can now view them in your wallet.</div>,
+          () => {
+            nav(`/wallet/${props.selectedAddress}/crystals`);
+          }
+        );
+        setRefreshCounter(refreshCounter + 1);
+      }
     }
   };
 
@@ -135,7 +138,7 @@ export function Crystals(props: CrystalsProps) {
                 </Row>
                 {props.selectedAddress && (
                   <>
-                    {nextMintable.count === 0 && (
+                    {mintGen < 0 && (
                       <div style={{ marginTop: "50px", marginBottom: "100px" }}>
                         <div>
                           You don't have any Spirals that can be minted into Crystals.
@@ -153,27 +156,27 @@ export function Crystals(props: CrystalsProps) {
                       </div>
                     )}
 
-                    {nextMintable.count > 0 && (
+                    {mintGen >= 0 && (
                       <>
                         <Row className="mb-2" style={{ textAlign: "center" }}>
                           <div>
                             You can mint up to{" "}
                             <span style={{ fontSize: "+2rem", color: "#ffd454" }}>
-                              {nextMintable.count} Gen{nextMintable?.gen}
+                              {mintableAtEachGen[mintGen]?.length || 0} Gen{mintGen}
                             </span>{" "}
                             Impish Crystals
-                            {nextMintable.eachMintCost.eq(0) && (
+                            {mintGen === 0 && (
                               <>
                                 {" "}
                                 for <span style={{ fontSize: "+2rem", color: "#ffd454" }}>Free!</span>
                               </>
                             )}
-                            {nextMintable.eachMintCost.gt(0) && (
+                            {mintGen > 0 && (
                               <>
                                 {" "}
                                 at{" "}
                                 <span style={{ fontSize: "+2rem", color: "#ffd454" }}>
-                                  {format4Decimals(nextMintable.eachMintCost)} ETH
+                                  {format4Decimals(mintCostsForEachGen[mintGen])} ETH
                                 </span>{" "}
                                 each.
                               </>
@@ -197,7 +200,7 @@ export function Crystals(props: CrystalsProps) {
                                   value={numCrystals.toString()}
                                   onChange={(e) => setNumCrystals(parseInt(e.currentTarget.value))}
                                 >
-                                  {range(nextMintable.count, 1).map((n) => {
+                                  {range(mintableAtEachGen[mintGen]?.length || 0, 1).map((n) => {
                                     return (
                                       <option key={n} value={n}>
                                         {n}
@@ -206,15 +209,31 @@ export function Crystals(props: CrystalsProps) {
                                   })}
                                 </Form.Select>
                               </FloatingLabel>
+
+                              <FloatingLabel label="Gen" style={{ color: "black", width: "100px" }}>
+                                <Form.Select
+                                  value={mintGen.toString()}
+                                  onChange={(e) => setMintGen(parseInt(e.currentTarget.value))}
+                                >
+                                  {range(5, 0).map((n) => {
+                                    return (
+                                      <option key={n} value={n}>
+                                        {n}
+                                      </option>
+                                    );
+                                  })}
+                                </Form.Select>
+                              </FloatingLabel>
+
                               <Button
                                 style={{ marginTop: "10px", height: "58px" }}
                                 variant="warning"
                                 onClick={mintCrystal}
                               >
                                 Mint for{" "}
-                                {nextMintable.eachMintCost.eq(0)
+                                {mintGen === 0
                                   ? "ETH 0"
-                                  : `ETH ${format4Decimals(nextMintable.eachMintCost.mul(numCrystals))}`}
+                                  : `ETH ${format4Decimals(mintCostsForEachGen[mintGen].mul(numCrystals))}`}
                               </Button>
                             </div>
                           </Col>

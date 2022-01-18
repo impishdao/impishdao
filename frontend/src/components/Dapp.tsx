@@ -362,10 +362,10 @@ export class Dapp extends React.Component<DappProps, DappState> {
       const t = await tx;
       await t.wait();
     } catch (e: any) {
+      success = false;
       if (e?.code !== ERROR_CODE_TX_REJECTED_BY_USER) {
         // User cancelled, so do nothing
         this.showModal("Error Sending Tx", <div>{e?.data?.message || e?.message}</div>);
-        success = false;
       }
     } finally {
       this.hideToast(id);
