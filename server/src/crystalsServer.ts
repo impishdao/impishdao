@@ -19,6 +19,7 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       const wallet = (await _crystal.walletOfOwner(address)) as Array<BigNumber>;
       res.send(wallet);
     } catch (err) {
+      console.log(err);
       res.status(500).send("Something went wrong fetch address NFTs");
     }
   });
@@ -26,16 +27,23 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
   app.get("/crystalapi/mintedforspiral/:spiralTokenId", async (req, res) => {
     let spiralTokenId = req.params.spiralTokenId;
 
-    const mintedTokenIds = await Promise.all([0, 1, 2, 3, 4].map(async (gen) => {
-      const {minted, tokenId} = await _crystal.mintedSpirals(spiralTokenId, gen);
-      if (minted) {
-        return tokenId as number;
-      } else {
-        return -1;
-      }
-    }));
+    try {
+      const mintedTokenIds = await Promise.all(
+        [0, 1, 2, 3, 4].map(async (gen) => {
+          const { minted, tokenId } = await _crystal.mintedSpirals(spiralTokenId, gen);
+          if (minted) {
+            return tokenId as number;
+          } else {
+            return -1;
+          }
+        })
+      );
 
-    res.send(mintedTokenIds);
+      res.send(mintedTokenIds);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Something went wrong getting mintedforspiral");
+    }
   });
 
   // Return a list of all mintable crystals for all the Spirals owned or staked by this address
@@ -49,32 +57,37 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       return;
     }
 
-    // Get a list of all Spirals owned or staked by this address.
-    const [ownedSpirals, stakedSpirals] = await Promise.all([
-      _impishspiral.walletOfOwner(address),
-      _spiralstaking.walletOfOwner(address),
-    ]);
+    try {
+      // Get a list of all Spirals owned or staked by this address.
+      const [ownedSpirals, stakedSpirals] = await Promise.all([
+        _impishspiral.walletOfOwner(address),
+        _spiralstaking.walletOfOwner(address),
+      ]);
 
-    console.log(`Wallet is ${ownedSpirals.concat(stakedSpirals)}`);
+      console.log(`Wallet is ${ownedSpirals.concat(stakedSpirals)}`);
 
-    // For each owner or staked Spiral, get a list of all generated.
-    const r = await Promise.all(
-      ownedSpirals.concat(stakedSpirals).map(async (spiralId: BigNumber) => {
-        const mintedBitField = BigNumber.from(await _crystal.mintedSpiralsForSpiral(spiralId)).toNumber();
+      // For each owner or staked Spiral, get a list of all generated.
+      const r = await Promise.all(
+        ownedSpirals.concat(stakedSpirals).map(async (spiralId: BigNumber) => {
+          const mintedBitField = BigNumber.from(await _crystal.mintedSpiralsForSpiral(spiralId)).toNumber();
 
-        // Extract the bit fields
-        const minted = [];
-        for (let i = 0; i < 5; i++) {
-          const bit = (mintedBitField >> i) & 1;
-          minted.push(bit);
-        }
-        minted.reverse();
+          // Extract the bit fields
+          const minted = [];
+          for (let i = 0; i < 5; i++) {
+            const bit = (mintedBitField >> i) & 1;
+            minted.push(bit);
+          }
+          minted.reverse();
 
-        return { spiralId, minted };
-      })
-    );
+          return { spiralId, minted };
+        })
+      );
 
-    res.send(r);
+      res.send(r);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Something went wrong getting getmintable");
+    }
   });
 
   type CrystalInfo = {
@@ -130,10 +143,8 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
     }
   );
 
-  _crystal.on(
-    _crystal.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
-      console.log(`Crystal transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
-      crystalMetadataCache.delete(tokenId.toNumber());
-    }
-  )
+  _crystal.on(_crystal.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
+    console.log(`Crystal transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
+    crystalMetadataCache.delete(tokenId.toNumber());
+  });
 }

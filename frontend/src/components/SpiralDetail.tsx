@@ -1,6 +1,6 @@
 import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Alert, Badge, Button, Col, Container, Form, ListGroup, Modal, Row, Table } from "react-bootstrap";
+import { Badge, Button, Col, Container, Form, ListGroup, Modal, Row, Table } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
