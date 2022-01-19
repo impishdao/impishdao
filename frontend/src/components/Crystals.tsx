@@ -312,7 +312,7 @@ export function Crystals(props: CrystalsProps) {
                       Every crystal has a certain number of symmetries, usually between 5 and 8. You can add more
                       symmetries by spending $SPIRALBITS, upto a maximum of 20 symmetries per Crystal.
                       <br />
-                      <br /> Adding Symmetries means Crystals need more $SPIRALBITS to grow, but their capicity to store
+                      <br /> Adding Symmetries means Crystals need more $SPIRALBITS to grow, but their capacity to store
                       $SPIRALBITS also increases proportionally. Adding one symmetry costs 20k $SPIRALBITS. All the
                       $SPIRALBITS used to add symmetries are burned.
                       <br />
