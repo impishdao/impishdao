@@ -20,6 +20,10 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+abstract contract ISpiralBits is IERC20 {
+  function mintSpiralBits(address to, uint256 amount) public virtual;
+}
+
 contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // Global reward for all SPIRALBITS staked per second
   //  TODO
@@ -37,8 +41,132 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // 0.0167 SPIRALBITS per second. (1 SPIRALBIT per 60 seconds)
   uint256 public constant SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether;
 
+  // We're staking this NFT in this contract
+  IERC721 public randomWalkNFT;
+  IERC721 public impishspiral;
+  IERC721 public crystals;
+
+  // The token that is being issued for staking
+  ISpiralBits public spiralbits;
+
+  // The Impish Token
+  IERC20 public impish;
+
+  function stakeSpiralBits(uint256 amount) external nonReentrant {
+    require(amount > 0, "Need SPIRALBITS");
+
+    // Transfer the SpiralBits in
+    spiralbits.transferFrom(msg.sender, address(this), amount);
+
+    // Update the owner's rewards. The newly added epoch doesn't matter, because it's duration is 0.
+    // This has to be done before
+    _updateRewards(msg.sender);
+
+    // Create a new epoch with the additional spiralbits. This starts a new Epoch,
+    // but it has duration = 0, since it just started
+    _addEpoch(int256(amount), 0);
+
+    // Spiralbits accounting
+    stakedNFTsAndTokens[msg.sender].spiralBitsStaked += uint96(amount);
+  }
+
+  function stakeImpish(uint256 amount) external nonReentrant {
+    require(amount > 0, "Need IMPISH");
+
+    // Transfer the SpiralBits in
+    impish.transferFrom(msg.sender, address(this), amount);
+
+    // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
+    _updateRewards(msg.sender);
+
+    // Create a new epoch with the additional spiralbits. This starts a new Epoch,
+    // but it has duration = 0, since it just started
+    _addEpoch(int256(amount), 0);
+
+    // Spiralbits accounting
+    stakedNFTsAndTokens[msg.sender].impishStaked += uint96(amount);
+  }
+
+  function stakeNFTsForOwner(
+    uint32[] calldata rwTokenIDs,
+    uint32[] calldata spiralTokenIds,
+    uint32[] calldata growingCrystalTokenIds,
+    uint32[] calldata fullCrystalTokenIds,
+    address owner
+  ) external nonReentrant {
+    // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
+    _updateRewards(owner);
+
+    // RandomWalkNFTs
+    uint256 tokenIdMultiplier = 1_000_000;
+    for (uint256 i = 0; i < rwTokenIDs.length; i++) {
+      _stakeNFT(randomWalkNFT, owner, uint256(rwTokenIDs[i]), tokenIdMultiplier);
+
+      // Add this spiral to the staked struct
+      stakedNFTsAndTokens[owner].numRWStaked += 1;
+    }
+
+    // Spirals
+    tokenIdMultiplier = 2_000_000;
+    for (uint256 i = 0; i < spiralTokenIds.length; i++) {
+      _stakeNFT(impishspiral, owner, uint256(spiralTokenIds[i]), tokenIdMultiplier);
+
+      // Add this spiral to the staked struct
+      stakedNFTsAndTokens[owner].numSpiralsStaked += 1;
+    }
+
+    // Crystals that are growing
+    tokenIdMultiplier = 3_000_000;
+    for (uint256 i = 0; i < growingCrystalTokenIds.length; i++) {
+      _stakeNFT(crystals, owner, uint256(growingCrystalTokenIds[i]), tokenIdMultiplier);
+
+      // Add this spiral to the staked struct
+      stakedNFTsAndTokens[owner].numGrowingCrystalsStaked += 1;
+    }
+
+    // Crystals that are growing
+    tokenIdMultiplier = 4_000_000;
+    for (uint256 i = 0; i < fullCrystalTokenIds.length; i++) {
+      _stakeNFT(crystals, owner, uint256(fullCrystalTokenIds[i]), tokenIdMultiplier);
+
+      // Add this spiral to the staked struct
+      stakedNFTsAndTokens[owner].numFullCrystalsStaked += 1;
+    }
+  }
+
+  // ---------------------
+  // Internal Functions
+  // ---------------------
+
+  // Stake an NFT
+  function _stakeNFT(
+    IERC721 nft,
+    address owner,
+    uint256 tokenId,
+    uint256 tokenIdMultiplier
+  ) internal {
+    require(nft.ownerOf(tokenId) == msg.sender, "DontOwnToken");
+
+    uint256 contractRWTokenId = tokenIdMultiplier + tokenId;
+
+    // Add the spiral to staked owner list to keep track of staked tokens
+    _addTokenToOwnerEnumeration(owner, contractRWTokenId);
+    stakedTokenOwners[contractRWTokenId].owner = owner;
+
+    // Transfer the actual NFT to this staking contract.
+    nft.safeTransferFrom(msg.sender, address(this), tokenId);
+  }
+
   // Do the internal accounting update for the address
-  function _update(address owner) internal {
+  function _updateRewards(address owner) internal {
+    // Return if there is nothing to update
+    if (stakedNFTsAndTokens[owner].lastClaimEpoch == 0) {
+      return;
+    }
+
+    // Update the current epoch, to bring all the rewards up to date for this address
+    _updateCurrentEpoch();
+
     uint256 rewardsAccumulated = 0;
     uint256 totalDuration = 0;
 
@@ -59,7 +187,10 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
         (uint256(epochs[i].totalImpishStakedE18) * 1 ether);
     }
 
-    rewardsAccumulated += totalDuration * SPIRALBITS_PER_SECOND_PER_SPIRAL * stakedNFTsAndTokens[owner].numSpiralsStaked;
+    rewardsAccumulated +=
+      totalDuration *
+      SPIRALBITS_PER_SECOND_PER_SPIRAL *
+      stakedNFTsAndTokens[owner].numSpiralsStaked;
     rewardsAccumulated += totalDuration * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
     // TODO: Reward for Fully Grown Crystals
 
@@ -86,12 +217,17 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   RewardEpoch[] public epochs; // List of epochs
   uint32 public lastEpochTime; // Last epoch ended at this time
 
-  // Add to epoch. spiralBitsChanged and impishChanged can both be negative
+  function _updateCurrentEpoch() internal {
+    uint256 lastEpochIndex = epochs.length - 1;
+    epochs[lastEpochIndex].epochDurationSec += (uint32(block.timestamp) - lastEpochTime);
+  }
+
+  // Add a new empty epoch. spiralBitsChanged and impishChanged can both be negative
   function _addEpoch(int256 spiralBitsChanged, int256 impishChanged) internal {
     uint256 lastEpochIndex = epochs.length - 1;
 
     RewardEpoch memory newEpoch = RewardEpoch({
-      epochDurationSec: uint32(block.timestamp - lastEpochTime),
+      epochDurationSec: 0,
       totalSpiralBitsStakedE18: uint32(
         int32(epochs[lastEpochIndex].totalSpiralBitsStakedE18) + int32(spiralBitsChanged / 1 ether)
       ),
@@ -111,7 +247,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint16 numSpiralsStaked;
     uint16 numGrowingCrystalsStaked;
     uint16 numFullCrystalsStaked;
-    uint16 lastClaimEpoch; // Last Epoch number the rewards were accumulated into claimedSpiralBits
+    uint16 lastClaimEpoch; // Last Epoch number the rewards were accumulated into claimedSpiralBits. Cannot be 0.
     uint96 spiralBitsStaked; // Total number of SPIRALBITS staked
     uint96 impishStaked; // Total number of IMPISH tokens staked
     uint96 claimedSpiralBits; // Already claimed (but not withdrawn) spiralBits before lastClaimTime
