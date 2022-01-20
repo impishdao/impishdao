@@ -252,12 +252,12 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
         (SPIRALBITS_STAKING_EMISSION_PER_SEC *
           epochs[i].epochDurationSec *
           stakedNFTsAndTokens[owner].spiralBitsStaked) /
-        (uint256(epochs[i].totalSpiralBitsStaked) * 1 ether);
+        uint256(epochs[i].totalSpiralBitsStaked);
 
       // accumulate impish rewards
       rewardsAccumulated +=
         (IMPISH_STAKING_EMISSION_PER_SEC * epochs[i].epochDurationSec * stakedNFTsAndTokens[owner].impishStaked) /
-        (uint256(epochs[i].totalImpishStaked) * 1 ether);
+        uint256(epochs[i].totalImpishStaked);
     }
 
     rewardsAccumulated +=
@@ -305,10 +305,8 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
     RewardEpoch memory newEpoch = RewardEpoch({
       epochDurationSec: 0,
-      totalSpiralBitsStaked: uint96(
-        int96(epochs[lastEpochIndex].totalSpiralBitsStaked) + int96(spiralBitsChanged / 1 ether)
-      ),
-      totalImpishStaked: uint96(int96(epochs[lastEpochIndex].totalImpishStaked) + int96(impishChanged / 1 ether))
+      totalSpiralBitsStaked: uint96(int96(epochs[lastEpochIndex].totalSpiralBitsStaked) + int96(spiralBitsChanged)),
+      totalImpishStaked: uint96(int96(epochs[lastEpochIndex].totalImpishStaked) + int96(impishChanged))
     });
 
     // Add to array
