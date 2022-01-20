@@ -55,7 +55,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   function stakeSpiralBits(uint256 amount) external nonReentrant {
     require(amount > 0, "Need SPIRALBITS");
 
-    // Transfer the SpiralBits in
+    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
     spiralbits.transferFrom(msg.sender, address(this), amount);
 
     // Update the owner's rewards. The newly added epoch doesn't matter, because it's duration is 0.
@@ -70,21 +70,65 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     stakedNFTsAndTokens[msg.sender].spiralBitsStaked += uint96(amount);
   }
 
+  function unstakeSpiralBits(bool claimReward) external nonReentrant {
+    uint256 amount = stakedNFTsAndTokens[msg.sender].spiralBitsStaked;
+    require(amount > 0, "No SPIRALBITS to Unstake");
+
+    // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
+    _updateRewards(msg.sender);
+
+    // Create a new epoch with the removed impish. This starts a new Epoch,
+    // but it has duration = 0, since it just started
+    _addEpoch(-int256(amount), 0);
+
+    // Impish accounting
+    stakedNFTsAndTokens[msg.sender].spiralBitsStaked = 0;
+
+    // Transfer impish out.
+    spiralbits.transfer(msg.sender, amount);
+
+    if (claimReward) {
+      _claimRewards(msg.sender);
+    }
+  }
+
   function stakeImpish(uint256 amount) external nonReentrant {
     require(amount > 0, "Need IMPISH");
 
-    // Transfer the SpiralBits in
+    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
     impish.transferFrom(msg.sender, address(this), amount);
 
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(msg.sender);
 
-    // Create a new epoch with the additional spiralbits. This starts a new Epoch,
+    // Create a new epoch with the additional impish. This starts a new Epoch,
     // but it has duration = 0, since it just started
-    _addEpoch(int256(amount), 0);
+    _addEpoch(0, int256(amount));
 
-    // Spiralbits accounting
+    // Impish accounting
     stakedNFTsAndTokens[msg.sender].impishStaked += uint96(amount);
+  }
+
+  function unstakeImpish(bool claimReward) external nonReentrant {
+    uint256 amount = stakedNFTsAndTokens[msg.sender].impishStaked;
+    require(amount > 0, "No IMPISH to Unstake");
+
+    // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
+    _updateRewards(msg.sender);
+
+    // Create a new epoch with the removed impish. This starts a new Epoch,
+    // but it has duration = 0, since it just started
+    _addEpoch(0, -int256(amount));
+
+    // Impish accounting
+    stakedNFTsAndTokens[msg.sender].impishStaked = 0;
+
+    // Transfer impish out.
+    impish.transfer(msg.sender, amount);
+
+    if (claimReward) {
+      _claimRewards(msg.sender);
+    }
   }
 
   function stakeNFTsForOwner(
@@ -138,6 +182,20 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // Internal Functions
   // ---------------------
 
+  // Claim the pending rewards
+  function _claimRewards(address owner) internal {
+    uint256 rewardsPending = stakedNFTsAndTokens[owner].claimedSpiralBits;
+
+    // If there are any rewards,
+    if (rewardsPending > 0) {
+      // Mark rewards as claimed
+      stakedNFTsAndTokens[owner].claimedSpiralBits = 0;
+
+      // Mint new spiralbits directly to the claimer
+      spiralbits.mintSpiralBits(owner, rewardsPending);
+    }
+  }
+
   // Stake an NFT
   function _stakeNFT(
     IERC721 nft,
@@ -145,7 +203,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint256 tokenId,
     uint256 tokenIdMultiplier
   ) internal {
-    require(nft.ownerOf(tokenId) == msg.sender, "DontOwnToken");
+    require(nft.ownerOf(tokenId) == msg.sender, "DontOwnNFT");
 
     uint256 contractRWTokenId = tokenIdMultiplier + tokenId;
 
@@ -192,6 +250,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       SPIRALBITS_PER_SECOND_PER_SPIRAL *
       stakedNFTsAndTokens[owner].numSpiralsStaked;
     rewardsAccumulated += totalDuration * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
+
     // TODO: Reward for Fully Grown Crystals
 
     stakedNFTsAndTokens[owner].lastClaimEpoch = uint16(epochs.length - 1);
@@ -220,10 +279,14 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   function _updateCurrentEpoch() internal {
     uint256 lastEpochIndex = epochs.length - 1;
     epochs[lastEpochIndex].epochDurationSec += (uint32(block.timestamp) - lastEpochTime);
+    lastEpochTime = uint32(block.timestamp);
   }
 
   // Add a new empty epoch. spiralBitsChanged and impishChanged can both be negative
   function _addEpoch(int256 spiralBitsChanged, int256 impishChanged) internal {
+    // Sanity check. Can't add epoch without having the epochs up-to-date
+    require(lastEpochTime == uint32(block.timestamp), "EpochNotUpdated");
+
     uint256 lastEpochIndex = epochs.length - 1;
 
     RewardEpoch memory newEpoch = RewardEpoch({
@@ -236,7 +299,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
     // Add to array
     epochs.push(newEpoch);
-    lastEpochTime = uint32(block.timestamp);
   }
 
   // -------------------
