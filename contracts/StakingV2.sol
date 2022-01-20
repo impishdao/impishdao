@@ -52,6 +52,16 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // The Impish Token
   IERC20 public impish;
 
+  constructor() {
+    // To make accounting easier, we put a dummy epoch here
+    epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 0, totalImpishStaked: 0}));
+
+    // And set up the first epoch at position 1.
+    // We start off the totals at 1 to make the math easier (We don't need
+    // to check divide by 0)
+    epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 1, totalImpishStaked: 1}));
+  }
+
   function stakeSpiralBits(uint256 amount) external nonReentrant {
     require(amount > 0, "Need SPIRALBITS");
 
@@ -217,8 +227,13 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
   // Do the internal accounting update for the address
   function _updateRewards(address owner) internal {
-    // Return if there is nothing to update
-    if (stakedNFTsAndTokens[owner].lastClaimEpoch == 0) {
+    // Mark as claimed until the last epoch.
+    uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
+    stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
+
+    // Return if there is nothing to update. We've already updated the lastClaimEpoch,
+    // which will happen for new stakers.
+    if (lastClaimedEpoch == 0) {
       return;
     }
 
@@ -228,7 +243,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint256 rewardsAccumulated = 0;
     uint256 totalDuration = 0;
 
-    for (uint256 i = stakedNFTsAndTokens[owner].lastClaimEpoch; i < epochs.length; i++) {
+    for (uint256 i = lastClaimedEpoch + 1; i < epochs.length; i++) {
       // Accumulate the durations, so we can add the NFT rewards too
       totalDuration += epochs[i].epochDurationSec;
 
@@ -237,12 +252,12 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
         (SPIRALBITS_STAKING_EMISSION_PER_SEC *
           epochs[i].epochDurationSec *
           stakedNFTsAndTokens[owner].spiralBitsStaked) /
-        (uint256(epochs[i].totalSpiralBitsStakedE18) * 1 ether);
+        (uint256(epochs[i].totalSpiralBitsStaked) * 1 ether);
 
       // accumulate impish rewards
       rewardsAccumulated +=
         (IMPISH_STAKING_EMISSION_PER_SEC * epochs[i].epochDurationSec * stakedNFTsAndTokens[owner].impishStaked) /
-        (uint256(epochs[i].totalImpishStakedE18) * 1 ether);
+        (uint256(epochs[i].totalImpishStaked) * 1 ether);
     }
 
     rewardsAccumulated +=
@@ -253,7 +268,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
     // TODO: Reward for Fully Grown Crystals
 
-    stakedNFTsAndTokens[owner].lastClaimEpoch = uint16(epochs.length - 1);
     stakedNFTsAndTokens[owner].claimedSpiralBits += uint96(rewardsAccumulated);
   }
 
@@ -270,8 +284,8 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // the user's balance needs to be updated
   struct RewardEpoch {
     uint32 epochDurationSec; // Total seconds that this epoch lasted
-    uint32 totalSpiralBitsStakedE18; // Total SPIRALBITS staked across all accounts in whole uints for this Epoch
-    uint32 totalImpishStakedE18; // Total IMPISH tokens staked across all accounts in whole units for this Epoch
+    uint96 totalSpiralBitsStaked; // Total SPIRALBITS staked across all accounts in whole uints for this Epoch
+    uint96 totalImpishStaked; // Total IMPISH tokens staked across all accounts in whole units for this Epoch
   }
   RewardEpoch[] public epochs; // List of epochs
   uint32 public lastEpochTime; // Last epoch ended at this time
@@ -291,10 +305,10 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
     RewardEpoch memory newEpoch = RewardEpoch({
       epochDurationSec: 0,
-      totalSpiralBitsStakedE18: uint32(
-        int32(epochs[lastEpochIndex].totalSpiralBitsStakedE18) + int32(spiralBitsChanged / 1 ether)
+      totalSpiralBitsStaked: uint96(
+        int96(epochs[lastEpochIndex].totalSpiralBitsStaked) + int96(spiralBitsChanged / 1 ether)
       ),
-      totalImpishStakedE18: uint32(int32(epochs[lastEpochIndex].totalImpishStakedE18) + int32(impishChanged / 1 ether))
+      totalImpishStaked: uint96(int96(epochs[lastEpochIndex].totalImpishStaked) + int96(impishChanged / 1 ether))
     });
 
     // Add to array
@@ -309,7 +323,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint16 numSpiralsStaked;
     uint16 numGrowingCrystalsStaked;
     uint16 numFullCrystalsStaked;
-    uint16 lastClaimEpoch; // Last Epoch number the rewards were accumulated into claimedSpiralBits. Cannot be 0.
+    uint32 lastClaimEpoch; // Last Epoch number the rewards were accumulated into claimedSpiralBits. Cannot be 0.
     uint96 spiralBitsStaked; // Total number of SPIRALBITS staked
     uint96 impishStaked; // Total number of IMPISH tokens staked
     uint96 claimedSpiralBits; // Already claimed (but not withdrawn) spiralBits before lastClaimTime
