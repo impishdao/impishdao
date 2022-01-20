@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 abstract contract IImpishSpiral is IERC721 {
   uint256 public _tokenIdCounter;
 
-  function getMintPrice() public virtual view returns (uint256);
-  function mintSpiralRandom() external virtual payable;
+  function getMintPrice() public view virtual returns (uint256);
+
+  function mintSpiralRandom() external payable virtual;
 }
 
 contract MultiMint is ReentrancyGuard, IERC721Receiver {
@@ -20,7 +21,7 @@ contract MultiMint is ReentrancyGuard, IERC721Receiver {
     impishspiral = IImpishSpiral(_impishspiral);
   }
 
-  function multiMint(uint8 count) external payable nonReentrant{
+  function multiMint(uint8 count) external payable nonReentrant {
     require(count > 0, "AtLeastOne");
     require(count <= 10, "AtMost10");
 
@@ -28,13 +29,13 @@ contract MultiMint is ReentrancyGuard, IERC721Receiver {
     // because the mintSpiralRandom will fail
     uint8 mintedSoFar;
     uint256 nextTokenId = impishspiral._tokenIdCounter();
-    
+
     for (mintedSoFar = 0; mintedSoFar < count; mintedSoFar++) {
       uint256 price = impishspiral.getMintPrice();
       impishspiral.mintSpiralRandom{value: price}();
-      
+
       impishspiral.safeTransferFrom(address(this), msg.sender, nextTokenId);
-      nextTokenId += 1;  
+      nextTokenId += 1;
     }
 
     // If there is any excess money left, send it back
@@ -50,8 +51,13 @@ contract MultiMint is ReentrancyGuard, IERC721Receiver {
   }
 
   // Function that marks this contract can accept incoming NFT transfers
-  function onERC721Received(address, address, uint256 , bytes calldata) public pure returns(bytes4) {
-      // Return this value to accept the NFT
-      return IERC721Receiver.onERC721Received.selector;
+  function onERC721Received(
+    address,
+    address,
+    uint256,
+    bytes calldata
+  ) public pure returns (bytes4) {
+    // Return this value to accept the NFT
+    return IERC721Receiver.onERC721Received.selector;
   }
 }

@@ -15,16 +15,15 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
   struct Listing {
     // What price is it listed for
     uint256 price;
-
     // The owner that listed it. If the owner has changed, it can't be sold anymore.
     address owner;
   }
 
   // Listing of all Tokens that are for sale
-  mapping (uint256 => Listing) public forSale;
+  mapping(uint256 => Listing) public forSale;
 
   // Fee rate in bips (1% = 100 bips)
-  uint256 public feeRate  = 0;
+  uint256 public feeRate = 0;
 
   constructor(address _impishspiral) {
     isPaused = false;
@@ -33,8 +32,8 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
 
   // Modifiers
   modifier whenNotPaused() {
-      require(!isPaused, "Paused");
-      _;
+    require(!isPaused, "Paused");
+    _;
   }
 
   // Pause if something goes wrong
@@ -43,7 +42,7 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
   }
 
   event SpiralMarketEvent(uint8 indexed eventType, uint256 indexed tokenId, address indexed owner, uint256 price);
-    
+
   function setFeeRate(uint256 _feeRate) external onlyOwner whenNotPaused {
     require(_feeRate < 10 * 100, "BadFee"); // Fee can't exceed 10%
 
@@ -77,7 +76,7 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
 
     require(impishspiral.ownerOf(tokenId) == seller, "OwnerChanged");
     require(impishspiral.isApprovedForAll(seller, address(this)), "NotApproved");
-    
+
     // Enough ETH has been sent
     require(msg.value == forSale[tokenId].price, "IncorrectETH");
 
@@ -102,7 +101,7 @@ contract SpiralMarket is Ownable, ReentrancyGuard {
     emit SpiralMarketEvent(3, tokenId, msg.sender, msg.value);
   }
 
-  // Is this listing valid? i.e., Is this token listed for sale and is the owner 
+  // Is this listing valid? i.e., Is this token listed for sale and is the owner
   // still selling it?
   function isListingValid(uint256 tokenId) public view returns (bool) {
     if (forSale[tokenId].price == 0) {
