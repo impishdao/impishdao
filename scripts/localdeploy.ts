@@ -36,6 +36,7 @@ async function main() {
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
+  const ImpishCrystal = await ethers.getContractFactory("ImpishCrystal");
 
   const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
   const impish = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAO.interface, signer);
@@ -43,10 +44,7 @@ async function main() {
   const impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiral.interface, signer);
   const spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarket.interface, signer);
   const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
-
-  const ImpishCrystal = await ethers.getContractFactory("ImpishCrystal");
-  const crystal = await ImpishCrystal.deploy(impishspiral.address, spiralstakign.address, spiralbits.address);
-  await crystal.deployed();
+  const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(crystal);
