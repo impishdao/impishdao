@@ -25,12 +25,10 @@ import "./ImpishSpiral.sol";
 import "./SpiralBits.sol";
 
 contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
-  // Global reward for all SPIRALBITS staked per second
-  //  TODO
+  // Global reward for all SPIRALBITS staked per second, across ALL staked SpiralBits
   uint256 public SPIRALBITS_STAKING_EMISSION_PER_SEC = 4 ether;
 
-  // Global reward for all IMPISH staked per second
-  //  TODO
+  // Global reward for all IMPISH staked per second, across ALL staked IMPISH
   uint256 public IMPISH_STAKING_EMISSION_PER_SEC = 1 ether;
 
   // How many spiral bits per second are awarded to a staked spiral
@@ -169,6 +167,47 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     }
   }
 
+  function unstakeNFTs(uint32[] calldata contractTokenIds, bool claim) external nonReentrant {
+    // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
+    _updateRewards(msg.sender);
+
+    for (uint256 i = 0; i < contractTokenIds.length; i++) {
+      require(contractTokenIds[i] > 1_000_000, "UseContractTokenIDs");
+      uint32 nftType = contractTokenIds[i] / 1_000_000;
+      uint32 tokenId = contractTokenIds[i] % 1_000_000;
+
+      if (nftType == 1) {
+        _unstakeNFT(randomWalkNFT, uint256(tokenId), 1_000_000);
+
+        // Add this RWNFT to the staked struct
+        stakedNFTsAndTokens[msg.sender].numRWStaked -= 1;
+      } else if (nftType == 2) {
+        _unstakeNFT(impishspiral, uint256(tokenId), 2_000_000);
+
+        // Add this spiral to the staked struct
+        stakedNFTsAndTokens[msg.sender].numSpiralsStaked -= 1;
+      } else if (nftType == 3) {
+        // Crystals that are growing
+        _unstakeNFT(crystals, uint256(tokenId), 3_000_000);
+
+        // Add this crystal (Growing) to the staked struct
+        stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
+      } else if (nftType == 4) {
+        // Crystals that are growing
+        _unstakeNFT(crystals, uint256(tokenId), 4_000_000);
+
+        // Add this crystal (fully grown) to the staked struct
+        stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked -= 1;
+      } else {
+        revert("InvalidNFTType");
+      }
+    }
+
+    if (claim) {
+      _claimRewards(msg.sender);
+    }
+  }
+
   // TODO: Unstake NFTs
   // {
   //    TODO: Delete crystalTargetSym when unstaking growing crystal
@@ -202,14 +241,29 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   ) internal {
     require(nft.ownerOf(tokenId) == msg.sender, "DontOwnNFT");
 
-    uint256 contractRWTokenId = tokenIdMultiplier + tokenId;
+    uint256 contractTokenId = tokenIdMultiplier + tokenId;
 
     // Add the spiral to staked owner list to keep track of staked tokens
-    _addTokenToOwnerEnumeration(owner, contractRWTokenId);
-    stakedTokenOwners[contractRWTokenId].owner = owner;
+    _addTokenToOwnerEnumeration(owner, contractTokenId);
+    stakedTokenOwners[contractTokenId].owner = owner;
 
     // Transfer the actual NFT to this staking contract.
     nft.safeTransferFrom(msg.sender, address(this), tokenId);
+  }
+
+  // Unstake an NFT and return it back to the sender
+  function _unstakeNFT(
+    IERC721 nft,
+    uint256 tokenId,
+    uint256 tokenIdMultiplier
+  ) internal {
+    uint256 contractTokenId = tokenIdMultiplier + tokenId;
+    require(stakedTokenOwners[contractTokenId].owner == msg.sender, "DontOwnNFT");
+
+    _removeTokenFromOwnerEnumeration(msg.sender, contractTokenId);
+
+    // Transfer the NFT out
+    nft.safeTransferFrom(address(this), msg.sender, tokenId);
   }
 
   // Do the internal accounting update for the address

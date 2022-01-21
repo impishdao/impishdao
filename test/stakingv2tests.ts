@@ -120,7 +120,7 @@ describe.only("SpiralStaking V2", function () {
     await impishSpiral.afterAllWinnings();
   });
 
-  it.only("Creates epochs correctly", async function () {
+  it("Creates epochs correctly", async function () {
     // Utility function to verify SpiralBits values in epochs.
     // Note that the array has deltas, not absolute values
     const expectEpochSpiralbitsToBe = async (expectedEpochsDeltas: BigNumber[], debugPrint?: boolean) => {
@@ -161,24 +161,34 @@ describe.only("SpiralStaking V2", function () {
 
     // Now Staking a spiral should also add a new epoch
     await impishSpiral.setApprovalForAll(stakingv2.address, true);
-    let tokenId = await impishSpiral._tokenIdCounter();
+    const tokenId1 = await impishSpiral._tokenIdCounter();
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
-    await stakingv2.stakeNFTsForOwner([tokenId.add(2000000)], signer.address);
+    await stakingv2.stakeNFTsForOwner([tokenId1.add(2000000)], signer.address);
+    expect(await impishSpiral.ownerOf(tokenId1)).to.be.equals(stakingv2.address);
     await expectEpochSpiralbitsToBe([Zero, Eth100, Eth10, Eth10]);
 
-    // Second signer removing their Spiralbits should reduce the staked spiralbits
+    // Second signer removing their Spiralbits should return the SPIRALBITS
     await expect(() => stakingv2.connect(signer2).unstakeSpiralBits(false)).to.changeTokenBalance(
       spiralbits,
       signer2,
       Eth10
     );
-
+    // ...but doesn't affect the Epochs until the next time
     await expectEpochSpiralbitsToBe([Zero, Eth100, Eth10, Eth10, Zero]);
 
     // The next time we add an epoch, it should reflect the removed SpiralBits
-    tokenId = await impishSpiral._tokenIdCounter();
+    const tokenId2 = await impishSpiral._tokenIdCounter();
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
-    await stakingv2.stakeNFTsForOwner([tokenId.add(2000000)], signer.address);
+    await stakingv2.stakeNFTsForOwner([tokenId2.add(2000000)], signer.address);
+    expect(await impishSpiral.ownerOf(tokenId2)).to.be.equals(stakingv2.address);
     await expectEpochSpiralbitsToBe([Zero, Eth100, Eth10, Eth10, Zero, Eth10.mul(-1)]);
+
+    // Unstaking the Spirals, but since the last call didn't have any spiralbits changes the epoch
+    // spiralbits shouldn't change. We should recieve the rewards, however
+    await stakingv2.unstakeNFTs([tokenId1.add(2000000), tokenId2.add(2000000)], true);
+    await expectEpochSpiralbitsToBe([Zero, Eth100, Eth10, Eth10, Zero, Eth10.mul(-1), Zero]);
+    expect(await impishSpiral.ownerOf(tokenId1)).to.be.equals(signer.address);
+    expect(await impishSpiral.ownerOf(tokenId2)).to.be.equals(signer.address);
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numSpiralsStaked).to.be.equals(0);
   });
 });
