@@ -22,10 +22,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./ImpishCrystal.sol";
 import "./ImpishSpiral.sol";
-
-abstract contract ISpiralBits is IERC20 {
-  function mintSpiralBits(address to, uint256 amount) public virtual;
-}
+import "./SpiralBits.sol";
 
 contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // Global reward for all SPIRALBITS staked per second
@@ -50,7 +47,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   ImpishCrystal public crystals;
 
   // The token that is being issued for staking
-  ISpiralBits public spiralbits;
+  SpiralBits public spiralbits;
 
   // The Impish Token
   IERC20 public impish;
@@ -60,11 +57,14 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     impishspiral = ImpishSpiral(crystals.spirals());
     randomWalkNFT = IERC721(impishspiral._rwNFT());
 
-    spiralbits = ISpiralBits(crystals.SpiralBits());
+    spiralbits = SpiralBits(crystals.SpiralBits());
     impish = IERC20(impishspiral._impishDAO());
 
     // To make accounting easier, we put a dummy epoch here
     epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 0, totalImpishStaked: 0}));
+
+    // Authorize spiralbits to be spent from this contact by the Crystals contracts, used to grow crystals
+    spiralbits.approve(_crystals, 2_000_000_000 ether);
 
     lastEpochTime = uint32(block.timestamp);
   }
@@ -467,8 +467,10 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
     stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
 
-    // Return any unused SpiralBits to the user
-    spiralbits.transfer(msg.sender, availableSpiralBits);
+    // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
+    // instead of returning a large amount of SPIRALBITS back to the user here. 
+    spiralbits.burn(availableSpiralBits);
+    stakedNFTsAndTokens[msg.sender].claimedSpiralBits = availableSpiralBits;
   }
 
   // ------------------
