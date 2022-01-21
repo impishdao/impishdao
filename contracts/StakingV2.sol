@@ -466,6 +466,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
     _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
     stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
+    stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
 
     // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
     // instead of returning a large amount of SPIRALBITS back to the user here. 
