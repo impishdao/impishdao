@@ -132,50 +132,40 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     }
   }
 
-  function stakeNFTsForOwner(
-    uint32[] calldata rwTokenIDs,
-    uint32[] calldata spiralTokenIds,
-    uint32[] calldata growingCrystalTokenIds,
-    uint32[] calldata fullCrystalTokenIds,
-    address owner
-  ) external nonReentrant {
+  function stakeNFTsForOwner(uint32[] calldata contractTokenIds, address owner) external nonReentrant {
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(owner);
 
-    // RandomWalkNFTs
-    uint256 tokenIdMultiplier = 1_000_000;
-    for (uint256 i = 0; i < rwTokenIDs.length; i++) {
-      _stakeNFT(randomWalkNFT, owner, uint256(rwTokenIDs[i]), tokenIdMultiplier);
+    for (uint256 i = 0; i < contractTokenIds.length; i++) {
+      require(contractTokenIds[i] > 1_000_000, "UseContractTokenIDs");
+      uint32 nftType = contractTokenIds[i] / 1_000_000;
+      uint32 tokenId = contractTokenIds[i] % 1_000_000;
 
-      // Add this spiral to the staked struct
-      stakedNFTsAndTokens[owner].numRWStaked += 1;
-    }
+      if (nftType == 1) {
+        _stakeNFT(randomWalkNFT, owner, uint256(tokenId), 1_000_000);
 
-    // Spirals
-    tokenIdMultiplier = 2_000_000;
-    for (uint256 i = 0; i < spiralTokenIds.length; i++) {
-      _stakeNFT(impishspiral, owner, uint256(spiralTokenIds[i]), tokenIdMultiplier);
+        // Add this RWNFT to the staked struct
+        stakedNFTsAndTokens[owner].numRWStaked += 1;
+      } else if (nftType == 2) {
+        _stakeNFT(impishspiral, owner, uint256(tokenId), 2_000_000);
 
-      // Add this spiral to the staked struct
-      stakedNFTsAndTokens[owner].numSpiralsStaked += 1;
-    }
+        // Add this spiral to the staked struct
+        stakedNFTsAndTokens[owner].numSpiralsStaked += 1;
+      } else if (nftType == 3) {
+        // Crystals that are growing
+        _stakeNFT(crystals, owner, uint256(tokenId), 3_000_000);
 
-    // Crystals that are growing
-    tokenIdMultiplier = 3_000_000;
-    for (uint256 i = 0; i < growingCrystalTokenIds.length; i++) {
-      _stakeNFT(crystals, owner, uint256(growingCrystalTokenIds[i]), tokenIdMultiplier);
+        // Add this crystal (Growing) to the staked struct
+        stakedNFTsAndTokens[owner].numGrowingCrystalsStaked += 1;
+      } else if (nftType == 4) {
+        // Crystals that are growing
+        _stakeNFT(crystals, owner, uint256(tokenId), 4_000_000);
 
-      // Add this spiral to the staked struct
-      stakedNFTsAndTokens[owner].numGrowingCrystalsStaked += 1;
-    }
-
-    // Crystals that are growing
-    tokenIdMultiplier = 4_000_000;
-    for (uint256 i = 0; i < fullCrystalTokenIds.length; i++) {
-      _stakeNFT(crystals, owner, uint256(fullCrystalTokenIds[i]), tokenIdMultiplier);
-
-      // Add this spiral to the staked struct
-      stakedNFTsAndTokens[owner].numFullCrystalsStaked += 1;
+        // Add this crystal (fully grown) to the staked struct
+        stakedNFTsAndTokens[owner].numFullCrystalsStaked += 1;
+      } else {
+        revert("InvalidNFTType");
+      }
     }
   }
 
@@ -224,12 +214,12 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       _addEpoch();
     }
 
-    // Mark as claimed until the last epoch.
+    // Return if there is nothing to update. We've already updated the lastClaimEpoch,
+    // which will happen for new stakers.
     uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
     stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
 
-    // Return if there is nothing to update. We've already updated the lastClaimEpoch,
-    // which will happen for new stakers.
+    // If this owner is new, just return
     if (lastClaimedEpoch == 0) {
       return;
     }
@@ -325,7 +315,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     address owner;
   }
 
-  // Mapping of Spiral TokenID => Address that staked it.
+  // Mapping of Contract TokenID => Address that staked it.
   mapping(uint256 => TokenIdInfo) public stakedTokenOwners;
 
   // Address that staked the token => Token Accounting
@@ -400,6 +390,29 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     // This also deletes the contents at the last position of the array
     delete stakedTokenOwners[tokenId];
     delete stakedNFTsAndTokens[from].ownedTokens[lastTokenIndex];
+  }
+
+  // ------------------
+  // Other functions
+  // ------------------
+  function claimSpiralWin(uint256 spiralTokenId) external nonReentrant {
+    ImpishSpiral(address(impishspiral)).claimWin(spiralTokenId);
+
+    // Send the ether to the Spiral's owner
+    address spiralOwner = stakedTokenOwners[spiralTokenId + 2_000_000].owner;
+    (bool success, ) = spiralOwner.call{value: address(this).balance}("");
+    require(success, "Transfer failed.");
+  }
+
+  receive() external payable {
+    // Default payable to accept ether payments for winning spirals
+  }
+
+  // Sometimes people send ETH to this contract - This is a way for the dev
+  // to rescue ETH stuck here
+  function rescueEth() external onlyOwner {
+    (bool success, ) = owner().call{value: address(this).balance}("");
+    require(success, "Transfer failed.");
   }
 
   // -------------------
