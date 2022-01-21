@@ -66,25 +66,18 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     // To make accounting easier, we put a dummy epoch here
     epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 0, totalImpishStaked: 0}));
 
-    // And set up the first epoch at position 1.
-    // We start off the totals at 1 to make the math easier (We don't need
-    // to check divide by 0)
-    epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 1, totalImpishStaked: 1}));
+    lastEpochTime = uint32(block.timestamp);
   }
 
   function stakeSpiralBits(uint256 amount) external nonReentrant {
     require(amount > 0, "Need SPIRALBITS");
 
-    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
-    spiralbits.transferFrom(msg.sender, address(this), amount);
-
     // Update the owner's rewards. The newly added epoch doesn't matter, because it's duration is 0.
     // This has to be done before
     _updateRewards(msg.sender);
 
-    // Create a new epoch with the additional spiralbits. This starts a new Epoch,
-    // but it has duration = 0, since it just started
-    _addEpoch(int256(amount), 0);
+    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
+    spiralbits.transferFrom(msg.sender, address(this), amount);
 
     // Spiralbits accounting
     stakedNFTsAndTokens[msg.sender].spiralBitsStaked += uint96(amount);
@@ -96,10 +89,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(msg.sender);
-
-    // Create a new epoch with the removed impish. This starts a new Epoch,
-    // but it has duration = 0, since it just started
-    _addEpoch(-int256(amount), 0);
 
     // Impish accounting
     stakedNFTsAndTokens[msg.sender].spiralBitsStaked = 0;
@@ -121,10 +110,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(msg.sender);
 
-    // Create a new epoch with the additional impish. This starts a new Epoch,
-    // but it has duration = 0, since it just started
-    _addEpoch(0, int256(amount));
-
     // Impish accounting
     stakedNFTsAndTokens[msg.sender].impishStaked += uint96(amount);
   }
@@ -135,10 +120,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(msg.sender);
-
-    // Create a new epoch with the removed impish. This starts a new Epoch,
-    // but it has duration = 0, since it just started
-    _addEpoch(0, -int256(amount));
 
     // Impish accounting
     stakedNFTsAndTokens[msg.sender].impishStaked = 0;
@@ -237,12 +218,15 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
   // Do the internal accounting update for the address
   function _updateRewards(address owner) internal {
+    // First, see if we need to add an epoch.
+    // We may not always need to, especially if the time elapsed is 0 (i.e., multiple tx in same block)
+    if (block.timestamp > lastEpochTime) {
+      _addEpoch();
+    }
+
     // Mark as claimed until the last epoch.
     uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
     stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
-
-    // Update the current epoch, to bring all the rewards up to date for this address
-    _updateCurrentEpoch();
 
     // Return if there is nothing to update. We've already updated the lastClaimEpoch,
     // which will happen for new stakers.
@@ -258,16 +242,22 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       totalDuration += epochs[i].epochDurationSec;
 
       // Accumulate spiralbits reward
-      rewardsAccumulated +=
-        (SPIRALBITS_STAKING_EMISSION_PER_SEC *
-          epochs[i].epochDurationSec *
-          stakedNFTsAndTokens[owner].spiralBitsStaked) /
-        uint256(epochs[i].totalSpiralBitsStaked);
+      if (epochs[i].totalSpiralBitsStaked > 0) {
+        rewardsAccumulated +=
+          (SPIRALBITS_STAKING_EMISSION_PER_SEC *
+            uint256(epochs[i].epochDurationSec) *
+            uint256(stakedNFTsAndTokens[owner].spiralBitsStaked)) /
+          uint256(epochs[i].totalSpiralBitsStaked);
+      }
 
       // accumulate impish rewards
-      rewardsAccumulated +=
-        (IMPISH_STAKING_EMISSION_PER_SEC * epochs[i].epochDurationSec * stakedNFTsAndTokens[owner].impishStaked) /
-        uint256(epochs[i].totalImpishStaked);
+      if (epochs[i].totalImpishStaked > 0) {
+        rewardsAccumulated +=
+          (IMPISH_STAKING_EMISSION_PER_SEC *
+            uint256(epochs[i].epochDurationSec) *
+            uint256(stakedNFTsAndTokens[owner].impishStaked)) /
+          uint256(epochs[i].totalImpishStaked);
+      }
     }
 
     rewardsAccumulated +=
@@ -300,23 +290,15 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   RewardEpoch[] public epochs; // List of epochs
   uint32 public lastEpochTime; // Last epoch ended at this time
 
-  function _updateCurrentEpoch() internal {
-    uint256 lastEpochIndex = epochs.length - 1;
-    epochs[lastEpochIndex].epochDurationSec += (uint32(block.timestamp) - lastEpochTime);
-    lastEpochTime = uint32(block.timestamp);
-  }
-
-  // Add a new empty epoch. spiralBitsChanged and impishChanged can both be negative
-  function _addEpoch(int256 spiralBitsChanged, int256 impishChanged) internal {
+  // Add a new epoch with the balances in the contract
+  function _addEpoch() internal {
     // Sanity check. Can't add epoch without having the epochs up-to-date
-    require(lastEpochTime == uint32(block.timestamp), "EpochNotUpdated");
-
-    uint256 lastEpochIndex = epochs.length - 1;
+    require(uint32(block.timestamp) > lastEpochTime, "TooNew");
 
     RewardEpoch memory newEpoch = RewardEpoch({
-      epochDurationSec: 0,
-      totalSpiralBitsStaked: uint96(int96(epochs[lastEpochIndex].totalSpiralBitsStaked) + int96(spiralBitsChanged)),
-      totalImpishStaked: uint96(int96(epochs[lastEpochIndex].totalImpishStaked) + int96(impishChanged))
+      epochDurationSec: uint32(block.timestamp) - lastEpochTime,
+      totalSpiralBitsStaked: uint96(spiralbits.balanceOf(address(this))),
+      totalImpishStaked: uint96(impish.balanceOf(address(this)))
     });
 
     // Add to array
