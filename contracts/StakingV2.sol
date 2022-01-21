@@ -8,7 +8,7 @@ pragma solidity ^0.8.9;
 // 4. Allow listing on marketplace while staked
 
 // A note on how TokenIDs work.
-// TokenIDs stored inside the contract have to be >1M.
+// TokenIDs stored inside the contract have to be >1M
 // 1M+ -> RandomWalkNFT
 // 2M+ -> Spiral
 // 3M+ -> Staked Crystal that is growing
@@ -46,8 +46,8 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
   // We're staking this NFT in this contract
   IERC721 public randomWalkNFT;
-  IERC721 public impishspiral;
-  IERC721 public crystals;
+  ImpishSpiral public impishspiral;
+  ImpishCrystal public crystals;
 
   // The token that is being issued for staking
   ISpiralBits public spiralbits;
@@ -56,12 +56,12 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   IERC20 public impish;
 
   constructor(address _crystals) {
-    crystals = IERC721(_crystals);
-    impishspiral = IERC721(ImpishCrystal(_crystals).spirals());
-    randomWalkNFT = IERC721(ImpishSpiral(ImpishCrystal(_crystals).spirals())._rwNFT());
+    crystals = ImpishCrystal(_crystals);
+    impishspiral = ImpishSpiral(crystals.spirals());
+    randomWalkNFT = IERC721(impishspiral._rwNFT());
 
-    spiralbits = ISpiralBits(ImpishCrystal(_crystals).SpiralBits());
-    impish = IERC20(ImpishSpiral(ImpishCrystal(_crystals).spirals())._impishDAO());
+    spiralbits = ISpiralBits(crystals.SpiralBits());
+    impish = IERC20(impishspiral._impishDAO());
 
     // To make accounting easier, we put a dummy epoch here
     epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 0, totalImpishStaked: 0}));
@@ -169,12 +169,18 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     }
   }
 
+  // TODO: Unstake NFTs
+  // {
+  //    TODO: Delete crystalTargetSym when unstaking growing crystal
+  // }
+
   // ---------------------
   // Internal Functions
   // ---------------------
 
   // Claim the pending rewards
   function _claimRewards(address owner) internal {
+    _updateRewards(owner);
     uint256 rewardsPending = stakedNFTsAndTokens[owner].claimedSpiralBits;
 
     // If there are any rewards,
@@ -390,6 +396,79 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     // This also deletes the contents at the last position of the array
     delete stakedTokenOwners[tokenId];
     delete stakedNFTsAndTokens[from].ownedTokens[lastTokenIndex];
+  }
+
+  // -----------------
+  // Harvesting and Growing Crystals
+  // -----------------
+  mapping(uint32 => uint8) public crystalTargetSyms;
+
+  function setCrystalTargetSym(uint32 crystalTokenId, uint8 targetSym) external nonReentrant {
+    uint32 contractCrystalTokenId = crystalTokenId + 3_000_000;
+    require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
+
+    crystalTargetSyms[crystalTokenId] = targetSym;
+  }
+
+  function harvestCrystal(uint32 crystalTokenId) external nonReentrant {
+    uint32 contractCrystalTokenId = crystalTokenId + 3_000_000;
+    require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
+
+    _updateRewards(msg.sender);
+
+    // How many spiralbits are available to grow
+    uint96 availableSpiralBits = stakedNFTsAndTokens[msg.sender].claimedSpiralBits;
+    stakedNFTsAndTokens[msg.sender].claimedSpiralBits = 0;
+    spiralbits.mintSpiralBits(address(this), availableSpiralBits);
+
+    // Grow the crystal to max that it can
+    (uint8 currentCrystalSize, , uint8 currentSym, , ) = crystals.crystals(crystalTokenId);
+    if (currentCrystalSize < 100) {
+      uint96 spiralBitsNeeded = uint96(
+        crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
+      );
+      if (availableSpiralBits > spiralBitsNeeded) {
+        crystals.grow(crystalTokenId, 100 - currentCrystalSize);
+        availableSpiralBits -= spiralBitsNeeded;
+      }
+    }
+
+    // Next grow syms
+    if (crystalTargetSyms[crystalTokenId] > 0 && crystalTargetSyms[crystalTokenId] > currentSym) {
+      uint8 growSyms = crystalTargetSyms[crystalTokenId] - currentSym;
+
+      uint96 spiralBitsNeeded = uint96(crystals.SPIRALBITS_PER_SYM() * uint256(growSyms));
+      if (availableSpiralBits > spiralBitsNeeded) {
+        crystals.addSym(crystalTokenId, growSyms);
+        availableSpiralBits -= spiralBitsNeeded;
+      }
+    }
+
+    // And then grow the Crystal again to max size if possible
+    (currentCrystalSize, , currentSym, , ) = crystals.crystals(crystalTokenId);
+    if (currentCrystalSize < 100) {
+      uint96 spiralBitsNeeded = uint96(
+        crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
+      );
+      if (availableSpiralBits > spiralBitsNeeded) {
+        crystals.grow(crystalTokenId, 100 - currentCrystalSize);
+        availableSpiralBits -= spiralBitsNeeded;
+      }
+    }
+
+    delete crystalTargetSyms[crystalTokenId];
+
+    // TODO: Unstake growing crystal
+    _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
+    stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
+
+    // TODO: Stake fully grown crystal
+    uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
+    _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
+    stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
+
+    // Return any unused SpiralBits to the user
+    spiralbits.transfer(msg.sender, availableSpiralBits);
   }
 
   // ------------------

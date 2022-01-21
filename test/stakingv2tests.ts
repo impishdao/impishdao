@@ -65,13 +65,13 @@ describe.only("SpiralStaking V2", function () {
     const Eth100 = ethers.utils.parseEther("100");
 
     // Approve spiralbits
-    await spiralbits.approve(stakingv2.address, ethers.utils.parseEther("1000000"));
+    await spiralbits.approve(stakingv2.address, Eth100);
     await stakingv2.stakeSpiralBits(Eth100);
 
     await expect(() => stakingv2.unstakeSpiralBits(false)).to.changeTokenBalance(spiralbits, signer, Eth100);
 
     // Approve IMPISH
-    await impdao.approve(stakingv2.address, ethers.utils.parseEther("1000000"));
+    await impdao.approve(stakingv2.address, Eth100);
     await impdao.deposit({ value: Eth100 });
     await stakingv2.stakeImpish(Eth100);
 
