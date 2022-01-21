@@ -6,6 +6,7 @@ import type { RandomWalkNFT } from "../typechain/RandomWalkNFT";
 import type { ImpishDAO } from "../typechain/ImpishDAO";
 import type { ImpishSpiral } from "../typechain/ImpishSpiral";
 import type { SpiralBits } from "../typechain/SpiralBits";
+import type { ImpishCrystal } from "../typechain/ImpishCrystal";
 import type { StakingV2 } from "../typechain/StakingV2";
 
 import { BigNumber } from "ethers";
@@ -15,6 +16,7 @@ type FixtureType = {
   impdao: ImpishDAO;
   rwnft: RandomWalkNFT;
   spiralbits: SpiralBits;
+  crystal: ImpishCrystal;
   stakingv2: StakingV2;
 };
 
@@ -60,11 +62,11 @@ describe.only("SpiralStaking V2", function () {
     // Start the mints
     await impishSpiral.startMints();
 
-    return { impishSpiral, impdao, rwnft, spiralbits, stakingv2 };
+    return { impishSpiral, impdao, rwnft, spiralbits, crystal, stakingv2 };
   }
 
   it("Simple Staking V2", async function () {
-    const { impdao, spiralbits, stakingv2 } = await loadContracts();
+    const { impdao, rwnft, impishSpiral, crystal, spiralbits, stakingv2 } = await loadContracts();
     const [signer] = await ethers.getSigners();
 
     const Eth100 = ethers.utils.parseEther("100");
@@ -93,6 +95,93 @@ describe.only("SpiralStaking V2", function () {
       1 * 3600 * 24 * 1.0, // 1 SPIRALBIT per sec * one day * 100% of rewards
       30
     );
+
+    // Stake all NFTs
+
+    // 1. Randomwalks
+    const rwID = await rwnft.nextTokenId();
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
+    await rwnft.setApprovalForAll(stakingv2.address, true);
+    await stakingv2.stakeNFTsForOwner([rwID.add(1000000)], signer.address);
+    expect(await stakingv2.walletOfOwner(signer.address)).to.be.deep.equals([rwID.add(1000000)]);
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numRWStaked).to.be.equals(1);
+
+    // 2. Spiral (and mint crystal before staking)
+    const spiralId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    const gcrystalId = await crystal._tokenIdCounter();
+    await crystal.mintCrystals([spiralId], 0);
+    await impishSpiral.setApprovalForAll(stakingv2.address, true);
+    await stakingv2.stakeNFTsForOwner([spiralId.add(2000000)], signer.address);
+    let walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    [rwID.add(1000000), spiralId.add(2000000)].forEach((cid) => {
+      expect(walletOfOwner.findIndex((n) => n.eq(cid))).to.be.gte(0);
+    });
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numSpiralsStaked).to.be.equals(1);
+
+    // 3. Growing Crystal.
+    await crystal.setApprovalForAll(stakingv2.address, true);
+    await stakingv2.stakeNFTsForOwner([gcrystalId + 3000000], signer.address);
+    walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    [rwID.add(1000000), spiralId.add(2000000), BigNumber.from(gcrystalId + 3000000)].forEach((cid) => {
+      expect(walletOfOwner.findIndex((n) => n.eq(cid))).to.be.gte(0);
+    });
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numGrowingCrystalsStaked).to.be.equals(1);
+
+    // 4. Grown crystal
+    const spiralId2 = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    const fcrystalId = await crystal._tokenIdCounter();
+    await crystal.mintCrystals([spiralId2], 0);
+    await spiralbits.approve(crystal.address, Eth2B);
+    await crystal.grow(fcrystalId, 70);
+    await stakingv2.stakeNFTsForOwner([fcrystalId + 4000000], signer.address);
+    walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    [
+      rwID.add(1000000),
+      spiralId.add(2000000),
+      BigNumber.from(gcrystalId + 3000000),
+      BigNumber.from(fcrystalId + 4000000),
+    ].forEach((cid) => {
+      expect(
+        walletOfOwner.findIndex((n) => n.eq(cid)),
+        `Failed to find ${cid.toNumber()} in ${JSON.stringify(walletOfOwner.map((b) => b.toNumber()))}`
+      ).to.be.gte(0);
+    });
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numFullCrystalsStaked).to.be.equals(1);
+
+    // Now, unstake each one by one.
+    // 1. Random Walk
+    await stakingv2.unstakeNFTs([rwID.add(1000000)], false);
+    walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    [spiralId.add(2000000), BigNumber.from(gcrystalId + 3000000), BigNumber.from(fcrystalId + 4000000)].forEach(
+      (cid) => {
+        expect(walletOfOwner.findIndex((n) => n.eq(cid))).to.be.gte(0);
+      }
+    );
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numRWStaked).to.be.equals(0);
+
+    // 2. Spiral
+    await stakingv2.unstakeNFTs([spiralId.add(2000000)], false);
+    walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    [BigNumber.from(gcrystalId + 3000000), BigNumber.from(fcrystalId + 4000000)].forEach((cid) => {
+      expect(walletOfOwner.findIndex((n) => n.eq(cid))).to.be.gte(0);
+    });
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numSpiralsStaked).to.be.equals(0);
+
+    // 3. Growing crystal
+    await stakingv2.unstakeNFTs([gcrystalId + 3000000], false);
+    walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    [BigNumber.from(fcrystalId + 4000000)].forEach((cid) => {
+      expect(walletOfOwner.findIndex((n) => n.eq(cid))).to.be.gte(0);
+    });
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numGrowingCrystalsStaked).to.be.equals(0);
+
+    // 3. Full Grown crystal
+    await stakingv2.unstakeNFTs([fcrystalId + 4000000], false);
+    walletOfOwner = await stakingv2.walletOfOwner(signer.address);
+    expect(walletOfOwner.length).to.be.equals(0);
+    expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numFullCrystalsStaked).to.be.equals(0);
   });
 
   it("Staking - Win while staked", async function () {

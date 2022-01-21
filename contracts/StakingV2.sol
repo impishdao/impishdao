@@ -31,11 +31,11 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // Global reward for all IMPISH staked per second, across ALL staked IMPISH
   uint256 public IMPISH_STAKING_EMISSION_PER_SEC = 1 ether;
 
-  // How many spiral bits per second are awarded to a staked spiral
+  // How many SpiralBits per second are awarded to a staked spiral
   // 0.167 SPIRALBITS per second. (10 SPIRALBIT per 60 seconds)
   uint256 public constant SPIRALBITS_PER_SECOND_PER_SPIRAL = 0.167 ether;
 
-  // How many spiral bits per second are awarded to a staked RandomWalkNFTs
+  // How many SpiralBits per second are awarded to a staked RandomWalkNFTs
   // 0.0167 SPIRALBITS per second. (1 SPIRALBIT per 60 seconds)
   uint256 public constant SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether;
 
@@ -156,7 +156,10 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
         // Add this crystal (Growing) to the staked struct
         stakedNFTsAndTokens[owner].numGrowingCrystalsStaked += 1;
       } else if (nftType == 4) {
-        // Crystals that are growing
+        // Crystals that are fully grown
+        (uint8 currentCrystalSize, , , , ) = crystals.crystals(tokenId);
+        require(currentCrystalSize == 100, "CrystalNotFullyGrown");
+
         _stakeNFT(crystals, owner, uint256(tokenId), 4_000_000);
 
         // Add this crystal (fully grown) to the staked struct
@@ -168,7 +171,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   }
 
   function unstakeNFTs(uint32[] calldata contractTokenIds, bool claim) external nonReentrant {
-    // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
+    // Update the owner's rewards first. This also updates the current epoch.
     _updateRewards(msg.sender);
 
     for (uint256 i = 0; i < contractTokenIds.length; i++) {
@@ -207,6 +210,15 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     if (claim) {
       _claimRewards(msg.sender);
     }
+  }
+
+  function compoundSpiralBits() external nonReentrant {
+    // Update the owner's rewards first. This also updates the current epoch.
+    _updateRewards(msg.sender);
+
+    // Move the spiral bits into staked
+    stakedNFTsAndTokens[msg.sender].spiralBitsStaked += stakedNFTsAndTokens[msg.sender].claimedSpiralBits;
+    stakedNFTsAndTokens[msg.sender].claimedSpiralBits = 0;
   }
 
   // ---------------------
@@ -270,8 +282,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       _addEpoch();
     }
 
-    // Return if there is nothing to update. We've already updated the lastClaimEpoch,
-    // which will happen for new stakers.
+    // Mark as claimed till the newly created epoch.
     uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
     stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
 
@@ -306,14 +317,18 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       }
     }
 
+    // Rewards for Staked Spirals
     rewardsAccumulated +=
       totalDuration *
       SPIRALBITS_PER_SECOND_PER_SPIRAL *
       stakedNFTsAndTokens[owner].numSpiralsStaked;
+
+    // Rewards for staked RandomWalks
     rewardsAccumulated += totalDuration * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
 
     // TODO: Reward for Fully Grown Crystals
 
+    // Accumulate everything
     stakedNFTsAndTokens[owner].claimedSpiralBits += uint96(rewardsAccumulated);
   }
 
