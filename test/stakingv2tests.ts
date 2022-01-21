@@ -20,6 +20,9 @@ type FixtureType = {
 
 describe.only("SpiralStaking V2", function () {
   const Zero = BigNumber.from(0);
+  const Eth2B = ethers.utils.parseEther("2000000000");
+  const Eth100 = ethers.utils.parseEther("100");
+  const Eth10 = ethers.utils.parseEther("10");
 
   async function loadContracts(): Promise<FixtureType> {
     const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
@@ -140,10 +143,6 @@ describe.only("SpiralStaking V2", function () {
     const { impishSpiral, stakingv2, spiralbits } = await loadContracts();
     const [signer, signer2] = await ethers.getSigners();
 
-    const Eth2B = ethers.utils.parseEther("2000000000");
-    const Eth100 = ethers.utils.parseEther("100");
-    const Eth10 = ethers.utils.parseEther("10");
-
     // Approve and stake spiralbits
     await spiralbits.approve(stakingv2.address, Eth2B);
     await stakingv2.stakeSpiralBits(Eth100);
@@ -190,5 +189,71 @@ describe.only("SpiralStaking V2", function () {
     expect(await impishSpiral.ownerOf(tokenId1)).to.be.equals(signer.address);
     expect(await impishSpiral.ownerOf(tokenId2)).to.be.equals(signer.address);
     expect((await stakingv2.stakedNFTsAndTokens(signer.address)).numSpiralsStaked).to.be.equals(0);
+  });
+
+  it("Negative Tests", async function () {
+    const { impishSpiral, stakingv2, spiralbits } = await loadContracts();
+    const [signer, signer2] = await ethers.getSigners();
+
+    // Can't stake Spiralbits that we don't have
+    await spiralbits.connect(signer2).approve(stakingv2.address, Eth2B);
+    await expect(stakingv2.connect(signer2).stakeSpiralBits(Eth10)).to.be.revertedWith(
+      "ERC20: transfer amount exceeds balance"
+    );
+
+    // Get some spiralbits to stake and now staking works
+    await spiralbits.transfer(signer2.address, Eth100);
+    await stakingv2.connect(signer2).stakeSpiralBits(Eth10);
+
+    // Can't unstake spiralbits that we haven't staked
+    await expect(stakingv2.unstakeSpiralBits(false)).to.be.revertedWith("NoSPIRALBITSToUnstake");
+    await expect(() => stakingv2.connect(signer2).unstakeSpiralBits(false)).to.changeTokenBalance(
+      spiralbits,
+      signer2,
+      Eth10
+    );
+
+    // Stake Spirals
+    await impishSpiral.setApprovalForAll(stakingv2.address, true);
+    await impishSpiral.connect(signer2).setApprovalForAll(stakingv2.address, true);
+    const tokenId1 = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+
+    // Can't stake non-existant token
+    await expect(stakingv2.stakeNFTsForOwner([tokenId1.add(1).add(2000000)], signer.address)).to.be.revertedWith(
+      "ERC721: owner query for nonexistent token"
+    );
+    // Bad nft type
+    await expect(stakingv2.stakeNFTsForOwner([tokenId1.add(5000000)], signer.address)).to.be.revertedWith(
+      "InvalidNFTType"
+    );
+    // Other guy can't stake my token
+    await expect(
+      stakingv2.connect(signer2).stakeNFTsForOwner([tokenId1.add(2000000)], signer.address)
+    ).to.be.revertedWith("DontOwnNFT");
+    // Can't stake without the contract ID
+    await expect(stakingv2.stakeNFTsForOwner([tokenId1], signer.address)).to.be.revertedWith("UseContractTokenIDs");
+
+    // Finally, this works
+    await stakingv2.stakeNFTsForOwner([tokenId1.add(2000000)], signer.address);
+
+    // Signer2 can't unstake my tokenID
+    await expect(stakingv2.connect(signer2).unstakeNFTs([tokenId1.add(2000000)], false)).to.be.revertedWith(
+      "DontOwnNFT"
+    );
+
+    // Can't unstake without using contractID
+    await expect(stakingv2.unstakeNFTs([tokenId1], false)).to.be.revertedWith("UseContractTokenIDs");
+
+    // Stake for a different owner
+    const tokenId2 = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    await stakingv2.stakeNFTsForOwner([tokenId2.add(2000000)], signer2.address);
+
+    // We can't unstake it...
+    await expect(stakingv2.unstakeNFTs([tokenId2.add(2000000)], false)).to.be.revertedWith("DontOwnNFT");
+    // ... but the signer2 can
+    await stakingv2.connect(signer2).unstakeNFTs([tokenId2.add(2000000)], false);
+    expect(await impishSpiral.ownerOf(tokenId2)).to.be.equals(signer2.address);
   });
 });

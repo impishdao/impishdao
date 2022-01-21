@@ -83,7 +83,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
   function unstakeSpiralBits(bool claimReward) external nonReentrant {
     uint256 amount = stakedNFTsAndTokens[msg.sender].spiralBitsStaked;
-    require(amount > 0, "No SPIRALBITS to Unstake");
+    require(amount > 0, "NoSPIRALBITSToUnstake");
 
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(msg.sender);
@@ -192,6 +192,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
 
         // Add this crystal (Growing) to the staked struct
         stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
+        delete crystalTargetSyms[tokenId + 3_000_000];
       } else if (nftType == 4) {
         // Crystals that are growing
         _unstakeNFT(crystals, uint256(tokenId), 4_000_000);
@@ -207,11 +208,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       _claimRewards(msg.sender);
     }
   }
-
-  // TODO: Unstake NFTs
-  // {
-  //    TODO: Delete crystalTargetSym when unstaking growing crystal
-  // }
 
   // ---------------------
   // Internal Functions
@@ -462,7 +458,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint32 contractCrystalTokenId = crystalTokenId + 3_000_000;
     require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
 
-    crystalTargetSyms[crystalTokenId] = targetSym;
+    crystalTargetSyms[contractCrystalTokenId] = targetSym;
   }
 
   function harvestCrystal(uint32 crystalTokenId) external nonReentrant {
@@ -489,8 +485,8 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     }
 
     // Next grow syms
-    if (crystalTargetSyms[crystalTokenId] > 0 && crystalTargetSyms[crystalTokenId] > currentSym) {
-      uint8 growSyms = crystalTargetSyms[crystalTokenId] - currentSym;
+    if (crystalTargetSyms[contractCrystalTokenId] > 0 && crystalTargetSyms[contractCrystalTokenId] > currentSym) {
+      uint8 growSyms = crystalTargetSyms[contractCrystalTokenId] - currentSym;
 
       uint96 spiralBitsNeeded = uint96(crystals.SPIRALBITS_PER_SYM() * uint256(growSyms));
       if (availableSpiralBits > spiralBitsNeeded) {
@@ -511,7 +507,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
       }
     }
 
-    delete crystalTargetSyms[crystalTokenId];
+    delete crystalTargetSyms[contractCrystalTokenId];
 
     // TODO: Unstake growing crystal
     _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
