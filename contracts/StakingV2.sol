@@ -27,7 +27,7 @@ import "./SpiralBits.sol";
 contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // Global reward for all SPIRALBITS staked per second
   //  TODO
-  uint256 public SPIRALBITS_STAKING_EMISSION_PER_SEC = 1 ether;
+  uint256 public SPIRALBITS_STAKING_EMISSION_PER_SEC = 4 ether;
 
   // Global reward for all IMPISH staked per second
   //  TODO
@@ -298,6 +298,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     });
 
     // Add to array
+    lastEpochTime = uint32(block.timestamp);
     epochs.push(newEpoch);
   }
 
@@ -469,7 +470,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
 
     // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
-    // instead of returning a large amount of SPIRALBITS back to the user here. 
+    // instead of returning a large amount of SPIRALBITS back to the user here.
     spiralbits.burn(availableSpiralBits);
     stakedNFTsAndTokens[msg.sender].claimedSpiralBits = availableSpiralBits;
   }
