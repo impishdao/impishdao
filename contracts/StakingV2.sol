@@ -20,6 +20,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./ImpishCrystal.sol";
+import "./ImpishSpiral.sol";
+
 abstract contract ISpiralBits is IERC20 {
   function mintSpiralBits(address to, uint256 amount) public virtual;
 }
@@ -52,7 +55,14 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // The Impish Token
   IERC20 public impish;
 
-  constructor() {
+  constructor(address _crystals) {
+    crystals = IERC721(_crystals);
+    impishspiral = IERC721(ImpishCrystal(_crystals).spirals());
+    randomWalkNFT = IERC721(ImpishSpiral(ImpishCrystal(_crystals).spirals())._rwNFT());
+
+    spiralbits = ISpiralBits(ImpishCrystal(_crystals).SpiralBits());
+    impish = IERC20(ImpishSpiral(ImpishCrystal(_crystals).spirals())._impishDAO());
+
     // To make accounting easier, we put a dummy epoch here
     epochs.push(RewardEpoch({epochDurationSec: 0, totalSpiralBitsStaked: 0, totalImpishStaked: 0}));
 
@@ -231,14 +241,14 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
     stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
 
+    // Update the current epoch, to bring all the rewards up to date for this address
+    _updateCurrentEpoch();
+
     // Return if there is nothing to update. We've already updated the lastClaimEpoch,
     // which will happen for new stakers.
     if (lastClaimedEpoch == 0) {
       return;
     }
-
-    // Update the current epoch, to bring all the rewards up to date for this address
-    _updateCurrentEpoch();
 
     uint256 rewardsAccumulated = 0;
     uint256 totalDuration = 0;
