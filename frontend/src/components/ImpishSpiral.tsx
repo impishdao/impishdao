@@ -8,7 +8,7 @@ import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
 
-type SpiralProps = DappState & DappFunctions & DappContracts & {};
+type SpiralProps = DappState & DappFunctions & {};
 
 export function ImpishSpiral(props: SpiralProps) {
   // const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
@@ -62,16 +62,19 @@ export function ImpishSpiral(props: SpiralProps) {
   // Fetch the user's wallet's RW NFTs.
   useEffect(() => {
     (async () => {
-      if (!props.selectedAddress || !props.rwnft) {
+      if (!props.selectedAddress || !props.contracts) {
         return;
       }
       // Limit to 20 tokens for now
-      const tokenIDs = ((await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>).slice(0, 20);
+      const tokenIDs = ((await props.contracts.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>).slice(
+        0,
+        20
+      );
 
       // Filter out tokens that have already been used.
       const shouldInclude = await Promise.all(
         tokenIDs.map(async (t) => {
-          const minted = await props.impspiral?.mintedRWs(t);
+          const minted = await props.contracts?.impspiral.mintedRWs(t);
           return !minted;
         })
       );
@@ -82,11 +85,11 @@ export function ImpishSpiral(props: SpiralProps) {
       setUserRWNFTs(filteredTokenIDs);
 
       // Also get the latest mint price
-      if (props.impspiral) {
-        setMintPrice(await props.impspiral.getMintPrice());
+      if (props.contracts) {
+        setMintPrice(await props.contracts.impspiral.getMintPrice());
       }
     })();
-  }, [props.selectedAddress, props.rwnft, props.impspiral]);
+  }, [props.selectedAddress, props.contracts]);
 
   // Select the first RW NFT when it loads
   useEffect(() => {
@@ -97,14 +100,14 @@ export function ImpishSpiral(props: SpiralProps) {
 
   useEffect(() => {
     (async () => {
-      if (!props.selectedAddress || !props.rwnft || !selectedUserRW) {
+      if (!props.selectedAddress || !props.contracts || !selectedUserRW) {
         return;
       }
 
-      const seed = (await props.rwnft.seeds(selectedUserRW)) as string;
+      const seed = (await props.contracts.rwnft.seeds(selectedUserRW)) as string;
       setPreviewURL(`/spiral_image/seed/${seed}/300.png`);
     })();
-  }, [props.selectedAddress, props.rwnft, selectedUserRW]);
+  }, [props.selectedAddress, props.contracts, selectedUserRW]);
 
   const calcMultiSpiralPrice = (numSpirals: number, basePrice: BigNumber): BigNumber => {
     let amountNeeded = BigNumber.from(0);
@@ -121,7 +124,7 @@ export function ImpishSpiral(props: SpiralProps) {
   const multiMintPriceETH = calcMultiSpiralPrice(numSpirals, mintPrice);
 
   const mintSpiral = async () => {
-    if (!props.impspiral || !props.multimint) {
+    if (!props.contracts) {
       return;
     }
 
@@ -129,16 +132,18 @@ export function ImpishSpiral(props: SpiralProps) {
       if (spiralType === "original") {
         // See if we need a multi mint
         if (numSpirals === 1) {
-          const id = await props.impspiral._tokenIdCounter();
-          let tx = await props.impspiral.mintSpiralRandom({ value: await props.impspiral.getMintPrice() });
+          const id = await props.contracts.impspiral._tokenIdCounter();
+          let tx = await props.contracts.impspiral.mintSpiralRandom({
+            value: await props.contracts.impspiral.getMintPrice(),
+          });
           await tx.wait();
 
           props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
             nav(`/spirals/detail/${id}`);
           });
         } else {
-          const price = calcMultiSpiralPrice(numSpirals, await props.impspiral.getMintPrice());
-          let tx = await props.multimint.multiMint(numSpirals, { value: price });
+          const price = calcMultiSpiralPrice(numSpirals, await props.contracts.impspiral.getMintPrice());
+          let tx = await props.contracts.multimint.multiMint(numSpirals, { value: price });
           await tx.wait();
 
           props.showModal(
@@ -151,9 +156,9 @@ export function ImpishSpiral(props: SpiralProps) {
         }
       } else {
         if (selectedUserRW) {
-          const id = await props.impspiral._tokenIdCounter();
-          let tx = await props.impspiral.mintSpiralWithRWNFT(selectedUserRW, {
-            value: await props.impspiral.getMintPrice(),
+          const id = await props.contracts.impspiral._tokenIdCounter();
+          let tx = await props.contracts.impspiral.mintSpiralWithRWNFT(selectedUserRW, {
+            value: await props.contracts.impspiral.getMintPrice(),
           });
           await tx.wait();
           props.showModal(

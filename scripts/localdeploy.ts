@@ -6,7 +6,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { Contract } from "@ethersproject/contracts";
-import { artifacts, ethers, network } from "hardhat";
+import { artifacts, ethers, network, upgrades } from "hardhat";
 import path from "path";
 import contractAddresses from "../proddata/contracts/contract-addresses.json";
 
@@ -47,8 +47,7 @@ async function main() {
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
 
   const StakingV2 = await ethers.getContractFactory("StakingV2");
-  
-  const stakingv2 =  await StakingV2.deploy(crystal.address);
+  const stakingv2 =  await upgrades.deployProxy(StakingV2, [crystal.address]);
   await stakingv2.deployed();
   
 
@@ -61,7 +60,7 @@ async function main() {
   });
   const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
   await spiralbits.connect(prodSigner).addAllowedMinter(stakingv2.address);
-  
+
   await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
   await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
   await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));

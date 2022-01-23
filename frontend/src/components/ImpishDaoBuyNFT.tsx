@@ -7,7 +7,7 @@ import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER
 import { NFTCard } from "./NFTcard";
 import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 
-type ImpishDAOBuyNFTsProps = DappState & DappFunctions & DappContracts & {};
+type ImpishDAOBuyNFTsProps = DappState & DappFunctions & {};
 
 export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
   const [startPage, setStartPage] = useState(0);
@@ -34,12 +34,15 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
   // Check if SpiralBits -> BuyWithEther contract needs approval
   useEffect(() => {
     retryTillSucceed(async () => {
-      if (props.selectedAddress && props.spiralbits && props.buywitheth) {
-        const allowance = await props.spiralbits.allowance(props.selectedAddress, props.buywitheth.address);
+      if (props.selectedAddress && props.contracts) {
+        const allowance = await props.contracts.spiralbits.allowance(
+          props.selectedAddress,
+          props.contracts.buywitheth.address
+        );
         setSpiralbitsAllowance(allowance);
       }
     });
-  }, [props.buywitheth, props.selectedAddress, props.spiralbits]);
+  }, [props.contracts, props.selectedAddress]);
 
   const PageList = () => {
     return (
@@ -69,21 +72,24 @@ export function ImpishDAOBuyNFTs(props: ImpishDAOBuyNFTsProps) {
       let tx: Promise<ContractTransaction> | undefined;
       switch (priceIn) {
         case "IMPISH": {
-          tx = props.impdao?.buyNFT(tokenId);
+          tx = props.contracts?.impdao.buyNFT(tokenId);
           break;
         }
         case "ETH": {
-          tx = props.buywitheth?.buyRwNFTFromDaoWithEth(tokenId, false, { value: price });
+          tx = props.contracts?.buywitheth.buyRwNFTFromDaoWithEth(tokenId, false, { value: price });
           break;
         }
         case "SPIRALBITS": {
-          if (props.spiralbits && props.buywitheth) {
+          if (props.contracts) {
             if (spiralbitsAllowance.lt(price)) {
-              const approveTx = props.spiralbits.approve(props.buywitheth.address, BigNumber.from(10).pow(18 + 10));
+              const approveTx = props.contracts.spiralbits.approve(
+                props.contracts.buywitheth.address,
+                BigNumber.from(10).pow(18 + 10)
+              );
               await props.waitForTxConfirmation(approveTx, "Approving");
             }
 
-            tx = props.buywitheth?.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
+            tx = props.contracts?.buywitheth.buyRwNFTFromDaoWithSpiralBits(tokenId, price, false);
           }
           break;
         }

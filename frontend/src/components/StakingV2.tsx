@@ -170,7 +170,7 @@ const StakingPageDisplay = ({
   );
 };
 
-type SpiralStakingProps = DappState & DappFunctions & DappContracts & {};
+type SpiralStakingProps = DappState & DappFunctions & {};
 
 type SpiralBitsDetails = {
   pending: BigNumber;
@@ -182,12 +182,14 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>();
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
 
+  const [v1StakedNFTs, setV1StakedNFTs] = useState<Array<NFTCardInfo>>();
+
   const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>();
   const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
 
   const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>();
   const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
-  
+
   const [spiralStakingApprovalNeeded, setSpiralStakingApprovalNeeded] = useState(false);
   const [rwnftStakingApprovalNeeded, setRwnftStakingApprovalNeeded] = useState(false);
 
@@ -204,8 +206,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
     if (props.selectedAddress) {
       // RandomWalkNFTs
       retryTillSucceed(async () => {
-        if (props.selectedAddress && props.rwnft) {
-          const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+        if (props.selectedAddress && props.contracts) {
+          const walletTokenIds = (await props.contracts.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
           setWalletRWNFTs(walletTokenIds);
         }
       });
@@ -227,155 +229,72 @@ export function SpiralStaking(props: SpiralStakingProps) {
           })();
         });
     }
-  }, [props.selectedAddress]);
+  }, [props.selectedAddress, props.contracts]);
 
-  // Get Spiral staking info for the wallet
+  // Get the v1 staked Spirals and RWNFTs
   useEffect(() => {
     retryTillSucceed(async () => {
-      if (props.selectedAddress && props.spiralstaking) {
-        const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        setWalletStakedSpirals(await getSeedsForSpiralTokenIds(stakedTokenIds));
+      if (props.contracts) {
+        const stakedSpiralIds = (await props.contracts.spiralstaking.walletOfOwner(
+          props.selectedAddress
+        )) as Array<BigNumber>;
+        console.log(`1: ${stakedSpiralIds.length}`);
+        const spirals = await getSeedsForSpiralTokenIds(stakedSpiralIds);
+        console.log(`2: ${spirals.length}`);
+
+        const stakedRwNFTIds = (await props.contracts.rwnftstaking.walletOfOwner(
+          props.selectedAddress
+        )) as Array<BigNumber>;
+        console.log(`Staked rws: ${stakedRwNFTIds.length} , staked spirals in v1 ${spirals.length}`);
+
+        setV1StakedNFTs(getNFTCardInfo(stakedRwNFTIds, spirals));
       }
     });
+  }, [props.selectedAddress, props.contracts]);
 
-    retryTillSucceed(async () => {
-      if (props.selectedAddress && props.spiralstaking) {
-        const pending = BigNumber.from(await props.spiralstaking.claimsPendingTotal(props.selectedAddress));
-        const bonusBips = BigNumber.from(await props.spiralstaking.currentBonusInBips()).toNumber();
-        setSpiralsTokenInfo({ pending, bonusBips });
-      }
-    });
+  const stakeV2 = async () => {};
 
-    retryTillSucceed(async () => {
-      if (props.selectedAddress && props.spiralstaking && props.impspiral) {
-        setSpiralStakingApprovalNeeded(
-          !(await props.impspiral.isApprovedForAll(props.selectedAddress, props.spiralstaking.address))
-        );
-      }
-    });
-  }, [props.selectedAddress, props.impspiral, props.spiralstaking, refreshCounter]);
-
-  // Get RWNFT staking info for the wallet
-  useEffect(() => {
-    retryTillSucceed(async () => {
-      if (props.selectedAddress && props.rwnftstaking) {
-        const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        setWalletStakedRWNFTs(stakedTokenIds);
-      }
-    });
-
-    retryTillSucceed(async () => {
-      if (props.selectedAddress && props.rwnftstaking) {
-        const pending = BigNumber.from(await props.rwnftstaking.claimsPendingTotal(props.selectedAddress));
-        const bonusBips = BigNumber.from(await props.rwnftstaking.currentBonusInBips()).toNumber();
-        setRWNFTTokenInfo({ pending, bonusBips });
-      }
-    });
-
-    retryTillSucceed(async () => {
-      if (props.selectedAddress && props.rwnft && props.rwnftstaking) {
-        setRwnftStakingApprovalNeeded(
-          !(await props.rwnft.isApprovedForAll(props.selectedAddress, props.rwnftstaking.address))
-        );
-      }
-    });
-  }, [props.selectedAddress, props.rwnft, props.rwnftstaking, refreshCounter]);
-
-  const stakeSpirals = async (spiralTokenIds: Set<number>) => {
-    if (props.spiralstaking && props.impspiral && spiralTokenIds.size > 0) {
-      // First, check if approved
-      if (spiralStakingApprovalNeeded) {
-        await props.waitForTxConfirmation(
-          props.impspiral.setApprovalForAll(props.spiralstaking.address, true),
-          "Approve Staking"
-        );
-      }
-
-      const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
-      await props.waitForTxConfirmation(props.spiralstaking.stakeNFTs(tokenIds), "Staking");
-
-      setRefreshCounter(refreshCounter + 1);
-    }
-  };
-
-  const unstakeSpirals = async (spiralTokenIds: Set<number>) => {
-    if (props.spiralstaking) {
+  const unstakeV1 = async () => {
+    if (props.contracts && props.selectedAddress && v1StakedNFTs) {
       const beforeSpiralBits = props.spiralBitsBalance;
 
-      const tokenIds = Array.from(spiralTokenIds).map((t) => BigNumber.from(t));
-      await props.waitForTxConfirmation(props.spiralstaking.unstakeNFTs(tokenIds, true), "Unstaking");
+      const rwTokenIds = v1StakedNFTs.filter((nft) => nft.getNFTtype() === "RandomWalkNFT").map((nft) => nft.tokenId);
+      await props.waitForTxConfirmation(
+        props.contracts.rwnftstaking.unstakeNFTs(rwTokenIds, true),
+        "Unstaking RandomWalkNFTs"
+      );
+
+      const spiralTokenIds = v1StakedNFTs
+        .filter((nft) => nft.getNFTtype() === "RandomWalkNFT")
+        .map((nft) => nft.tokenId);
+      await props.waitForTxConfirmation(
+        props.contracts.spiralstaking.unstakeNFTs(spiralTokenIds, true),
+        "Unstaking Spirals"
+      );
 
       setRefreshCounter(refreshCounter + 1);
-      if (props.spiralbits && props.selectedAddress) {
-        const afterSpiralBits = await props.spiralbits.balanceOf(props.selectedAddress);
-        if (afterSpiralBits.gt(beforeSpiralBits)) {
-          props.showModal(
-            "Claimed SPIRALBITS",
-            <div>
-              You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
-            </div>
-          );
-        }
-      }
-    }
-  };
 
-  const stakeRWNFTs = async (rwTokenIds: Set<number>) => {
-    if (props.rwnftstaking && props.rwnft && rwTokenIds.size > 0) {
-      // First, check if approved
-      if (rwnftStakingApprovalNeeded) {
-        await props.waitForTxConfirmation(
-          props.rwnft.setApprovalForAll(props.rwnftstaking.address, true),
-          "Approve Staking"
+      const afterSpiralBits = await props.contracts.spiralbits.balanceOf(props.selectedAddress);
+      if (afterSpiralBits.gt(beforeSpiralBits)) {
+        props.showModal(
+          "Claimed SPIRALBITS",
+          <div>
+            You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
+          </div>
         );
       }
-
-      const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
-      await props.waitForTxConfirmation(props.rwnftstaking.stakeNFTs(tokenIds), "Stake RandomWalkNFTs");
-
-      setRefreshCounter(refreshCounter + 1);
     }
   };
 
-  const unstakeRWNFTs = async (rwTokenIds: Set<number>) => {
-    if (props.rwnftstaking) {
-      const beforeSpiralBits = props.spiralBitsBalance;
-
-      const tokenIds = Array.from(rwTokenIds).map((t) => BigNumber.from(t));
-      await props.waitForTxConfirmation(props.rwnftstaking.unstakeNFTs(tokenIds, true), "Unstaking");
-
-      setRefreshCounter(refreshCounter + 1);
-
-      if (props.spiralbits && props.selectedAddress) {
-        const afterSpiralBits = await props.spiralbits.balanceOf(props.selectedAddress);
-        if (afterSpiralBits.gt(beforeSpiralBits)) {
-          props.showModal(
-            "Claimed SPIRALBITS",
-            <div>
-              You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
-            </div>
-          );
-        }
-      }
-    }
-  };
-
-  const claimSpiralbits = async (contractNum: number) => {
+  const claimSpiralbits = async () => {
     const beforeSpiralBits = props.spiralBitsBalance;
 
-    let tx;
-    if (props.rwnftstaking && contractNum === 1) {
-      tx = props.rwnftstaking.unstakeNFTs([], true);
-    } else if (props.spiralstaking && contractNum === 0) {
-      tx = props.spiralstaking.unstakeNFTs([], true);
-    }
+    if (props.contracts && props.selectedAddress) {
+      await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeNFTs([], true), "Claim SPIRALBITS");
 
-    await props.waitForTxConfirmation(tx, "Claim SPIRALBITS");
+      setRefreshCounter(refreshCounter + 1);
 
-    setRefreshCounter(refreshCounter + 1);
-
-    if (props.spiralbits && props.selectedAddress) {
-      const afterSpiralBits = await props.spiralbits.balanceOf(props.selectedAddress);
+      const afterSpiralBits = await props.contracts.spiralbits.balanceOf(props.selectedAddress);
       if (afterSpiralBits.gt(beforeSpiralBits)) {
         props.showModal(
           "Claimed SPIRALBITS",
@@ -400,9 +319,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
   }
 
   const walletNFTs = getNFTCardInfo(walletRWNFTs, walletSpirals, walletCrystals);
-  console.log(
-    `rws ${walletRWNFTs?.length}, spirals: ${walletSpirals?.length}, crystals: ${walletCrystals?.length} = ${walletNFTs.length}`
-  );
 
   return (
     <>
@@ -433,7 +349,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 buttonName={"Stake"}
                 pageSize={12}
                 nfts={walletNFTs}
-                onButtonClick={stakeSpirals}
+                onButtonClick={stakeV2}
                 refreshCounter={refreshCounter}
                 nothingMessage={
                   <div>
@@ -443,6 +359,16 @@ export function SpiralStaking(props: SpiralStakingProps) {
                     </Link>
                   </div>
                 }
+              />
+
+              <StakingPageDisplay
+                title="V1 Staked"
+                buttonName={"Unstake All"}
+                pageSize={12}
+                nfts={v1StakedNFTs}
+                onButtonClick={unstakeV1}
+                refreshCounter={refreshCounter}
+                nothingMessage={<div>Nothing staked in V1.</div>}
               />
 
               <Table variant="dark">

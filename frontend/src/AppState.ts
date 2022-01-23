@@ -60,6 +60,8 @@ export class DappState {
   // Toasts currently Displaying
   currentToasts: Array<ToastInfo>;
 
+  contracts?: DappContracts;
+
   constructor() {
     this.impishTokenBalance = BigNumber.from(0);
     this.spiralBitsBalance = BigNumber.from(0);
@@ -90,18 +92,19 @@ export type DappFunctions = {
 };
 
 export type DappContracts = {
-  provider?: Web3Provider;
+  provider: Web3Provider;
 
-  rwnft?: Contract;
-  impdao?: Contract;
-  impspiral?: Contract;
-  spiralmarket?: Contract;
-  multimint?: Contract;
-  spiralbits?: Contract;
-  spiralstaking?: Contract;
-  rwnftstaking?: Contract;
-  buywitheth?: Contract;
-  crystal?: Contract;
+  rwnft: Contract;
+  impdao: Contract;
+  impspiral: Contract;
+  spiralmarket: Contract;
+  multimint: Contract;
+  spiralbits: Contract;
+  spiralstaking: Contract;
+  rwnftstaking: Contract;
+  buywitheth: Contract;
+  crystal: Contract;
+  stakingv2: Contract;
 };
 
 export type SpiralDetail = {
@@ -122,6 +125,8 @@ export type CrystalInfo = {
   indirectOwner?: string;
 };
 
+type NFTtype = "RandomWalkNFT" | "Spiral" | "GrowingCrystal" | "Crystal";
+
 export class NFTCardInfo {
   tokenId: number;
   image: string;
@@ -135,5 +140,20 @@ export class NFTCardInfo {
 
   getContractTokenId(): number {
     return this.tokenId + this.contractIdMultiplier;
+  }
+
+  getNFTtype(): NFTtype {
+    switch (this.contractIdMultiplier) {
+      case 1000000:
+        return "RandomWalkNFT";
+      case 2000000:
+        return "Spiral";
+      case 3000000:
+        return "GrowingCrystal";
+      case 4000000:
+        return "Crystal";
+    }
+
+    throw new Error("Unrecognized ContractIDMultiplier");
   }
 }

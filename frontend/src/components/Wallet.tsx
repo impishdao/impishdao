@@ -8,10 +8,9 @@ import { Navigation } from "./Navigation";
 import { formatkmb, range } from "./utils";
 import { getMetadataForCrystalTokenIds, getSeedsForSpiralTokenIds } from "./walletutils";
 
-type CrystalWalletProps = DappState &
-  DappContracts & {
-    connectWallet: () => void;
-  };
+type CrystalWalletProps = DappState & {
+  connectWallet: () => void;
+};
 
 export function CrystalWallet(props: CrystalWalletProps) {
   const { type, address } = useParams();

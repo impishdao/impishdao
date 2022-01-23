@@ -17,13 +17,21 @@ import RWNFTStakingArtifact from "../contracts/rwnftstaking.json";
 import MultiMintArtifact from "../contracts/multimint.json";
 import BuyWithEtherArtifact from "../contracts/buywithether.json";
 import Crystal from "../contracts/crystal.json";
+import StakingV2 from "../contracts/stakingv2.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Web3Provider } from "@ethersproject/providers";
 import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
+import {
+  DappContracts,
+  DappState,
+  ERROR_CODE_TX_REJECTED_BY_USER,
+  NFTForSale,
+  ToastInfo,
+  WANTED_NETWORK_ID,
+} from "../AppState";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralDetail } from "./SpiralDetail";
@@ -62,18 +70,6 @@ const ModalDialog = ({ title, message, show, close }: ModalDialogProps) => {
 type DappProps = {};
 
 export class Dapp extends React.Component<DappProps, DappState> {
-  provider?: Web3Provider;
-  impdao?: Contract;
-  rwnft?: Contract;
-  impspiral?: Contract;
-  spiralmarket?: Contract;
-  multimint?: Contract;
-  spiralstaking?: Contract;
-  rwnftstaking?: Contract;
-  spiralbits?: Contract;
-  buywitheth?: Contract;
-  crystal?: Contract;
-
   constructor(props: DappProps) {
     super(props);
 
@@ -95,70 +91,81 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
   _intializeEthers = async () => {
     // We first initialize ethers by creating a provider using window.ethereum
-    this.provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
 
     // When, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
-    this.impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, this.provider.getSigner(0));
+    const impdao = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAOArtifact.abi, provider.getSigner(0));
 
     // Interface to RWNFT
-    this.rwnft = new ethers.Contract(
+    const rwnft = new ethers.Contract(
       contractAddresses.RandomWalkNFT,
       RandomWalkNFTArtifact.abi,
-      this.provider.getSigner(0)
+      provider.getSigner(0)
     );
 
     // Interface to ImpishSpiral contract
-    this.impspiral = new ethers.Contract(
+    const impspiral = new ethers.Contract(
       contractAddresses.ImpishSpiral,
       ImpishSpiralArtifact.abi,
-      this.provider.getSigner(0)
+      provider.getSigner(0)
     );
 
     // Spiral Market Contract
-    this.spiralmarket = new ethers.Contract(
+    const spiralmarket = new ethers.Contract(
       contractAddresses.SpiralMarket,
       SpiralMarketArtifact.abi,
-      this.provider.getSigner(0)
+      provider.getSigner(0)
     );
 
     // Multimint contract
-    this.multimint = new ethers.Contract(
-      contractAddresses.MultiMint,
-      MultiMintArtifact.abi,
-      this.provider.getSigner(0)
-    );
+    const multimint = new ethers.Contract(contractAddresses.MultiMint, MultiMintArtifact.abi, provider.getSigner(0));
 
     // SPIRALBITS
-    this.spiralbits = new ethers.Contract(
-      contractAddresses.SpiralBits,
-      SpiralBitsArtifact.abi,
-      this.provider.getSigner(0)
-    );
+    const spiralbits = new ethers.Contract(contractAddresses.SpiralBits, SpiralBitsArtifact.abi, provider.getSigner(0));
 
     // Spiral Staking
-    this.spiralstaking = new ethers.Contract(
+    const spiralstaking = new ethers.Contract(
       contractAddresses.SpiralStaking,
       SpiralStakingArtifact.abi,
-      this.provider.getSigner(0)
+      provider.getSigner(0)
     );
 
     // RWNFT staking
-    this.rwnftstaking = new ethers.Contract(
+    const rwnftstaking = new ethers.Contract(
       contractAddresses.RWNFTStaking,
       RWNFTStakingArtifact.abi,
-      this.provider.getSigner(0)
+      provider.getSigner(0)
     );
 
     // Buy ImpishDAO NFTs with ETH or Spiralbits
-    this.buywitheth = new ethers.Contract(
+    const buywitheth = new ethers.Contract(
       contractAddresses.BuyWithEther,
       BuyWithEtherArtifact.abi,
-      this.provider.getSigner(0)
+      provider.getSigner(0)
     );
 
     // Impish Crystals
-    this.crystal = new ethers.Contract(contractAddresses.Crystal, Crystal.abi, this.provider.getSigner(0));
+    const crystal = new ethers.Contract(contractAddresses.Crystal, Crystal.abi, provider.getSigner(0));
+
+    // Staking V2
+    const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.abi, provider.getSigner(0));
+
+    const contracts = {
+      provider,
+      rwnft,
+      impdao,
+      impspiral,
+      spiralmarket,
+      multimint,
+      spiralbits,
+      spiralstaking,
+      rwnftstaking,
+      buywitheth,
+      crystal,
+      stakingv2,
+    };
+    this.setState({ contracts });
 
     this.readDappState();
     this.readUserData();
@@ -316,9 +323,10 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
   readUserData = async () => {
     if (this.state.selectedAddress) {
-      const impishTokenBalance = await this.impdao?.balanceOf(this.state.selectedAddress);
-      const spiralBitsBalance = await this.spiralbits?.balanceOf(this.state.selectedAddress);
-      const ethBalance = (await this.provider?.getBalance(this.state.selectedAddress)) || BigNumber.from(0);
+      const impishTokenBalance = await this.state.contracts?.impdao.balanceOf(this.state.selectedAddress);
+      const spiralBitsBalance = await this.state.contracts?.spiralbits.balanceOf(this.state.selectedAddress);
+      const ethBalance =
+        (await this.state.contracts?.provider.getBalance(this.state.selectedAddress)) || BigNumber.from(0);
 
       this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
     }
@@ -375,20 +383,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
   };
 
   render() {
-    const contracts = {
-      provider: this.provider,
-      rwnft: this.rwnft,
-      impdao: this.impdao,
-      impspiral: this.impspiral,
-      spiralmarket: this.spiralmarket,
-      multimint: this.multimint,
-      spiralbits: this.spiralbits,
-      spiralstaking: this.spiralstaking,
-      rwnftstaking: this.rwnftstaking,
-      buywitheth: this.buywitheth,
-      crystal: this.crystal,
-    };
-
     return (
       <BrowserRouter>
         <Container>
@@ -424,7 +418,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <ImpishDAO
                   {...this.state}
-                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
@@ -439,7 +432,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <Crystals
                   {...this.state}
-                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
@@ -454,7 +446,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <ImpishSpiral
                   {...this.state}
-                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
@@ -469,7 +460,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
               element={
                 <SpiralStaking
                   {...this.state}
-                  {...contracts}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
@@ -481,7 +471,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
             <Route
               path="/wallet/:address/:type"
-              element={<CrystalWallet {...this.state} connectWallet={this._connectWallet} {...contracts} />}
+              element={<CrystalWallet {...this.state} connectWallet={this._connectWallet} />}
             />
 
             <Route
@@ -492,12 +482,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route
               path="/spirals/detail/:id"
               element={
-                <SpiralDetail
-                  {...this.state}
-                  {...contracts}
-                  showModal={this.showModal}
-                  connectWallet={() => this._connectWallet()}
-                />
+                <SpiralDetail {...this.state} showModal={this.showModal} connectWallet={() => this._connectWallet()} />
               }
             />
 

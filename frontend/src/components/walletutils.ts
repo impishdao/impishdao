@@ -61,12 +61,13 @@ export function getNFTCardInfo(
   spiralNFTs?: SpiralDetail[],
   crystalNFTs?: CrystalInfo[]
 ): NFTCardInfo[] {
-  let result = rwNFTs?.map((tokenId) => {
-    const paddedTokenId = pad(tokenId.toString(), 6);
-    const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
+  let result =
+    rwNFTs?.map((tokenId) => {
+      const paddedTokenId = pad(tokenId.toString(), 6);
+      const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
 
-    return new NFTCardInfo(tokenId.toNumber(), 1000000, imgurl);
-  }) || []; 
+      return new NFTCardInfo(tokenId.toNumber(), 1000000, imgurl);
+    }) || [];
 
   result = result.concat(
     spiralNFTs?.map((spiral) => {

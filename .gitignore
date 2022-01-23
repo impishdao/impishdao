@@ -5,6 +5,8 @@ coverage
 coverage.json
 typechain
 
+/.openzeppelin
+
 /deploy.sh
 /proddata
 

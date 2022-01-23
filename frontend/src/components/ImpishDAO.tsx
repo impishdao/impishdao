@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 
 let timeNow = Date.now();
 
-type ImpishDAOProps = DappState & DappFunctions & DappContracts & {};
+type ImpishDAOProps = DappState & DappFunctions & {};
 
 type BeenOutbidProps = DappState & {
   depositIntoDAO: (amount: BigNumber) => Promise<void>;
@@ -315,18 +315,20 @@ const Loading = () => {
 export function ImpishDAO(props: ImpishDAOProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const AdminDepositExternal = async () => {
-    if (props.provider) {
-      (await props.rwnft?.connect(props.provider.getSigner(0)).mint({ value: props.mintPrice })).wait().then(() => {
-        props.readDappState();
-        props.readUserData();
-      });
+    if (props.contracts) {
+      (await props.contracts.rwnft?.connect(props.contracts.provider.getSigner(0)).mint({ value: props.mintPrice }))
+        .wait()
+        .then(() => {
+          props.readDappState();
+          props.readUserData();
+        });
     }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const AdminWithdraw = async () => {
-    if (props.provider) {
-      (await props.rwnft?.connect(props.provider.getSigner(0)).withdraw()).wait().then(() => {
+    if (props.contracts) {
+      (await props.contracts.rwnft?.connect(props.contracts.provider.getSigner(0)).withdraw()).wait().then(() => {
         props.readDappState();
         props.readUserData();
       });
@@ -336,7 +338,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
   const depositIntoDAO = async (amount: BigNumber) => {
     try {
       // Wait for this Tx to be mined, then refresh all data.
-      let tx: ContractTransaction = await props.impdao?.deposit({ value: amount });
+      let tx: ContractTransaction = await props.contracts?.impdao.deposit({ value: amount });
 
       // Wait for Tx confirmation
       await tx.wait();
@@ -345,7 +347,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
       props.readDappState();
       props.readUserData();
 
-      const bal = await props.impdao?.balanceOf(props.selectedAddress);
+      const bal = await props.contracts?.impdao.balanceOf(props.selectedAddress);
 
       props.showModal(
         "Yay!",
@@ -379,7 +381,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
   const redeemTokens = async () => {
     // Wait for this Tx to be mined, then refresh all data.
     try {
-      let tx: ContractTransaction = await props.impdao?.redeem();
+      let tx: ContractTransaction = await props.contracts?.impdao.redeem();
 
       // Wait for Tx confirmation
       await tx.wait();

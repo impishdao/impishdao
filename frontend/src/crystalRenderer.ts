@@ -542,7 +542,7 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: numb
 
 const crystalImageCacheMap = new Map<string, string>();
 export function crystal_image(seed: string, sym: number, generation: number, size: number) {
-  const key = `${seed}/${sym}/${generation}/${size};`
+  const key = `${seed}/${sym}/${generation}/${size}`;
 
   let image = crystalImageCacheMap.get(key);
   if (image) {

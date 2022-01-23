@@ -8,7 +8,7 @@ import { Navigation } from "./Navigation";
 import { TransferAddressModal } from "./NFTTransferModal";
 import { formatkmb, retryTillSucceed } from "./utils";
 
-type CrystalDetailProps = DappState & DappFunctions & DappContracts & {};
+type CrystalDetailProps = DappState & DappFunctions & {};
 
 export function CrystalDetail(props: CrystalDetailProps) {
   const { id } = useParams();
@@ -46,13 +46,16 @@ export function CrystalDetail(props: CrystalDetailProps) {
   // Check for approval for Spending by Crystals
   useEffect(() => {
     retryTillSucceed(async () => {
-      if (props.selectedAddress && props.crystal && props.spiralbits) {
-        const currentAllowance = await props.spiralbits?.allowance(props.selectedAddress, props.crystal?.address);
+      if (props.selectedAddress && props.contracts) {
+        const currentAllowance = await props.contracts.spiralbits.allowance(
+          props.selectedAddress,
+          props.contracts.crystal.address
+        );
 
         setApprovalNeeded(currentAllowance.eq(0));
       }
     });
-  }, [props.crystal, props.selectedAddress, props.spiralbits]);
+  }, [props.contracts, props.selectedAddress]);
 
   useLayoutEffect(() => {
     fetch(`/crystalapi/crystal/metadata/${id}`)
@@ -242,9 +245,9 @@ export function CrystalDetail(props: CrystalDetailProps) {
       return true;
     }
 
-    if (props.spiralbits && props.crystal) {
+    if (props.contracts) {
       const success = await props.waitForTxConfirmation(
-        props.spiralbits.approve(props.crystal.address, ethers.utils.parseEther("2000000000")),
+        props.contracts.spiralbits.approve(props.contracts.crystal.address, ethers.utils.parseEther("2000000000")),
         "Approving SPIRALBITS"
       );
 
@@ -257,10 +260,13 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const growCrystal = async () => {
-    if (props.selectedAddress && props.crystal && props.spiralbits && crystalInfo) {
+    if (props.selectedAddress && props.contracts && crystalInfo) {
       // Check for approval needed first
       if (await approveSpiralBits()) {
-        const success = await props.waitForTxConfirmation(props.crystal.grow(id, parseInt(growBy)), "Growing Crystal");
+        const success = await props.waitForTxConfirmation(
+          props.contracts.crystal.grow(id, parseInt(growBy)),
+          "Growing Crystal"
+        );
 
         if (success) {
           const newSize = crystalInfo.size + parseInt(growBy);
@@ -274,11 +280,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const doAddSym = async () => {
-    if (props.selectedAddress && props.crystal && props.spiralbits && crystalInfo) {
+    if (props.selectedAddress && props.contracts && crystalInfo) {
       // Check for approval needed first
       if (await approveSpiralBits()) {
         const success = await props.waitForTxConfirmation(
-          props.crystal.addSym(id, parseInt(addSym)),
+          props.contracts.crystal.addSym(id, parseInt(addSym)),
           "Adding Symmetry to Crystal"
         );
 
@@ -294,11 +300,11 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const doReduceSym = async () => {
-    if (props.selectedAddress && props.crystal && props.spiralbits && crystalInfo) {
+    if (props.selectedAddress && props.contracts && crystalInfo) {
       // Check for approval needed first
       if (await approveSpiralBits()) {
         const success = await props.waitForTxConfirmation(
-          props.crystal.decSym(id, parseInt(reduceSym)),
+          props.contracts.crystal.decSym(id, parseInt(reduceSym)),
           "Reduce Symmetry of Crystal"
         );
 
@@ -313,8 +319,8 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const shatter = async () => {
-    if (props.selectedAddress && props.crystal) {
-      const success = await props.waitForTxConfirmation(props.crystal.shatter(id), "Shatter Crystal");
+    if (props.selectedAddress && props.contracts) {
+      const success = await props.waitForTxConfirmation(props.contracts.crystal.shatter(id), "Shatter Crystal");
 
       if (success) {
         resetManageVars();
@@ -332,7 +338,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
 
       <TransferAddressModal
         show={transferAddressModalShowing}
-        nft={props.crystal}
+        nft={props.contracts?.crystal}
         tokenId={BigNumber.from(id)}
         close={() => {
           setTransferAddressModalShowing(false);

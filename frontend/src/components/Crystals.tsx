@@ -20,7 +20,7 @@ const mintCostsForEachGen = [
   ethers.utils.parseEther("10"),
 ];
 
-type CrystalsProps = DappState & DappFunctions & DappContracts & {};
+type CrystalsProps = DappState & DappFunctions & {};
 export function Crystals(props: CrystalsProps) {
   const [numCrystals, setNumCrystals] = useState(1);
   const [mintGen, setMintGen] = useState(0);
@@ -78,7 +78,7 @@ export function Crystals(props: CrystalsProps) {
   }, [props.selectedAddress, refreshCounter]);
 
   const mintCrystal = async () => {
-    if (props.crystal) {
+    if (props.contracts) {
       // Mint numCrystals from the mintable list.
       const spiralTokenIds = mintableAtEachGen[mintGen]?.slice(0, numCrystals);
       if (!spiralTokenIds || spiralTokenIds.length === 0) {
@@ -88,7 +88,7 @@ export function Crystals(props: CrystalsProps) {
       const value = mintCostsForEachGen[mintGen].mul(spiralTokenIds.length);
 
       const success = await props.waitForTxConfirmation(
-        props.crystal.mintCrystals(spiralTokenIds, mintGen, { value }),
+        props.contracts.crystal.mintCrystals(spiralTokenIds, mintGen, { value }),
         "Minting Crystals"
       );
 
