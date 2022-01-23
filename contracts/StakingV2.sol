@@ -14,30 +14,34 @@ pragma solidity ^0.8.9;
 // 3M+ -> Staked Crystal that is growing
 // 4M+ -> Fully grown crystal that is earning SPIRALBITS
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./ImpishCrystal.sol";
 import "./ImpishSpiral.sol";
 import "./SpiralBits.sol";
 
-contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
+contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+  // Since this is an upgradable implementation, the storage layout is important. 
+  // Please be careful changing variable positions when upgrading.
+
   // Global reward for all SPIRALBITS staked per second, across ALL staked SpiralBits
-  uint256 public SPIRALBITS_STAKING_EMISSION_PER_SEC = 4 ether;
+  uint256 public SPIRALBITS_STAKING_EMISSION_PER_SEC;
 
   // Global reward for all IMPISH staked per second, across ALL staked IMPISH
-  uint256 public IMPISH_STAKING_EMISSION_PER_SEC = 1 ether;
+  uint256 public IMPISH_STAKING_EMISSION_PER_SEC;
 
   // How many SpiralBits per second are awarded to a staked spiral
   // 0.167 SPIRALBITS per second. (10 SPIRALBIT per 60 seconds)
-  uint256 public constant SPIRALBITS_PER_SECOND_PER_SPIRAL = 0.167 ether;
+  uint256 public SPIRALBITS_PER_SECOND_PER_SPIRAL;
 
   // How many SpiralBits per second are awarded to a staked RandomWalkNFTs
   // 0.0167 SPIRALBITS per second. (1 SPIRALBIT per 60 seconds)
-  uint256 public constant SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether;
+  uint256 public SPIRALBITS_PER_SECOND_PER_RW;
 
   // We're staking this NFT in this contract
   IERC721 public randomWalkNFT;
@@ -50,7 +54,50 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // The Impish Token
   IERC20 public impish;
 
-  constructor(address _crystals) {
+  struct RewardEpoch {
+    uint32 epochDurationSec; // Total seconds that this epoch lasted
+    uint96 totalSpiralBitsStaked; // Total SPIRALBITS staked across all accounts in whole uints for this Epoch
+    uint96 totalImpishStaked; // Total IMPISH tokens staked across all accounts in whole units for this Epoch
+  }
+  RewardEpoch[] public epochs; // List of epochs
+  uint32 public lastEpochTime; // Last epoch ended at this time
+
+  struct StakedNFTAndTokens {
+    uint16 numRWStaked;
+    uint16 numSpiralsStaked;
+    uint16 numGrowingCrystalsStaked;
+    uint16 numFullCrystalsStaked;
+    uint32 lastClaimEpoch; // Last Epoch number the rewards were accumulated into claimedSpiralBits. Cannot be 0.
+    uint96 spiralBitsStaked; // Total number of SPIRALBITS staked
+    uint96 impishStaked; // Total number of IMPISH tokens staked
+    uint96 claimedSpiralBits; // Already claimed (but not withdrawn) spiralBits before lastClaimTime
+    mapping(uint256 => uint256) ownedTokens; // index => tokenId
+  }
+
+  struct TokenIdInfo {
+    uint256 ownedTokensIndex;
+    address owner;
+  }
+
+  // Mapping of Contract TokenID => Address that staked it.
+  mapping(uint256 => TokenIdInfo) public stakedTokenOwners;
+
+  // Address that staked the token => Token Accounting
+  mapping(address => StakedNFTAndTokens) public stakedNFTsAndTokens;
+
+  mapping(uint32 => uint8) public crystalTargetSyms;
+
+  // Upgradable contracts use initialize instead of contructors
+  function initialize(address _crystals) public initializer {
+    // Call super initializers
+    __Ownable_init();
+    __ReentrancyGuard_init();
+
+    SPIRALBITS_STAKING_EMISSION_PER_SEC = 4 ether;
+    IMPISH_STAKING_EMISSION_PER_SEC = 1 ether;
+    SPIRALBITS_PER_SECOND_PER_SPIRAL = 0.167 ether;
+    SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether;
+
     crystals = ImpishCrystal(_crystals);
     impishspiral = ImpishSpiral(crystals.spirals());
     randomWalkNFT = IERC721(impishspiral._rwNFT());
@@ -343,15 +390,7 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // Therefore, we need to track how many of the total ERC20s were staked for each epoch
   // Note that if the amount of ERC20 staked by a user changes (via deposit or withdraw), then
   // the user's balance needs to be updated
-  struct RewardEpoch {
-    uint32 epochDurationSec; // Total seconds that this epoch lasted
-    uint96 totalSpiralBitsStaked; // Total SPIRALBITS staked across all accounts in whole uints for this Epoch
-    uint96 totalImpishStaked; // Total IMPISH tokens staked across all accounts in whole units for this Epoch
-  }
-  RewardEpoch[] public epochs; // List of epochs
-  uint32 public lastEpochTime; // Last epoch ended at this time
-
-  // Add a new epoch with the balances in the contract
+    // Add a new epoch with the balances in the contract
   function _addEpoch() internal {
     // Sanity check. Can't add epoch without having the epochs up-to-date
     require(uint32(block.timestamp) > lastEpochTime, "TooNew");
@@ -370,29 +409,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // -------------------
   // Keep track of staked NFTs
   // -------------------
-  struct StakedNFTAndTokens {
-    uint16 numRWStaked;
-    uint16 numSpiralsStaked;
-    uint16 numGrowingCrystalsStaked;
-    uint16 numFullCrystalsStaked;
-    uint32 lastClaimEpoch; // Last Epoch number the rewards were accumulated into claimedSpiralBits. Cannot be 0.
-    uint96 spiralBitsStaked; // Total number of SPIRALBITS staked
-    uint96 impishStaked; // Total number of IMPISH tokens staked
-    uint96 claimedSpiralBits; // Already claimed (but not withdrawn) spiralBits before lastClaimTime
-    mapping(uint256 => uint256) ownedTokens; // index => tokenId
-  }
-
-  struct TokenIdInfo {
-    uint256 ownedTokensIndex;
-    address owner;
-  }
-
-  // Mapping of Contract TokenID => Address that staked it.
-  mapping(uint256 => TokenIdInfo) public stakedTokenOwners;
-
-  // Address that staked the token => Token Accounting
-  mapping(address => StakedNFTAndTokens) public stakedNFTsAndTokens;
-
   function _totalTokenCountStaked(address _owner) internal view returns (uint256) {
     return
       stakedNFTsAndTokens[_owner].numRWStaked +
@@ -467,8 +483,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
   // -----------------
   // Harvesting and Growing Crystals
   // -----------------
-  mapping(uint32 => uint8) public crystalTargetSyms;
-
   function setCrystalTargetSym(uint32 crystalTokenId, uint8 targetSym) external nonReentrant {
     uint32 contractCrystalTokenId = crystalTokenId + 3_000_000;
     require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
@@ -574,6 +588,6 @@ contract StakingV2 is IERC721Receiver, ReentrancyGuard, Ownable {
     bytes calldata
   ) public pure returns (bytes4) {
     // Return this value to accept the NFT
-    return IERC721Receiver.onERC721Received.selector;
+    return IERC721ReceiverUpgradeable.onERC721Received.selector;
   }
 }

@@ -53,8 +53,9 @@ describe.only("SpiralStaking V2", function () {
     await crystal.deployed();
 
     const StakingV2 = await ethers.getContractFactory("StakingV2");
-    const stakingv2 = await StakingV2.deploy(crystal.address);
+    const stakingv2 = await StakingV2.deploy();
     await stakingv2.deployed();
+    await stakingv2.initialize(crystal.address);
 
     // Allow spiral staking to mint spiralbits
     spiralbits.addAllowedMinter(stakingv2.address);
