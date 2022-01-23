@@ -6,65 +6,12 @@ import { CrystalInfo, DappContracts, DappState, SpiralDetail } from "../AppState
 import { crystal_image } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
 import { formatkmb, range } from "./utils";
+import { getMetadataForCrystalTokenIds, getSeedsForSpiralTokenIds } from "./walletutils";
 
 type CrystalWalletProps = DappState &
   DappContracts & {
     connectWallet: () => void;
   };
-
-const getSeedsForSpiralTokenIds = async (tokenIds: Array<BigNumber>): Promise<Array<SpiralDetail>> => {
-  const spiralDetails = await Promise.all(
-    tokenIds.map(async (t) => {
-      try {
-        const tokenId = BigNumber.from(t);
-        const url = `/spiralapi/seedforid/${tokenId.toString()}`;
-        const { seed, owner, indirectOwner } = await (await fetch(url)).json();
-
-        return { tokenId, seed, owner, indirectOwner };
-      } catch (err) {
-        console.log(err);
-        return {};
-      }
-    })
-  );
-
-  const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
-  filtered.sort((a, b) => b.tokenId.toNumber() - a.tokenId.toNumber());
-
-  return filtered;
-};
-
-const getMetadataForCrystalTokenIds = async (tokenIds: Array<BigNumber>): Promise<Array<CrystalInfo>> => {
-  const crystalDetails = await Promise.all(
-    tokenIds.map(async (t) => {
-      try {
-        const tokenId = BigNumber.from(t);
-        const url = `/crystalapi/crystal/metadata/${tokenId.toString()}`;
-        const { attributes } = await (await fetch(url)).json();
-
-        const info = {
-          tokenId,
-          size: attributes.size,
-          generation: attributes.generation,
-          sym: attributes.sym,
-          seed: BigNumber.from(attributes.seed),
-          spiralBitsStored: BigNumber.from(attributes.spiralBitsStored),
-          owner: attributes.owner,
-        };
-
-        return info;
-      } catch (err) {
-        console.log(err);
-        return {};
-      }
-    })
-  );
-
-  const filtered = crystalDetails.filter((d: any) => d.seed) as Array<CrystalInfo>;
-  filtered.sort((a, b) => b.tokenId.toNumber() - a.tokenId.toNumber());
-
-  return filtered;
-};
 
 export function CrystalWallet(props: CrystalWalletProps) {
   const { type, address } = useParams();

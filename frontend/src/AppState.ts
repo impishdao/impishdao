@@ -119,4 +119,21 @@ export type CrystalInfo = {
   seed: BigNumber;
   spiralBitsStored: BigNumber;
   owner: string;
+  indirectOwner?: string;
 };
+
+export class NFTCardInfo {
+  tokenId: number;
+  image: string;
+  contractIdMultiplier: number;
+
+  constructor(tokenId: number, contractIdMultiplier: number, image: string) {
+    this.tokenId = tokenId;
+    this.image = image;
+    this.contractIdMultiplier = contractIdMultiplier;
+  }
+
+  getContractTokenId(): number {
+    return this.tokenId + this.contractIdMultiplier;
+  }
+}

@@ -436,7 +436,12 @@ export function CrystalDetail(props: CrystalDetailProps) {
                           Cost: {formatkmb(spiralBitsNeededToAddSym())} SPIRALBITS
                         </div>
                         {addSymErrorMsg && (
-                          <Alert className="mt-3" variant="danger"  onClose={() => setAddSymErrorMsg(undefined)} dismissible>
+                          <Alert
+                            className="mt-3"
+                            variant="danger"
+                            onClose={() => setAddSymErrorMsg(undefined)}
+                            dismissible
+                          >
                             {addSymErrorMsg}
                           </Alert>
                         )}

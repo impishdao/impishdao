@@ -46,20 +46,28 @@ async function main() {
   const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
 
+  const StakingV2 = await ethers.getContractFactory("StakingV2");
+  
+  const stakingv2 =  await StakingV2.deploy(crystal.address);
+  await stakingv2.deployed();
+  
+
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(crystal);
+  saveFrontendFiles(stakingv2);
 
   await network.provider.request({
     method: "hardhat_impersonateAccount",
     params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
   });
-  // const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
-  // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
-  // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
-  // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
+  const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
+  await spiralbits.connect(prodSigner).addAllowedMinter(stakingv2.address);
+  
+  await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
+  await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
+  await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
 }
 
-function saveFrontendFiles(crystal: Contract) {
+function saveFrontendFiles(stakingv2: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -74,7 +82,7 @@ function saveFrontendFiles(crystal: Contract) {
 
   const newContractAddressStr = JSON.stringify(
     Object.assign(contractAddresses, {
-      Crystal: crystal.address,
+      StakingV2: stakingv2.address,
     }),
     undefined,
     2
@@ -84,8 +92,8 @@ function saveFrontendFiles(crystal: Contract) {
   fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
 
   const crystalArtifact = artifacts.readArtifactSync("ImpishCrystal");
-  fs.writeFileSync(contractsDir + "/crystal.json", JSON.stringify(crystalArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/crystal.json", JSON.stringify(crystalArtifact, null, 2));
+  fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(crystalArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(crystalArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

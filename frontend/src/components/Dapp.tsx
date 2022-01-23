@@ -29,7 +29,7 @@ import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralDetail } from "./SpiralDetail";
 import { Top10 } from "./Top10";
 import { Marketplace } from "./Marketplace";
-import { SpiralStaking } from "./SpiralStaking";
+import { SpiralStaking } from "./StakingV2";
 import { cloneDeep } from "lodash";
 import { Crystals } from "./Crystals";
 import { CrystalWallet } from "./Wallet";

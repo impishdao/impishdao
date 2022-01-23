@@ -1,18 +1,19 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
 import { Button, Card, Col, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
-import { DappContracts, DappFunctions, DappState } from "../AppState";
+import { CrystalInfo, DappContracts, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
 import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
 import { Link } from "react-router-dom";
+import { getMetadataForCrystalTokenIds, getNFTCardInfo, getSeedsForSpiralTokenIds } from "./walletutils";
 
 type StakingPageDisplayProps = {
   title: string;
   pageSize: number;
-  spirals?: Array<SpiralDetail | BigNumber>;
+  nfts?: Array<NFTCardInfo>;
   buttonName: string;
   buttonTooltip?: string;
   onButtonClick: (selection: Set<number>) => void;
@@ -24,7 +25,7 @@ type StakingPageDisplayProps = {
 };
 const StakingPageDisplay = ({
   pageSize,
-  spirals,
+  nfts,
   title,
   buttonName,
   buttonTooltip,
@@ -55,8 +56,8 @@ const StakingPageDisplay = ({
   };
 
   const selectAll = () => {
-    if (spirals && spirals.length > 0) {
-      const newSelection = spirals.slice(0, 50).map((t: any) => {
+    if (nfts && nfts.length > 0) {
+      const newSelection = nfts.slice(0, 50).map((t: any) => {
         if (t.tokenId) {
           return t.tokenId.toNumber();
         } else {
@@ -67,7 +68,7 @@ const StakingPageDisplay = ({
     }
   };
 
-  const numPages = spirals ? Math.floor((spirals.length - 1) / pageSize) + 1 : 1;
+  const numPages = nfts ? Math.floor((nfts.length - 1) / pageSize) + 1 : 1;
 
   const PageList = () => {
     return (
@@ -96,7 +97,7 @@ const StakingPageDisplay = ({
     );
   };
 
-  const disabled = !spirals || spirals.length === 0;
+  const disabled = !nfts || nfts.length === 0;
 
   return (
     <>
@@ -109,39 +110,26 @@ const StakingPageDisplay = ({
           justifyContent: "center",
         }}
       >
-        {!spirals && <span style={{ color: "#aaa", textAlign: "center" }}>Loading...</span>}
-        {spirals && (
+        {!nfts && <span style={{ color: "#aaa", textAlign: "center" }}>Loading...</span>}
+        {nfts && (
           <>
-            {spirals.slice(startPage * pageSize, startPage * pageSize + pageSize).map((s: any) => {
-              let imgurl;
-              let tokenId: BigNumber;
-              let height;
+            {nfts.slice(startPage * pageSize, startPage * pageSize + pageSize).map((nft) => {
+              const ctokenId = nft.getContractTokenId();
 
-              if (s.tokenId !== undefined) {
-                imgurl = `/spiral_image/seed/${s.seed}/75.png`;
-                tokenId = s.tokenId;
-                height = "75px";
-              } else {
-                const paddedTokenId = pad(s.toString(), 6);
-                imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
-                tokenId = s;
-                height = "50px";
-              }
-
-              const border = selection.has(tokenId.toNumber()) ? "solid 2px #ffd454" : "solid 1px white";
+              const border = selection.has(ctokenId) ? "solid 2px #ffd454" : "solid 1px white";
 
               return (
-                <Col md={2} key={tokenId.toNumber()} className="mb-3">
+                <Col md={1} key={ctokenId} className="mb-3">
                   <Card
                     style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
-                    onClick={() => toggleInSelection(tokenId.toNumber())}
+                    onClick={() => toggleInSelection(ctokenId)}
                   >
-                    <Card.Img variant="top" src={imgurl} style={{ width: "75px", height }} />#{tokenId.toString()}
+                    <Card.Img variant="top" src={nft.image} style={{ width: "75px", height: '75px' }} />#{nft.tokenId}
                   </Card>
                 </Col>
               );
             })}
-            {spirals.length === 0 && (
+            {nfts.length === 0 && (
               <span style={{ color: "#aaa", textAlign: "center" }}>
                 {nothingMessage !== undefined && <div>{nothingMessage}</div>}
                 {nothingMessage === undefined && <span>Nothing Here</span>}
@@ -152,12 +140,12 @@ const StakingPageDisplay = ({
       </Row>
       <Row>
         <div style={{ display: "flex", justifyContent: "end", flexDirection: "row" }}>
-          {spirals && (
+          {nfts && (
             <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
               <div style={{ textDecoration: "underline", color: "white", cursor: "pointer" }} onClick={selectAll}>
                 Select All
               </div>
-              (Selected: {selection.size} / {spirals.length})
+              (Selected: {selection.size} / {nfts.length})
             </div>
           )}
         </div>
@@ -184,49 +172,25 @@ const StakingPageDisplay = ({
 
 type SpiralStakingProps = DappState & DappFunctions & DappContracts & {};
 
-type SpiralDetail = {
-  tokenId: BigNumber;
-  seed: string;
-};
-
 type SpiralBitsDetails = {
   pending: BigNumber;
   bonusBips: number;
 };
 
 export function SpiralStaking(props: SpiralStakingProps) {
+  const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>();
   const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>();
+  const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
+
   const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>();
   const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
   const [spiralStakingApprovalNeeded, setSpiralStakingApprovalNeeded] = useState(false);
 
-  const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>();
   const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>();
   const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
   const [rwnftStakingApprovalNeeded, setRwnftStakingApprovalNeeded] = useState(false);
 
   const [refreshCounter, setRefreshCounter] = useState(0);
-
-  const getSeedsForSpiralTokenIds = async (data: Array<BigNumber>): Promise<Array<SpiralDetail>> => {
-    // Map all the data to get the seeds
-    const spiralDetails = await Promise.all(
-      (data as Array<BigNumber>).map(async (t) => {
-        try {
-          const tokenId = BigNumber.from(t);
-          const url = `/spiralapi/seedforid/${tokenId.toString()}`;
-          const { seed } = await (await fetch(url)).json();
-
-          return { tokenId, seed };
-        } catch (err) {
-          console.log(err);
-          return {};
-        }
-      })
-    );
-
-    const filtered = spiralDetails.filter((d) => d.seed) as Array<SpiralDetail>;
-    return filtered;
-  };
 
   const { readUserData } = props;
   useEffect(() => {
@@ -234,16 +198,38 @@ export function SpiralStaking(props: SpiralStakingProps) {
     readUserData();
   }, [readUserData, refreshCounter]);
 
-  // Get Spiral staking info for the wallet
+  // Get all NFTs in the wallet
   useEffect(() => {
     if (props.selectedAddress) {
+      // RandomWalkNFTs
+      retryTillSucceed(async () => {
+        if (props.selectedAddress && props.rwnft) {
+          const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+          setWalletRWNFTs(walletTokenIds);
+        }
+      });
+
+      // Spirals
       fetch(`/spiralapi/wallet/${props.selectedAddress}`)
         .then((r) => r.json())
         .then(async (data) => {
           setWalletSpirals(await getSeedsForSpiralTokenIds(data));
         });
-    }
 
+      // Crystals
+      fetch(`/crystalapi/wallet/${props.selectedAddress}`)
+        .then((r) => r.json())
+        .then((data) => {
+          (async () => {
+            const crystalDetails = await getMetadataForCrystalTokenIds(data);
+            setWalletCrystals(crystalDetails);
+          })();
+        });
+    }
+  }, [props.selectedAddress]);
+
+  // Get Spiral staking info for the wallet
+  useEffect(() => {
     retryTillSucceed(async () => {
       if (props.selectedAddress && props.spiralstaking) {
         const stakedTokenIds = (await props.spiralstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
@@ -274,13 +260,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
       if (props.selectedAddress && props.rwnftstaking) {
         const stakedTokenIds = (await props.rwnftstaking.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
         setWalletStakedRWNFTs(stakedTokenIds);
-      }
-    });
-
-    retryTillSucceed(async () => {
-      if (props.selectedAddress && props.rwnft) {
-        const walletTokenIds = (await props.rwnft.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
-        setWalletRWNFTs(walletTokenIds);
       }
     });
 
@@ -427,11 +406,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
         className="withSpiralBackgroundMultiSpiral"
         style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}
       >
-        <h1 className="mb-5">Chapter 2: SpiralBits Staking</h1>
+        <h1 className="mb-5">Chapter 2: Staking</h1>
 
         {props.selectedAddress && (
           <Row>
-            <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
+            <Col md={12} style={{ border: "solid 1px white", textAlign: "left" }}>
               <h2
                 style={{
                   textAlign: "center",
@@ -440,14 +419,14 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   color: "#ffd454",
                 }}
               >
-                Stake Spirals
+                Stake your NFTs
               </h2>
-              {props.selectedAddress && (
+              
                 <StakingPageDisplay
                   title="Available To Stake"
                   buttonName={spiralStakingApprovalNeeded ? "Approve & Stake" : "Stake"}
-                  pageSize={6}
-                  spirals={walletSpirals}
+                  pageSize={12}
+                  nfts={getNFTCardInfo(walletRWNFTs, walletSpirals, walletCrystals)}
                   onButtonClick={stakeSpirals}
                   refreshCounter={refreshCounter}
                   nothingMessage={
@@ -459,21 +438,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                     </div>
                   }
                 />
-              )}
-              {props.selectedAddress && (
-                <StakingPageDisplay
-                  title="Staked Spirals"
-                  buttonName="Unstake &amp; Claim"
-                  buttonTooltip="Unstake selected Spirals and claim all SPIRALBITS into your wallet"
-                  pageSize={6}
-                  spirals={walletStakedSpirals}
-                  onButtonClick={unstakeSpirals}
-                  secondButtonName="Claim"
-                  secondButtonTooltip="Claim all SPIRALBITS into your wallet without unstaking any Spirals"
-                  refreshCounter={refreshCounter}
-                  onSecondButtonClick={() => claimSpiralbits(0)}
-                />
-              )}
+              
               <Table variant="dark">
                 <tbody>
                   <tr>
@@ -487,72 +452,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   <tr>
                     <td>Total if withdrawn now:</td>
                     <td style={{ textAlign: "right" }}>{formatkmb(totalSpiralWithdrawWithBonus)} SPIRALBITS</td>
-                  </tr>
-                </tbody>
-              </Table>
-            </Col>
-
-            <Col md={6} style={{ border: "solid 1px white", textAlign: "left" }}>
-              <h2
-                style={{
-                  textAlign: "center",
-                  backgroundColor: "rgba(0, 0, 0, 0.5)",
-                  padding: "10px",
-                  color: "#ffd454",
-                }}
-              >
-                Stake RandomWalkNFTs
-              </h2>
-              {props.selectedAddress && (
-                <StakingPageDisplay
-                  title="Available To Stake"
-                  buttonName={rwnftStakingApprovalNeeded ? "Approve & Stake" : "Stake"}
-                  pageSize={6}
-                  spirals={walletRWNFTs}
-                  refreshCounter={refreshCounter}
-                  onButtonClick={stakeRWNFTs}
-                  nothingMessage={
-                    <div>
-                      No RandomWalkNFTs.{" "}
-                      <a
-                        href="https://www.randomwalknft.com/"
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "#ffd454" }}
-                      >
-                        Mint some to stake
-                      </a>
-                    </div>
-                  }
-                />
-              )}
-              {props.selectedAddress && (
-                <StakingPageDisplay
-                  title="Staked RandomWalkNFTs"
-                  buttonName="Unstake &amp; Claim"
-                  buttonTooltip="Unstake selected RandomWalkNFTs and claim all SPIRALBITS into your wallet"
-                  pageSize={6}
-                  spirals={walletStakedRWNFTs}
-                  onButtonClick={unstakeRWNFTs}
-                  secondButtonTooltip="Claim all SPIRALBITS into your wallet without unstaking any RandomWalkNFTs"
-                  secondButtonName="Claim"
-                  refreshCounter={refreshCounter}
-                  onSecondButtonClick={() => claimSpiralbits(1)}
-                />
-              )}
-              <Table variant="dark">
-                <tbody>
-                  <tr>
-                    <td>SPIRALBITS earned:</td>
-                    <td style={{ textAlign: "right" }}>{formatkmb(rwnftTokenInfo?.pending)} SPIRALBITS</td>
-                  </tr>
-                  <tr>
-                    <td>Current Bonus</td>
-                    <td style={{ textAlign: "right" }}>{(rwnftTokenInfo?.bonusBips || 0) / 100} %</td>
-                  </tr>
-                  <tr>
-                    <td>Total if withdrawn now:</td>
-                    <td style={{ textAlign: "right" }}>{formatkmb(totalRWNFTWithdrawWithBonus)} SPIRALBITS</td>
                   </tr>
                 </tbody>
               </Table>

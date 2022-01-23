@@ -540,10 +540,19 @@ export function setup_crystal(canvas: HTMLCanvasElement, seed: string, sym: numb
   }
 }
 
+const crystalImageCacheMap = new Map<string, string>();
 export function crystal_image(seed: string, sym: number, generation: number, size: number) {
-  let f = new Finger(seed, sym, generation);
+  const key = `${seed}/${sym}/${generation}/${size};`
 
-  const newCanvas = f.render(size);
+  let image = crystalImageCacheMap.get(key);
+  if (image) {
+    return image;
+  } else {
+    let f = new Finger(seed, sym, generation);
 
-  return newCanvas.toDataURL("image/png");
+    const newCanvas = f.render(size);
+    image = newCanvas.toDataURL("image/png");
+    crystalImageCacheMap.set(key, image);
+    return image;
+  }
 }

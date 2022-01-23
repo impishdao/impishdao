@@ -25,7 +25,7 @@ export function Crystals(props: CrystalsProps) {
   const [numCrystals, setNumCrystals] = useState(1);
   const [mintGen, setMintGen] = useState(0);
   const [mintableAtEachGen, setMintableAtEachGen] = useState<BigNumber[][]>([]);
-  
+
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   const nav = useNavigate();
@@ -45,7 +45,7 @@ export function Crystals(props: CrystalsProps) {
 
   useEffect(() => {
     if (mintableAtEachGen) {
-      for (let i = 0 ; i < mintableAtEachGen.length; i++) {
+      for (let i = 0; i < mintableAtEachGen.length; i++) {
         if (mintableAtEachGen[i]?.length > 0) {
           console.log(`Setting mintGen to ${i}`);
           setMintGen(i);
@@ -85,7 +85,7 @@ export function Crystals(props: CrystalsProps) {
         console.log("No Spirals found to mint");
         return;
       }
-      const value =  mintCostsForEachGen[mintGen].mul(spiralTokenIds.length);
+      const value = mintCostsForEachGen[mintGen].mul(spiralTokenIds.length);
 
       const success = await props.waitForTxConfirmation(
         props.crystal.mintCrystals(spiralTokenIds, mintGen, { value }),
