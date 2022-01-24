@@ -122,9 +122,6 @@ const MarketPriceModal = ({
 
 type SpiralDetailProps = DappState & {
   connectWallet: () => void;
-  spiralmarket?: Contract;
-  impishspiral?: Contract;
-
   showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
 };
 
@@ -250,11 +247,11 @@ export function SpiralDetail(props: SpiralDetailProps) {
   }
 
   const cancelListing = async () => {
-    if (!props.selectedAddress || !props.spiralmarket) {
+    if (!props.selectedAddress || !props.contracts) {
       return;
     }
 
-    let tx: ContractTransaction = await props.spiralmarket.cancelListing(BigNumber.from(id));
+    let tx: ContractTransaction = await props.contracts.spiralmarket.cancelListing(BigNumber.from(id));
     await tx.wait();
 
     props.showModal(
@@ -269,14 +266,14 @@ export function SpiralDetail(props: SpiralDetailProps) {
   };
 
   const updateSalePrice = async () => {
-    if (!props.selectedAddress || !props.spiralmarket || !props.impishspiral) {
+    if (!props.selectedAddress || !props.contracts) {
       return;
     }
 
     // Check if approval is needed
-    const isApprovalNeeded = !(await props.impishspiral.isApprovedForAll(
+    const isApprovalNeeded = !(await props.contracts.impspiral.isApprovedForAll(
       props.selectedAddress,
-      props.spiralmarket.address
+      props.contracts.spiralmarket.address
     ));
 
     setPrice(ethers.utils.formatEther(listingPrice));
@@ -286,14 +283,14 @@ export function SpiralDetail(props: SpiralDetailProps) {
   };
 
   const listForSale = async () => {
-    if (!props.selectedAddress || !props.spiralmarket || !props.impishspiral) {
+    if (!props.selectedAddress || !props.contracts) {
       return;
     }
 
     // Check if approval is needed
-    const isApprovalNeeded = !(await props.impishspiral.isApprovedForAll(
+    const isApprovalNeeded = !(await props.contracts.impspiral.isApprovedForAll(
       props.selectedAddress,
-      props.spiralmarket.address
+      props.contracts.spiralmarket.address
     ));
 
     setModalMessage(<div>Set the Buy Now price for this Spiral</div>);
@@ -308,13 +305,13 @@ export function SpiralDetail(props: SpiralDetailProps) {
   const [price, setPrice] = useState("0.05");
 
   const buyNow = async () => {
-    if (!props.selectedAddress || !props.spiralmarket) {
+    if (!props.selectedAddress || !props.contracts) {
       return;
     }
 
     // First, make sure the listing is still available
     try {
-      const isValid = await props.spiralmarket.isListingValid(BigNumber.from(id));
+      const isValid = await props.contracts.spiralmarket.isListingValid(BigNumber.from(id));
       if (!isValid) {
         props.showModal(
           "Listing Invalid",
@@ -331,7 +328,9 @@ export function SpiralDetail(props: SpiralDetailProps) {
         return;
       }
 
-      let tx: ContractTransaction = await props.spiralmarket.buySpiral(BigNumber.from(id), { value: listingPrice });
+      let tx: ContractTransaction = await props.contracts.spiralmarket.buySpiral(BigNumber.from(id), {
+        value: listingPrice,
+      });
       await tx.wait();
 
       props.showModal(
@@ -373,8 +372,8 @@ export function SpiralDetail(props: SpiralDetailProps) {
       <MarketPriceModal
         show={marketPriceModalShowing}
         message={modalMessage}
-        spiralmarket={props.spiralmarket}
-        impishspiral={props.impishspiral}
+        spiralmarket={props.contracts?.spiralmarket}
+        impishspiral={props.contracts?.impspiral}
         tokenId={BigNumber.from(id)}
         modalNeedsApproval={modalNeedsApproval}
         price={price}
@@ -389,7 +388,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
 
       <TransferAddressModal
         show={transferAddressModalShowing}
-        nft={props.impishspiral}
+        nft={props.contracts?.impspiral}
         tokenId={BigNumber.from(id)}
         close={() => {
           setTransferAddressModalShowing(false);

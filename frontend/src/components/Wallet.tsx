@@ -1,8 +1,7 @@
-import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Card, Col, Container, Dropdown, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { CrystalInfo, DappContracts, DappState, SpiralDetail } from "../AppState";
+import { CrystalInfo, DappState, SpiralDetail } from "../AppState";
 import { crystal_image } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
 import { formatkmb, range } from "./utils";

@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { Button, Card, Col, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
+import { Button, Card, Col, Form, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
 import { CrystalInfo, DappContracts, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
 import { formatkmb, range, retryTillSucceed } from "./utils";
 import { BigNumber } from "ethers";
@@ -192,6 +192,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [stakedImpish, setStakedImpish] = useState<BigNumber | undefined>();
   const [spiralBitsClaimed, setSpiralBitsClaimed] = useState<BigNumber | undefined>();
 
+  const [spiralBitsToStake, setSpiralBitsToStake] = useState("");
+
   const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>();
   const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
 
@@ -310,6 +312,15 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
   const unstakeV2 = async () => {};
 
+  const stakeSpiralBits = async () => {
+    if (props.contracts && props.selectedAddress) {
+      await props.waitForTxConfirmation(
+        props.contracts.stakingv2.stakeSpiralBits(BigNumber.from(spiralBitsToStake)),
+        "Staking SpiralBits"
+      );
+    }
+  };
+
   const unstakeV1 = async () => {
     if (props.contracts && props.selectedAddress && v1StakedNFTs) {
       const beforeSpiralBits = props.spiralBitsBalance;
@@ -362,18 +373,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
     }
   };
 
-  let totalSpiralWithdrawWithBonus;
-  if (spiralsTokenInfo?.pending) {
-    const p = spiralsTokenInfo.pending;
-    totalSpiralWithdrawWithBonus = p.add(p.mul(spiralsTokenInfo.bonusBips).div(10000));
-  }
-
-  let totalRWNFTWithdrawWithBonus;
-  if (rwnftTokenInfo?.pending) {
-    const p = rwnftTokenInfo.pending;
-    totalRWNFTWithdrawWithBonus = p.add(p.mul(rwnftTokenInfo.bonusBips).div(10000));
-  }
-
   const walletNFTs = getNFTCardInfo(walletRWNFTs, walletSpirals, walletCrystals);
 
   return (
@@ -389,7 +388,10 @@ export function SpiralStaking(props: SpiralStakingProps) {
         {props.selectedAddress && (
           <>
             <Row className="mb-5">
-              <Col md={6} style={{ paddingBottom: "2%", paddingLeft: "10%", paddingRight: "10%", border: 'solid 1px white' }}>
+              <Col
+                md={6}
+                style={{ paddingBottom: "2%", paddingLeft: "10%", paddingRight: "10%", border: "solid 1px white" }}
+              >
                 <h2
                   style={{
                     textAlign: "center",
@@ -402,7 +404,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 </h2>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div>Wallet</div>
-                  <div>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</div>
+                  <div
+                    style={{ textDecoration: "underline", cursor: "pointer" }}
+                    onClick={() => setSpiralBitsToStake(props.spiralBitsBalance.toString())}
+                  >
+                    {formatkmb(props.spiralBitsBalance)} SPIRALBITS
+                  </div>
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -410,14 +417,31 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   <div>1100% </div>
                 </div>
                 <div className="mt-4 mb-1" style={{ display: "flex", justifyContent: "end" }}>
-                  <Button variant="info">Stake</Button>
+                  <Form.Group
+                    className="mb-3"
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: "5px" }}
+                  >
+                    <Form.Control
+                      type="number"
+                      step={1}
+                      placeholder="SPIRALBITS to Stake"
+                      value={spiralBitsToStake}
+                      onChange={(e) => setSpiralBitsToStake(e.currentTarget.value)}
+                    />
+                    <Button variant="info" onClick={stakeSpiralBits}>
+                      Stake
+                    </Button>
+                  </Form.Group>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div>Staked</div>
                   <div>{formatkmb(stakedSpiralBits)} SPIRALBITS</div>
                 </div>
               </Col>
-              <Col md={6} style={{ paddingBottom: "2%", paddingLeft: "10%", paddingRight: "10%", border: 'solid 1px white' }}>
+              <Col
+                md={6}
+                style={{ paddingBottom: "2%", paddingLeft: "10%", paddingRight: "10%", border: "solid 1px white" }}
+              >
                 <h2
                   style={{
                     textAlign: "center",
@@ -496,7 +520,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   nothingMessage={<div>Nothing staked in V1.</div>}
                 />
 
-                <Table variant="dark">
+                {/* <Table variant="dark">
                   <tbody>
                     <tr>
                       <td>SPIRALBITS earned:</td>
@@ -511,7 +535,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                       <td style={{ textAlign: "right" }}>{formatkmb(totalSpiralWithdrawWithBonus)} SPIRALBITS</td>
                     </tr>
                   </tbody>
-                </Table>
+                </Table> */}
               </Col>
             </Row>
           </>
