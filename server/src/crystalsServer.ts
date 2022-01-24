@@ -25,7 +25,7 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
   });
 
   app.get("/crystalapi/mintedforspiral/:spiralTokenId", async (req, res) => {
-    let spiralTokenId = req.params.spiralTokenId;
+    const spiralTokenId = req.params.spiralTokenId;
 
     try {
       const mintedTokenIds = await Promise.all(

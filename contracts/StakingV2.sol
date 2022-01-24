@@ -26,7 +26,7 @@ import "./ImpishSpiral.sol";
 import "./SpiralBits.sol";
 
 contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
-  // Since this is an upgradable implementation, the storage layout is important. 
+  // Since this is an upgradable implementation, the storage layout is important.
   // Please be careful changing variable positions when upgrading.
 
   // Global reward for all SPIRALBITS staked per second, across ALL staked SpiralBits
@@ -259,6 +259,47 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     }
   }
 
+  function pendingRewards(address owner) internal view returns (uint256) {
+    uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
+    uint256 accumulated = 0;
+
+    if (lastClaimedEpoch > 0) {
+      accumulated += _getRewardsAccumulated(owner, lastClaimedEpoch);
+    }
+
+    RewardEpoch memory newEpoch = _getNextEpoch();
+
+    if (newEpoch.epochDurationSec > 0) {
+      // Accumulate what will probably be the next epoch
+      if (newEpoch.totalSpiralBitsStaked > 0) {
+        accumulated +=
+          (SPIRALBITS_STAKING_EMISSION_PER_SEC *
+            newEpoch.epochDurationSec *
+            uint256(stakedNFTsAndTokens[owner].spiralBitsStaked)) /
+          uint256(newEpoch.totalSpiralBitsStaked);
+      }
+
+      if (newEpoch.totalImpishStaked > 0) {
+        accumulated +=
+          (IMPISH_STAKING_EMISSION_PER_SEC *
+            newEpoch.epochDurationSec *
+            uint256(stakedNFTsAndTokens[owner].impishStaked)) /
+          uint256(newEpoch.totalImpishStaked);
+      }
+
+      accumulated +=
+        newEpoch.epochDurationSec *
+        SPIRALBITS_PER_SECOND_PER_SPIRAL *
+        stakedNFTsAndTokens[owner].numSpiralsStaked;
+
+      accumulated += newEpoch.epochDurationSec * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
+
+      // TODO: Reward for Fully Grown Crystals
+    }
+
+    return accumulated;
+  }
+
   // ---------------------
   // Internal Functions
   // ---------------------
@@ -312,23 +353,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     nft.safeTransferFrom(address(this), msg.sender, tokenId);
   }
 
-  // Do the internal accounting update for the address
-  function _updateRewards(address owner) internal {
-    // First, see if we need to add an epoch.
-    // We may not always need to, especially if the time elapsed is 0 (i.e., multiple tx in same block)
-    if (block.timestamp > lastEpochTime) {
-      _addEpoch();
-    }
-
-    // Mark as claimed till the newly created epoch.
-    uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
-    stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
-
-    // If this owner is new, just return
-    if (lastClaimedEpoch == 0) {
-      return;
-    }
-
+  function _getRewardsAccumulated(address owner, uint256 lastClaimedEpoch) internal view returns (uint256) {
     uint256 rewardsAccumulated = 0;
     uint256 totalDuration = 0;
 
@@ -366,6 +391,28 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
     // TODO: Reward for Fully Grown Crystals
 
+    return rewardsAccumulated;
+  }
+
+  // Do the internal accounting update for the address
+  function _updateRewards(address owner) internal {
+    // First, see if we need to add an epoch.
+    // We may not always need to, especially if the time elapsed is 0 (i.e., multiple tx in same block)
+    if (block.timestamp > lastEpochTime) {
+      _addEpoch();
+    }
+
+    // Mark as claimed till the newly created epoch.
+    uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
+    stakedNFTsAndTokens[owner].lastClaimEpoch = uint32(epochs.length - 1);
+
+    // If this owner is new, just return
+    if (lastClaimedEpoch == 0) {
+      return;
+    }
+
+    uint256 rewardsAccumulated = _getRewardsAccumulated(owner, lastClaimedEpoch);
+
     // Accumulate everything
     stakedNFTsAndTokens[owner].claimedSpiralBits += uint96(rewardsAccumulated);
   }
@@ -381,16 +428,23 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
   // Therefore, we need to track how many of the total ERC20s were staked for each epoch
   // Note that if the amount of ERC20 staked by a user changes (via deposit or withdraw), then
   // the user's balance needs to be updated
-    // Add a new epoch with the balances in the contract
-  function _addEpoch() internal {
-    // Sanity check. Can't add epoch without having the epochs up-to-date
-    require(uint32(block.timestamp) > lastEpochTime, "TooNew");
 
+  function _getNextEpoch() internal view returns (RewardEpoch memory) {
     RewardEpoch memory newEpoch = RewardEpoch({
       epochDurationSec: uint32(block.timestamp) - lastEpochTime,
       totalSpiralBitsStaked: uint96(spiralbits.balanceOf(address(this))),
       totalImpishStaked: uint96(impish.balanceOf(address(this)))
     });
+
+    return newEpoch;
+  }
+
+  // Add a new epoch with the balances in the contract
+  function _addEpoch() internal {
+    // Sanity check. Can't add epoch without having the epochs up-to-date
+    require(uint32(block.timestamp) > lastEpochTime, "TooNew");
+
+    RewardEpoch memory newEpoch = _getNextEpoch();
 
     // Add to array
     lastEpochTime = uint32(block.timestamp);

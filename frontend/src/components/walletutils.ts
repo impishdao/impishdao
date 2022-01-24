@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { CrystalInfo, NFTCardInfo, SpiralDetail } from "../AppState";
 import { crystal_image } from "../crystalRenderer";
 import { pad } from "./utils";
@@ -88,3 +88,5 @@ export function getNFTCardInfo(
 
   return result;
 }
+
+export const Eth2B = ethers.utils.parseEther("2000000000");

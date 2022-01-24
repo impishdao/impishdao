@@ -1,14 +1,14 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { Button, Card, Col, Form, OverlayTrigger, Row, Table, Tooltip } from "react-bootstrap";
-import { CrystalInfo, DappContracts, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
+import { Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
+import { CrystalInfo, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
 import { formatkmb, range, retryTillSucceed } from "./utils";
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
 import { Link } from "react-router-dom";
-import { getMetadataForCrystalTokenIds, getNFTCardInfo, getSeedsForSpiralTokenIds } from "./walletutils";
+import { Eth2B, getMetadataForCrystalTokenIds, getNFTCardInfo, getSeedsForSpiralTokenIds } from "./walletutils";
 
 type StakingPageDisplayProps = {
   title: string;
@@ -173,6 +173,14 @@ const StakingPageDisplay = ({
   );
 };
 
+type StakingApprovalsNeeded = {
+  spiralbits: boolean;
+  impish: boolean;
+  randomwalknft: boolean;
+  spiral: boolean;
+  crystal: boolean;
+};
+
 type SpiralStakingProps = DappState & DappFunctions & {};
 
 type SpiralBitsDetails = {
@@ -200,8 +208,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>();
   const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
 
-  const [spiralStakingApprovalNeeded, setSpiralStakingApprovalNeeded] = useState(false);
-  const [rwnftStakingApprovalNeeded, setRwnftStakingApprovalNeeded] = useState(false);
+  const [approvalsNeeded, setApprovalsNeeded] = useState<StakingApprovalsNeeded>();
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -239,7 +246,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
           })();
         });
     }
-  }, [props.selectedAddress, props.contracts]);
+  }, [props.selectedAddress, props.contracts, refreshCounter]);
 
   // Get the v1 staked Spirals and RWNFTs
   useEffect(() => {
@@ -258,7 +265,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         setV1StakedNFTs(getNFTCardInfo(stakedRwNFTIds, spirals));
       }
     });
-  }, [props.selectedAddress, props.contracts]);
+  }, [props.selectedAddress, props.contracts, refreshCounter]);
 
   // Get all the staked NFTs, SPIRALBITS, Impish
   useEffect(() => {
@@ -306,6 +313,35 @@ export function SpiralStaking(props: SpiralStakingProps) {
         setSpiralBitsClaimed(BigNumber.from(stakedTokens["claimedSpiralBits"]));
       }
     });
+  }, [props.selectedAddress, props.contracts, refreshCounter]);
+
+  // Record all approvals needed
+  useEffect(() => {
+    retryTillSucceed(async () => {
+      if (props.contracts && props.selectedAddress) {
+        const spiralbits = (
+          await props.contracts.spiralbits.allowance(props.selectedAddress, props.contracts.stakingv2.address)
+        ).eq(0);
+        const impish = (
+          await props.contracts.impdao.allowance(props.selectedAddress, props.contracts.stakingv2.address)
+        ).eq(0);
+
+        const randomwalknft = await props.contracts.rwnft.isApprovedForAll(
+          props.selectedAddress,
+          props.contracts.stakingv2.address
+        );
+        const spiral = await props.contracts.impspiral.isApprovedForAll(
+          props.selectedAddress,
+          props.contracts.stakingv2.address
+        );
+        const crystal = await props.contracts.crystal.isApprovedForAll(
+          props.selectedAddress,
+          props.contracts.stakingv2.address
+        );
+
+        setApprovalsNeeded({ spiralbits, impish, randomwalknft, spiral, crystal });
+      }
+    });
   }, [props.selectedAddress, props.contracts]);
 
   const stakeV2 = async () => {};
@@ -313,11 +349,33 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const unstakeV2 = async () => {};
 
   const stakeSpiralBits = async () => {
+    if (props.contracts && props.selectedAddress && approvalsNeeded) {
+      let success = true;
+      if (approvalsNeeded.spiralbits) {
+        success = await props.waitForTxConfirmation(
+          props.contracts.spiralbits.approve(props.contracts.stakingv2.address, Eth2B),
+          "Approving"
+        );
+      }
+
+      if (success) {
+        const spiralBits18Dec = ethers.utils.parseEther(spiralBitsToStake);
+        await props.waitForTxConfirmation(
+          props.contracts.stakingv2.stakeSpiralBits(spiralBits18Dec),
+          "Staking SpiralBits"
+        );
+
+        setSpiralBitsToStake("");
+        setRefreshCounter(refreshCounter + 1);
+      }
+    }
+  };
+
+  const unstakeSpiralBits = async () => {
     if (props.contracts && props.selectedAddress) {
-      await props.waitForTxConfirmation(
-        props.contracts.stakingv2.stakeSpiralBits(BigNumber.from(spiralBitsToStake)),
-        "Staking SpiralBits"
-      );
+      await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeSpiralBits(true), "Unstaking SpiralBits");
+
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 
@@ -406,7 +464,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   <div>Wallet</div>
                   <div
                     style={{ textDecoration: "underline", cursor: "pointer" }}
-                    onClick={() => setSpiralBitsToStake(props.spiralBitsBalance.toString())}
+                    onClick={() => setSpiralBitsToStake(ethers.utils.formatEther(props.spiralBitsBalance))}
                   >
                     {formatkmb(props.spiralBitsBalance)} SPIRALBITS
                   </div>
@@ -423,6 +481,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   >
                     <Form.Control
                       type="number"
+                      style={{ textAlign: "right" }}
                       step={1}
                       placeholder="SPIRALBITS to Stake"
                       value={spiralBitsToStake}
@@ -436,6 +495,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div>Staked</div>
                   <div>{formatkmb(stakedSpiralBits)} SPIRALBITS</div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "end" }}>
+                  <Button variant="info" onClick={unstakeSpiralBits}>
+                    Unstake All
+                  </Button>
                 </div>
               </Col>
               <Col
