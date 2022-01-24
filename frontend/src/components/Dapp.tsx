@@ -20,18 +20,10 @@ import Crystal from "../contracts/crystal.json";
 import StakingV2 from "../contracts/stakingv2.json";
 import contractAddresses from "../contracts/contract-addresses.json";
 
-import { Web3Provider } from "@ethersproject/providers";
 import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import {
-  DappContracts,
-  DappState,
-  ERROR_CODE_TX_REJECTED_BY_USER,
-  NFTForSale,
-  ToastInfo,
-  WANTED_NETWORK_ID,
-} from "../AppState";
+import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
 import { SpiralDetail } from "./SpiralDetail";

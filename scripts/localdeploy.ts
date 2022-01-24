@@ -47,9 +47,8 @@ async function main() {
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
 
   const StakingV2 = await ethers.getContractFactory("StakingV2");
-  const stakingv2 =  await upgrades.deployProxy(StakingV2, [crystal.address]);
+  const stakingv2 = await upgrades.deployProxy(StakingV2, [crystal.address]);
   await stakingv2.deployed();
-  
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(stakingv2);
@@ -90,9 +89,9 @@ function saveFrontendFiles(stakingv2: Contract) {
   fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
   fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
 
-  const crystalArtifact = artifacts.readArtifactSync("ImpishCrystal");
-  fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(crystalArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(crystalArtifact, null, 2));
+  const stakingv2Artifact = artifacts.readArtifactSync("StakingV2");
+  fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(stakingv2Artifact, null, 2));
+  fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(stakingv2Artifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -259,15 +259,6 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     }
   }
 
-  function compoundSpiralBits() external nonReentrant {
-    // Update the owner's rewards first. This also updates the current epoch.
-    _updateRewards(msg.sender);
-
-    // Move the spiral bits into staked
-    stakedNFTsAndTokens[msg.sender].spiralBitsStaked += stakedNFTsAndTokens[msg.sender].claimedSpiralBits;
-    stakedNFTsAndTokens[msg.sender].claimedSpiralBits = 0;
-  }
-
   // ---------------------
   // Internal Functions
   // ---------------------
@@ -538,11 +529,11 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
     delete crystalTargetSyms[contractCrystalTokenId];
 
-    // TODO: Unstake growing crystal
+    // Unstake growing crystal
     _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
     stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
 
-    // TODO: Stake fully grown crystal
+    // Stake fully grown crystal
     uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
     _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
     stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
@@ -568,13 +559,6 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
   receive() external payable {
     // Default payable to accept ether payments for winning spirals
-  }
-
-  // Sometimes people send ETH to this contract - This is a way for the dev
-  // to rescue ETH stuck here
-  function rescueEth() external onlyOwner {
-    (bool success, ) = owner().call{value: address(this).balance}("");
-    require(success, "Transfer failed.");
   }
 
   // -------------------

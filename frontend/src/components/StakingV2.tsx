@@ -124,7 +124,10 @@ const StakingPageDisplay = ({
                     style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
                     onClick={() => toggleInSelection(ctokenId)}
                   >
-                    <Card.Img variant="top" src={nft.image} style={{ width: "75px", height: "75px" }} />#{nft.tokenId}
+                    <Card.Img variant="top" src={nft.image} style={{ width: "75px", height: "75px" }} />
+                    <span>
+                      {nft.getNFTTypeShort()} #{nft.tokenId}
+                    </span>
                   </Card>
                 </Col>
               );
@@ -182,7 +185,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [walletSpirals, setWalletSpirals] = useState<Array<SpiralDetail>>();
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
 
+  const [stakedNFTCards, setStakedNFTCards] = useState<Array<NFTCardInfo>>();
   const [v1StakedNFTs, setV1StakedNFTs] = useState<Array<NFTCardInfo>>();
+
+  const [stakedSpiralBits, setStakedSpiralBits] = useState<BigNumber | undefined>();
+  const [stakedImpish, setStakedImpish] = useState<BigNumber | undefined>();
+  const [spiralBitsClaimed, setSpiralBitsClaimed] = useState<BigNumber | undefined>();
 
   const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>();
   const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
@@ -238,9 +246,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const stakedSpiralIds = (await props.contracts.spiralstaking.walletOfOwner(
           props.selectedAddress
         )) as Array<BigNumber>;
-        console.log(`1: ${stakedSpiralIds.length}`);
         const spirals = await getSeedsForSpiralTokenIds(stakedSpiralIds);
-        console.log(`2: ${spirals.length}`);
 
         const stakedRwNFTIds = (await props.contracts.rwnftstaking.walletOfOwner(
           props.selectedAddress
@@ -252,7 +258,57 @@ export function SpiralStaking(props: SpiralStakingProps) {
     });
   }, [props.selectedAddress, props.contracts]);
 
+  // Get all the staked NFTs, SPIRALBITS, Impish
+  useEffect(() => {
+    // Get staked wallet
+    retryTillSucceed(async () => {
+      if (props.contracts) {
+        const nftWallet = (await props.contracts.stakingv2.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+
+        // Split up into RWs, spirals and crystals
+        const rwNFTIDs: Array<BigNumber> = [];
+        const spiralsNFTIDs: Array<BigNumber> = [];
+        const crystalNFTIDs: Array<BigNumber> = [];
+
+        nftWallet.forEach((contractTokenId) => {
+          const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
+          switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
+            case "RandomWalkNFT": {
+              rwNFTIDs.push(tokenId);
+              break;
+            }
+            case "Spiral": {
+              spiralsNFTIDs.push(tokenId);
+              break;
+            }
+            case "GrowingCrystal":
+            case "Crystal": {
+              crystalNFTIDs.push(tokenId);
+              break;
+            }
+          }
+        });
+
+        // Get all the metadata for the spirals
+        const stakedNFTCards = getNFTCardInfo(
+          rwNFTIDs.map((t) => BigNumber.from(t)),
+          await getSeedsForSpiralTokenIds(spiralsNFTIDs),
+          await getMetadataForCrystalTokenIds(crystalNFTIDs)
+        );
+        setStakedNFTCards(stakedNFTCards);
+
+        // Get staked Spiralbits and Impish
+        const stakedTokens = await props.contracts.stakingv2.stakedNFTsAndTokens(props.selectedAddress);
+        setStakedSpiralBits(BigNumber.from(stakedTokens["spiralBitsStaked"]));
+        setStakedImpish(BigNumber.from(stakedTokens["impishStaked"]));
+        setSpiralBitsClaimed(BigNumber.from(stakedTokens["claimedSpiralBits"]));
+      }
+    });
+  }, [props.selectedAddress, props.contracts]);
+
   const stakeV2 = async () => {};
+
+  const unstakeV2 = async () => {};
 
   const unstakeV1 = async () => {
     if (props.contracts && props.selectedAddress && v1StakedNFTs) {
@@ -331,64 +387,134 @@ export function SpiralStaking(props: SpiralStakingProps) {
         <h1 className="mb-5">Chapter 2: Staking</h1>
 
         {props.selectedAddress && (
-          <Row>
-            <Col md={12} style={{ border: "solid 1px white", textAlign: "left" }}>
-              <h2
-                style={{
-                  textAlign: "center",
-                  backgroundColor: "rgba(0, 0, 0, 0.5)",
-                  padding: "10px",
-                  color: "#ffd454",
-                }}
-              >
-                Stake your NFTs
-              </h2>
+          <>
+            <Row className="mb-5">
+              <Col md={6} style={{ paddingBottom: "2%", paddingLeft: "10%", paddingRight: "10%", border: 'solid 1px white' }}>
+                <h2
+                  style={{
+                    textAlign: "center",
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    padding: "10px",
+                    color: "#ffd454",
+                  }}
+                >
+                  Stake SPIRALBITS
+                </h2>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>Wallet</div>
+                  <div>{formatkmb(props.spiralBitsBalance)} SPIRALBITS</div>
+                </div>
 
-              <StakingPageDisplay
-                title="Available To Stake"
-                buttonName={"Stake"}
-                pageSize={12}
-                nfts={walletNFTs}
-                onButtonClick={stakeV2}
-                refreshCounter={refreshCounter}
-                nothingMessage={
-                  <div>
-                    No Spirals.{" "}
-                    <Link to="/spirals" style={{ color: "#ffd454" }}>
-                      Mint some to stake
-                    </Link>
-                  </div>
-                }
-              />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>APR</div>
+                  <div>1100% </div>
+                </div>
+                <div className="mt-4 mb-1" style={{ display: "flex", justifyContent: "end" }}>
+                  <Button variant="info">Stake</Button>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>Staked</div>
+                  <div>{formatkmb(stakedSpiralBits)} SPIRALBITS</div>
+                </div>
+              </Col>
+              <Col md={6} style={{ paddingBottom: "2%", paddingLeft: "10%", paddingRight: "10%", border: 'solid 1px white' }}>
+                <h2
+                  style={{
+                    textAlign: "center",
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    padding: "10px",
+                    color: "#ffd454",
+                  }}
+                >
+                  Stake IMPISH
+                </h2>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>Wallet</div>
+                  <div>{formatkmb(props.impishTokenBalance)} IMPISH</div>
+                </div>
 
-              <StakingPageDisplay
-                title="V1 Staked"
-                buttonName={"Unstake All"}
-                pageSize={12}
-                nfts={v1StakedNFTs}
-                onButtonClick={unstakeV1}
-                refreshCounter={refreshCounter}
-                nothingMessage={<div>Nothing staked in V1.</div>}
-              />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>APR</div>
+                  <div>1100% </div>
+                </div>
+                <div className="mt-4 mb-1" style={{ display: "flex", justifyContent: "end" }}>
+                  <Button variant="info">Stake</Button>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>Staked</div>
+                  <div>{formatkmb(stakedImpish)} IMPISH</div>
+                </div>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={12} style={{ textAlign: "left" }}>
+                <h2
+                  style={{
+                    textAlign: "center",
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    padding: "10px",
+                    color: "#ffd454",
+                  }}
+                >
+                  Stake NFTs
+                </h2>
 
-              <Table variant="dark">
-                <tbody>
-                  <tr>
-                    <td>SPIRALBITS earned:</td>
-                    <td style={{ textAlign: "right" }}>{formatkmb(spiralsTokenInfo?.pending)} SPIRALBITS</td>
-                  </tr>
-                  <tr>
-                    <td>Current Bonus</td>
-                    <td style={{ textAlign: "right" }}>{(spiralsTokenInfo?.bonusBips || 0) / 100} %</td>
-                  </tr>
-                  <tr>
-                    <td>Total if withdrawn now:</td>
-                    <td style={{ textAlign: "right" }}>{formatkmb(totalSpiralWithdrawWithBonus)} SPIRALBITS</td>
-                  </tr>
-                </tbody>
-              </Table>
-            </Col>
-          </Row>
+                <StakingPageDisplay
+                  title="Available To Stake"
+                  buttonName={"Stake"}
+                  pageSize={12}
+                  nfts={walletNFTs}
+                  onButtonClick={stakeV2}
+                  refreshCounter={refreshCounter}
+                  nothingMessage={
+                    <div>
+                      No Spirals.{" "}
+                      <Link to="/spirals" style={{ color: "#ffd454" }}>
+                        Mint some to stake
+                      </Link>
+                    </div>
+                  }
+                />
+
+                <StakingPageDisplay
+                  title="Staked NFTs"
+                  buttonName="Unstake"
+                  pageSize={12}
+                  nfts={stakedNFTCards}
+                  onButtonClick={unstakeV2}
+                  refreshCounter={refreshCounter}
+                  nothingMessage={<div>Nothing staked so far.</div>}
+                />
+
+                <StakingPageDisplay
+                  title="V1 Staked"
+                  buttonName="Unstake All"
+                  pageSize={12}
+                  nfts={v1StakedNFTs}
+                  onButtonClick={unstakeV1}
+                  refreshCounter={refreshCounter}
+                  nothingMessage={<div>Nothing staked in V1.</div>}
+                />
+
+                <Table variant="dark">
+                  <tbody>
+                    <tr>
+                      <td>SPIRALBITS earned:</td>
+                      <td style={{ textAlign: "right" }}>{formatkmb(spiralsTokenInfo?.pending)} SPIRALBITS</td>
+                    </tr>
+                    <tr>
+                      <td>Current Bonus</td>
+                      <td style={{ textAlign: "right" }}>{(spiralsTokenInfo?.bonusBips || 0) / 100} %</td>
+                    </tr>
+                    <tr>
+                      <td>Total if withdrawn now:</td>
+                      <td style={{ textAlign: "right" }}>{formatkmb(totalSpiralWithdrawWithBonus)} SPIRALBITS</td>
+                    </tr>
+                  </tbody>
+                </Table>
+              </Col>
+            </Row>
+          </>
         )}
         {!props.selectedAddress && (
           <div style={{ marginTop: "50px", marginBottom: "100px" }}>

@@ -142,14 +142,40 @@ export class NFTCardInfo {
     return this.tokenId + this.contractIdMultiplier;
   }
 
-  getNFTtype(): NFTtype {
-    switch (this.contractIdMultiplier) {
+  static SplitFromContractTokenId = (contractTokenId: BigNumber): [BigNumber, BigNumber] => {
+    const contractMultiplier = contractTokenId.div(1000000).mul(1000000);
+    const tokenId = contractTokenId.sub(contractMultiplier);
+
+    return [tokenId, contractMultiplier];
+  }
+
+  static NFTTypeForContractMultiplier = (contractId: number): NFTtype => {
+    switch (contractId) {
       case 1000000:
         return "RandomWalkNFT";
       case 2000000:
         return "Spiral";
       case 3000000:
         return "GrowingCrystal";
+      case 4000000:
+        return "Crystal";
+    }
+
+    throw new Error("Unrecognized ContractIDMultiplier");
+  }
+
+  getNFTtype(): NFTtype {
+    return NFTCardInfo.NFTTypeForContractMultiplier(this.contractIdMultiplier);
+  }
+
+  getNFTTypeShort(): string {
+    switch (this.contractIdMultiplier) {
+      case 1000000:
+        return "RW";
+      case 2000000:
+        return "Spiral";
+      case 3000000:
+        return "Crystal";
       case 4000000:
         return "Crystal";
     }
