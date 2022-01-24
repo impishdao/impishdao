@@ -175,18 +175,13 @@ const StakingPageDisplay = ({
 
 type StakingApprovalsNeeded = {
   spiralbits: boolean;
-  impish: boolean;
+  impdao: boolean;
   randomwalknft: boolean;
   spiral: boolean;
   crystal: boolean;
 };
 
 type SpiralStakingProps = DappState & DappFunctions & {};
-
-type SpiralBitsDetails = {
-  pending: BigNumber;
-  bonusBips: number;
-};
 
 export function SpiralStaking(props: SpiralStakingProps) {
   const [walletRWNFTs, setWalletRWNFTs] = useState<Array<BigNumber>>();
@@ -201,12 +196,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [spiralBitsClaimed, setSpiralBitsClaimed] = useState<BigNumber | undefined>();
 
   const [spiralBitsToStake, setSpiralBitsToStake] = useState("");
-
-  const [walletStakedSpirals, setWalletStakedSpirals] = useState<Array<SpiralDetail>>();
-  const [spiralsTokenInfo, setSpiralsTokenInfo] = useState<SpiralBitsDetails>();
-
-  const [walletStakedRWNFTs, setWalletStakedRWNFTs] = useState<Array<BigNumber>>();
-  const [rwnftTokenInfo, setRWNFTTokenInfo] = useState<SpiralBitsDetails>();
+  const [impishToStake, setImpishToStake] = useState("");
 
   const [approvalsNeeded, setApprovalsNeeded] = useState<StakingApprovalsNeeded>();
 
@@ -322,7 +312,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const spiralbits = (
           await props.contracts.spiralbits.allowance(props.selectedAddress, props.contracts.stakingv2.address)
         ).eq(0);
-        const impish = (
+
+        const impdao = (
           await props.contracts.impdao.allowance(props.selectedAddress, props.contracts.stakingv2.address)
         ).eq(0);
 
@@ -339,7 +330,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
           props.contracts.stakingv2.address
         );
 
-        setApprovalsNeeded({ spiralbits, impish, randomwalknft, spiral, crystal });
+        setApprovalsNeeded({ spiralbits, impdao, randomwalknft, spiral, crystal });
       }
     });
   }, [props.selectedAddress, props.contracts]);
@@ -379,6 +370,39 @@ export function SpiralStaking(props: SpiralStakingProps) {
     }
   };
 
+
+  const stakeImpish = async () => {
+    if (props.contracts && props.selectedAddress && approvalsNeeded) {
+      let success = true;
+      if (approvalsNeeded.impdao) {
+        success = await props.waitForTxConfirmation(
+          props.contracts.impdao.approve(props.contracts.stakingv2.address, Eth2B),
+          "Approving"
+        );
+      }
+
+      if (success) {
+        const impish18Dec = ethers.utils.parseEther(impishToStake);
+        await props.waitForTxConfirmation(
+          props.contracts.stakingv2.stakeImpish(impish18Dec),
+          "Staking Impish"
+        );
+
+        setImpishToStake("");
+        setRefreshCounter(refreshCounter + 1);
+      }
+    }
+  };
+
+  const unstakeImpish = async () => {
+    if (props.contracts && props.selectedAddress) {
+      await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeImpish(true), "Unstaking Impish");
+
+      setRefreshCounter(refreshCounter + 1);
+    }
+  };
+
+
   const unstakeV1 = async () => {
     if (props.contracts && props.selectedAddress && v1StakedNFTs) {
       const beforeSpiralBits = props.spiralBitsBalance;
@@ -396,26 +420,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
         props.contracts.spiralstaking.unstakeNFTs(spiralTokenIds, true),
         "Unstaking Spirals"
       );
-
-      setRefreshCounter(refreshCounter + 1);
-
-      const afterSpiralBits = await props.contracts.spiralbits.balanceOf(props.selectedAddress);
-      if (afterSpiralBits.gt(beforeSpiralBits)) {
-        props.showModal(
-          "Claimed SPIRALBITS",
-          <div>
-            You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
-          </div>
-        );
-      }
-    }
-  };
-
-  const claimSpiralbits = async () => {
-    const beforeSpiralBits = props.spiralBitsBalance;
-
-    if (props.contracts && props.selectedAddress) {
-      await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeNFTs([], true), "Claim SPIRALBITS");
 
       setRefreshCounter(refreshCounter + 1);
 
@@ -518,7 +522,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 </h2>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div>Wallet</div>
-                  <div>{formatkmb(props.impishTokenBalance)} IMPISH</div>
+                  <div
+                    style={{ textDecoration: "underline", cursor: "pointer" }}
+                    onClick={() => setImpishToStake(ethers.utils.formatEther(props.impishTokenBalance))}
+                  >
+                    {formatkmb(props.impishTokenBalance)} IMPISH
+                  </div>
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -526,11 +535,31 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   <div>1100% </div>
                 </div>
                 <div className="mt-4 mb-1" style={{ display: "flex", justifyContent: "end" }}>
-                  <Button variant="info">Stake</Button>
+                  <Form.Group
+                    className="mb-3"
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: "5px" }}
+                  >
+                    <Form.Control
+                      type="number"
+                      style={{ textAlign: "right" }}
+                      step={1}
+                      placeholder="IMPISH to Stake"
+                      value={impishToStake}
+                      onChange={(e) => setImpishToStake(e.currentTarget.value)}
+                    />
+                    <Button variant="info" onClick={stakeImpish}>
+                      Stake
+                    </Button>
+                  </Form.Group>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div>Staked</div>
                   <div>{formatkmb(stakedImpish)} IMPISH</div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "end" }}>
+                  <Button variant="info" onClick={unstakeImpish}>
+                    Unstake All
+                  </Button>
                 </div>
               </Col>
             </Row>
