@@ -119,7 +119,7 @@ const StakingPageDisplay = ({
               const border = selection.has(ctokenId) ? "solid 2px #ffd454" : "solid 1px white";
 
               return (
-                <Col md={1} key={ctokenId} className="mb-3">
+                <Col md={pageSize === 12 ? 1 : 2} key={ctokenId} className="mb-3">
                   <Card
                     style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
                     onClick={() => toggleInSelection(ctokenId)}
@@ -189,6 +189,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
 
   const [stakedNFTCards, setStakedNFTCards] = useState<Array<NFTCardInfo>>();
+  const [growingCrystalNFTCards, setGrowingCrystalNFTCards] = useState<Array<NFTCardInfo>>();
   const [v1StakedNFTs, setV1StakedNFTs] = useState<Array<NFTCardInfo>>();
 
   const [stakedSpiralBits, setStakedSpiralBits] = useState<BigNumber | undefined>();
@@ -289,11 +290,17 @@ export function SpiralStaking(props: SpiralStakingProps) {
         });
 
         // Get all the metadata for the spirals
-        const stakedNFTCards = getNFTCardInfo(
+        let stakedNFTCards = getNFTCardInfo(
           rwNFTIDs.map((t) => BigNumber.from(t)),
           await getSeedsForSpiralTokenIds(spiralsNFTIDs),
           await getMetadataForCrystalTokenIds(crystalNFTIDs)
         );
+
+        // Split the NFT Cards into growing Crystals and everything else
+        const growingCrystals = stakedNFTCards.filter((c) => c.getNFTtype() === "GrowingCrystal");
+        stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() !== "GrowingCrystal");
+
+        setGrowingCrystalNFTCards(growingCrystals);
         setStakedNFTCards(stakedNFTCards);
 
         // Get staked Spiralbits and Impish
@@ -388,7 +395,19 @@ export function SpiralStaking(props: SpiralStakingProps) {
     }
   };
 
-  const unstakeV2 = async () => {};
+  const unstakeV2 = async (contractTokenIdsSet: Set<number>) => {
+    if (props.contracts && props.selectedAddress) {
+      const contractTokenIds = Array.from(contractTokenIdsSet);
+
+      await props.waitForTxConfirmation(
+        props.contracts.stakingv2.unstakeNFTs(contractTokenIds, true),
+        "Unstaking"
+      );
+      setRefreshCounter(refreshCounter + 1);
+    }
+  };
+
+  const harvest = async () => {};
 
   const stakeSpiralBits = async () => {
     if (props.contracts && props.selectedAddress && approvedForStakingv2) {
@@ -623,7 +642,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 </h2>
 
                 <StakingPageDisplay
-                  title="Available To Stake"
+                  title=""
                   buttonName={"Stake"}
                   pageSize={12}
                   nfts={walletNFTs}
@@ -638,28 +657,48 @@ export function SpiralStaking(props: SpiralStakingProps) {
                     </div>
                   }
                 />
-
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6} style={{ border: "solid 1px white", paddingRight: "20px", paddingLeft: "20px" }}>
                 <StakingPageDisplay
                   title="Staked NFTs"
                   buttonName="Unstake"
-                  pageSize={12}
+                  pageSize={6}
                   nfts={stakedNFTCards}
                   onButtonClick={unstakeV2}
                   refreshCounter={refreshCounter}
                   nothingMessage={<div>Nothing staked so far.</div>}
                 />
-
+              </Col>
+              <Col md={6} style={{ border: "solid 1px white", paddingRight: "20px", paddingLeft: "20px" }}>
                 <StakingPageDisplay
-                  title="V1 Staked"
-                  buttonName="Unstake All"
-                  pageSize={12}
-                  nfts={v1StakedNFTs}
-                  onButtonClick={unstakeV1}
+                  title="Crystals Growing"
+                  buttonName="Unstake"
+                  pageSize={6}
+                  nfts={growingCrystalNFTCards}
+                  onButtonClick={unstakeV2}
+                  secondButtonName="Harvest"
+                  onSecondButtonClick={harvest}
                   refreshCounter={refreshCounter}
-                  nothingMessage={<div>Nothing staked in V1.</div>}
+                  nothingMessage={<div>Nothing Crystals growing.</div>}
                 />
+              </Col>
+            </Row>
+            {v1StakedNFTs && v1StakedNFTs.length > 0 && (
+              <Row>
+                <Col md={12}>
+                  <StakingPageDisplay
+                    title="V1 Staked"
+                    buttonName="Unstake All"
+                    pageSize={12}
+                    nfts={v1StakedNFTs}
+                    onButtonClick={unstakeV1}
+                    refreshCounter={refreshCounter}
+                    nothingMessage={<div>Nothing staked in V1.</div>}
+                  />
 
-                {/* <Table variant="dark">
+                  {/* <Table variant="dark">
                   <tbody>
                     <tr>
                       <td>SPIRALBITS earned:</td>
@@ -675,8 +714,9 @@ export function SpiralStaking(props: SpiralStakingProps) {
                     </tr>
                   </tbody>
                 </Table> */}
-              </Col>
-            </Row>
+                </Col>
+              </Row>
+            )}
           </>
         )}
         {!props.selectedAddress && (

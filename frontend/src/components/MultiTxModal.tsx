@@ -30,7 +30,7 @@ export function MultiTxModal({ show, txns, waitForTxConfirmation, onCancel, onFi
         onFinish();
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show]);
 
   return (

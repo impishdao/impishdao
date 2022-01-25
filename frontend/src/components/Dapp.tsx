@@ -362,7 +362,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
     return new Promise<boolean>((resolve, reject) => {
       this.setState({ multiTxModal: { show: true, txns, resolve, reject } });
     });
-    
   };
 
   cancelMultiTx = () => {
@@ -371,7 +370,6 @@ export class Dapp extends React.Component<DappProps, DappState> {
     if (reject) {
       reject("Cancelled");
     }
-    
   };
 
   finishMultiTx = () => {
