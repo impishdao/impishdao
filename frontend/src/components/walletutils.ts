@@ -61,6 +61,10 @@ export async function getSeedsForSpiralTokenIds(data: Array<BigNumber>): Promise
   return filtered;
 }
 
+export function getCrystalImage(crystal: CrystalInfo): string {
+  return crystal_image(crystal.seed.toHexString(), crystal.sym, crystal.generation, crystal.size / 100);
+}
+
 export function getNFTCardInfo(
   rwNFTs?: BigNumber[],
   spiralNFTs?: SpiralDetail[],
@@ -71,27 +75,24 @@ export function getNFTCardInfo(
       const paddedTokenId = pad(tokenId.toString(), 6);
       const imgurl = `https://randomwalknft.s3.us-east-2.amazonaws.com/${paddedTokenId}_black_thumb.jpg`;
 
-      return new NFTCardInfo(tokenId.toNumber(), 1000000, imgurl);
+      return new NFTCardInfo(tokenId.toNumber(), 1000000, imgurl, tokenId);
     }) || [];
 
   result = result.concat(
     spiralNFTs?.map((spiral) => {
-      return new NFTCardInfo(spiral.tokenId.toNumber(), 2000000, `/spiral_image/seed/${spiral.seed}/75.png`);
+      return new NFTCardInfo(spiral.tokenId.toNumber(), 2000000, `/spiral_image/seed/${spiral.seed}/75.png`, spiral);
     }) || []
   );
 
   result = result.concat(
     crystalNFTs?.map((crystal) => {
       const contractMultiplier = crystal.size === 100 ? 4000000 : 3000000;
-      return new NFTCardInfo(
-        crystal.tokenId.toNumber(),
-        contractMultiplier,
-        crystal_image(crystal.seed.toHexString(), crystal.sym, crystal.generation, crystal.size / 100)
-      );
+      return new NFTCardInfo(crystal.tokenId.toNumber(), contractMultiplier, getCrystalImage(crystal), crystal);
     }) || []
   );
 
   return result;
 }
 
+export const Eth1k = ethers.utils.parseEther("1000");
 export const Eth2B = ethers.utils.parseEther("2000000000");

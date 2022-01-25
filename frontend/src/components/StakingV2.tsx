@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
+import { Button, Card, Col, Form, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
 import { CrystalInfo, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
 import { formatkmb, range, retryTillSucceed } from "./utils";
 import { BigNumber, ethers } from "ethers";
@@ -9,7 +9,9 @@ import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
 import { Link } from "react-router-dom";
 import {
+  Eth1k,
   Eth2B,
+  getCrystalImage,
   getMetadataForCrystalTokenIds,
   getNFTCardInfo,
   getSeedsForSpiralTokenIds,
@@ -120,15 +122,18 @@ const StakingPageDisplay = ({
 
               return (
                 <Col md={pageSize === 12 ? 1 : 2} key={ctokenId} className="mb-3">
-                  <Card
-                    style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
-                    onClick={() => toggleInSelection(ctokenId)}
-                  >
-                    <Card.Img variant="top" src={nft.image} style={{ width: "75px", height: "75px" }} />
-                    <span>
-                      {nft.getNFTTypeShort()} #{nft.tokenId}
-                    </span>
-                  </Card>
+                  <OverlayTrigger overlay={<Tooltip>{nft.progress ? `Growth: ${nft.progress}%` : ""}</Tooltip>}>
+                    <Card
+                      style={{ width: "90px", padding: "10px", borderRadius: "5px", cursor: "pointer", border }}
+                      onClick={() => toggleInSelection(ctokenId)}
+                    >
+                      {nft.progress && <ProgressBar style={{ height: "4px" }} now={nft.progress} />}
+                      <Card.Img variant="top" src={nft.image} style={{ width: "75px", height: "75px" }} />
+                      <span>
+                        {nft.getNFTTypeShort()} #{nft.tokenId}
+                      </span>
+                    </Card>
+                  </OverlayTrigger>
                 </Col>
               );
             })}
@@ -194,7 +199,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
   const [stakedSpiralBits, setStakedSpiralBits] = useState<BigNumber | undefined>();
   const [stakedImpish, setStakedImpish] = useState<BigNumber | undefined>();
-  const [spiralBitsClaimed, setSpiralBitsClaimed] = useState<BigNumber | undefined>();
+  const [spiralBitsPendingReward, setSpiralBitsPendingReward] = useState<BigNumber | undefined>();
 
   const [spiralBitsToStake, setSpiralBitsToStake] = useState("");
   const [impishToStake, setImpishToStake] = useState("");
@@ -295,22 +300,43 @@ export function SpiralStaking(props: SpiralStakingProps) {
           await getMetadataForCrystalTokenIds(crystalNFTIDs)
         );
 
+        // Get pending rewards
+        let pendingRewards = await props.contracts.stakingv2.pendingRewards(props.selectedAddress);
+        console.log(`Pending Rewards ${ethers.utils.formatEther(pendingRewards)}`);
+        setSpiralBitsPendingReward(pendingRewards);
+
         // Split the NFT Cards into growing Crystals and everything else
-        const growingCrystals = stakedNFTCards.filter((c) => c.getNFTtype() === "GrowingCrystal");
+        let growingCrystals = stakedNFTCards.filter((c) => c.getNFTtype() === "GrowingCrystal");
         stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() !== "GrowingCrystal");
+
+        // allocate the pending rewards to the growing crystals to make them grow.
+        growingCrystals = growingCrystals.map((gc) => {
+          const crystalInfo = gc.metadata as CrystalInfo;
+          const crystalCapacity = Eth1k.mul(100 - crystalInfo.size);
+          if (pendingRewards.gt(crystalCapacity)) {
+            crystalInfo.size = 100;
+
+            gc.progress = 100;
+            gc.image = getCrystalImage(crystalInfo);
+            pendingRewards = pendingRewards.sub(crystalCapacity);
+          } else if (pendingRewards.gt(0)) {
+            crystalInfo.size += Math.floor(pendingRewards.div(Eth1k).toNumber());
+
+            gc.progress = crystalInfo.size;
+            gc.image = getCrystalImage(crystalInfo);
+            pendingRewards = BigNumber.from(0);
+          }
+
+          return gc;
+        });
 
         setGrowingCrystalNFTCards(growingCrystals);
         setStakedNFTCards(stakedNFTCards);
 
         // Get staked Spiralbits and Impish
         const stakedTokens = await props.contracts.stakingv2.stakedNFTsAndTokens(props.selectedAddress);
-        console.log(stakedTokens);
         setStakedSpiralBits(BigNumber.from(stakedTokens["spiralBitsStaked"]));
         setStakedImpish(BigNumber.from(stakedTokens["impishStaked"]));
-
-        const pendingRewards = await props.contracts.stakingv2.pendingRewards(props.selectedAddress);
-        // console.log(`Pending Rewards: ${ethers.utils.formatEther(pendingRewards)}`);
-        setSpiralBitsClaimed(pendingRewards);
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -438,21 +464,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
   const stakeImpish = async () => {
     if (props.contracts && props.selectedAddress && approvedForStakingv2) {
-      let success = true;
-      if (approvedForStakingv2.impdao) {
-        success = await props.waitForTxConfirmation(
-          props.contracts.impdao.approve(props.contracts.stakingv2.address, Eth2B),
-          "Approving"
-        );
+      const txns: MultiTxItem[] = [];
+
+      if (!approvedForStakingv2.impdao) {
+        txns.push({
+          tx: () => props.contracts?.impdao.approve(props.contracts?.stakingv2.address, Eth2B),
+          title: "Approving",
+        });
       }
 
-      if (success) {
-        const impish18Dec = ethers.utils.parseEther(impishToStake);
-        await props.waitForTxConfirmation(props.contracts.stakingv2.stakeImpish(impish18Dec), "Staking Impish");
+      const impish18Dec = ethers.utils.parseEther(impishToStake);
+      txns.push({ tx: () => props.contracts?.stakingv2.stakeImpish(impish18Dec), title: "Staking Impish" });
 
-        setImpishToStake("");
-        setRefreshCounter(refreshCounter + 1);
-      }
+      await props.executeMultiTx(txns);
+
+      setImpishToStake("");
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 

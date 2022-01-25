@@ -33,7 +33,7 @@ export type MultiTxModalState = {
   txns: MultiTxItem[];
   resolve?: (value: boolean) => void;
   reject?: (reason: any) => void;
-}
+};
 
 export class DappState {
   networkError?: string;
@@ -87,7 +87,7 @@ export class DappState {
     this.nftsWithPrice = [];
     this.currentToasts = [];
 
-    this.multiTxModal = {show: false, txns: []};
+    this.multiTxModal = { show: false, txns: [] };
   }
 }
 
@@ -146,12 +146,19 @@ export class NFTCardInfo {
   tokenId: number;
   image: string;
   contractIdMultiplier: number;
+  metadata: BigNumber | SpiralDetail | CrystalInfo;
   progress?: number;
 
-  constructor(tokenId: number, contractIdMultiplier: number, image: string) {
+  constructor(
+    tokenId: number,
+    contractIdMultiplier: number,
+    image: string,
+    metadata: BigNumber | SpiralDetail | CrystalInfo
+  ) {
     this.tokenId = tokenId;
     this.image = image;
     this.contractIdMultiplier = contractIdMultiplier;
+    this.metadata = metadata;
   }
 
   getContractTokenId(): number {
@@ -159,20 +166,20 @@ export class NFTCardInfo {
   }
 
   static NFTTypeFromContractTokenId = (contractTokenId: BigNumber | number): NFTtype => {
-    if (typeof(contractTokenId) === 'number') {
+    if (typeof contractTokenId === "number") {
       contractTokenId = BigNumber.from(contractTokenId);
     }
 
     const contractId = NFTCardInfo.SplitFromContractTokenId(contractTokenId)[1];
     return NFTCardInfo.NFTTypeForContractMultiplier(contractId.toNumber());
-  }
+  };
 
   static SplitFromContractTokenId = (contractTokenId: BigNumber): [BigNumber, BigNumber] => {
     const contractMultiplier = contractTokenId.div(1000000).mul(1000000);
     const tokenId = contractTokenId.sub(contractMultiplier);
 
     return [tokenId, contractMultiplier];
-  }
+  };
 
   static NFTTypeForContractMultiplier = (contractId: number): NFTtype => {
     switch (contractId) {
@@ -187,7 +194,7 @@ export class NFTCardInfo {
     }
 
     throw new Error("Unrecognized ContractIDMultiplier");
-  }
+  };
 
   getNFTtype(): NFTtype {
     return NFTCardInfo.NFTTypeForContractMultiplier(this.contractIdMultiplier);
