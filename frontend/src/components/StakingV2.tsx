@@ -173,7 +173,7 @@ const StakingPageDisplay = ({
   );
 };
 
-type StakingApprovalsNeeded = {
+type StakingApprovedForV2 = {
   spiralbits: boolean;
   impdao: boolean;
   randomwalknft: boolean;
@@ -199,7 +199,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [spiralBitsToStake, setSpiralBitsToStake] = useState("");
   const [impishToStake, setImpishToStake] = useState("");
 
-  const [approvedForStakingv2, setApprovalsNeeded] = useState<StakingApprovalsNeeded>();
+  const [approvedForStakingv2, setApprovedForStakingv2] = useState<StakingApprovedForV2>();
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -251,7 +251,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const stakedRwNFTIds = (await props.contracts.rwnftstaking.walletOfOwner(
           props.selectedAddress
         )) as Array<BigNumber>;
-        console.log(`Staked rws: ${stakedRwNFTIds.length} , staked spirals in v1 ${spirals.length}`);
 
         setV1StakedNFTs(getNFTCardInfo(stakedRwNFTIds, spirals));
       }
@@ -305,9 +304,13 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
         // Get staked Spiralbits and Impish
         const stakedTokens = await props.contracts.stakingv2.stakedNFTsAndTokens(props.selectedAddress);
+        console.log(stakedTokens);
         setStakedSpiralBits(BigNumber.from(stakedTokens["spiralBitsStaked"]));
         setStakedImpish(BigNumber.from(stakedTokens["impishStaked"]));
-        setSpiralBitsClaimed(BigNumber.from(stakedTokens["claimedSpiralBits"]));
+
+        const pendingRewards = await props.contracts.stakingv2.pendingRewards(props.selectedAddress);
+        // console.log(`Pending Rewards: ${ethers.utils.formatEther(pendingRewards)}`);
+        setSpiralBitsClaimed(pendingRewards);
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -318,11 +321,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
       if (props.contracts && props.selectedAddress) {
         const spiralbits = (
           await props.contracts.spiralbits.allowance(props.selectedAddress, props.contracts.stakingv2.address)
-        ).eq(0);
+        ).gt(0);
 
         const impdao = (
           await props.contracts.impdao.allowance(props.selectedAddress, props.contracts.stakingv2.address)
-        ).eq(0);
+        ).gt(0);
 
         const randomwalknft = await props.contracts.rwnft.isApprovedForAll(
           props.selectedAddress,
@@ -337,12 +340,10 @@ export function SpiralStaking(props: SpiralStakingProps) {
           props.contracts.stakingv2.address
         );
 
-        console.log(`Spiral approval ${spiral}`);
-
-        setApprovalsNeeded({ spiralbits, impdao, randomwalknft, spiral, crystal });
+        setApprovedForStakingv2({ spiralbits, impdao, randomwalknft, spiral, crystal });
       }
     });
-  }, [props.selectedAddress, props.contracts]);
+  }, [props.selectedAddress, props.contracts, refreshCounter]);
 
   const stakeV2 = async (contractTokenIdsSet: Set<number>) => {
     if (props.contracts && props.selectedAddress && approvedForStakingv2) {
@@ -399,10 +400,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
     if (props.contracts && props.selectedAddress) {
       const contractTokenIds = Array.from(contractTokenIdsSet);
 
-      await props.waitForTxConfirmation(
-        props.contracts.stakingv2.unstakeNFTs(contractTokenIds, true),
-        "Unstaking"
-      );
+      await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeNFTs(contractTokenIds, true), "Unstaking");
       setRefreshCounter(refreshCounter + 1);
     }
   };
@@ -411,24 +409,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
   const stakeSpiralBits = async () => {
     if (props.contracts && props.selectedAddress && approvedForStakingv2) {
-      let success = true;
-      if (approvedForStakingv2.spiralbits) {
-        success = await props.waitForTxConfirmation(
-          props.contracts.spiralbits.approve(props.contracts.stakingv2.address, Eth2B),
-          "Approving"
-        );
+      const txns: MultiTxItem[] = [];
+
+      if (!approvedForStakingv2.spiralbits) {
+        txns.push({
+          tx: () => props.contracts?.spiralbits.approve(props.contracts?.stakingv2.address, Eth2B),
+          title: "Approving",
+        });
       }
 
-      if (success) {
-        const spiralBits18Dec = ethers.utils.parseEther(spiralBitsToStake);
-        await props.waitForTxConfirmation(
-          props.contracts.stakingv2.stakeSpiralBits(spiralBits18Dec),
-          "Staking SpiralBits"
-        );
+      const spiralBits18Dec = ethers.utils.parseEther(spiralBitsToStake);
+      txns.push({ tx: () => props.contracts?.stakingv2.stakeSpiralBits(spiralBits18Dec), title: "Staking SpiralBits" });
 
-        setSpiralBitsToStake("");
-        setRefreshCounter(refreshCounter + 1);
-      }
+      await props.executeMultiTx(txns);
+
+      setSpiralBitsToStake("");
+      setRefreshCounter(refreshCounter + 1);
     }
   };
 
@@ -668,7 +664,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   nfts={stakedNFTCards}
                   onButtonClick={unstakeV2}
                   refreshCounter={refreshCounter}
-                  nothingMessage={<div>Nothing staked so far.</div>}
+                  nothingMessage={<div>Nothing staked here</div>}
                 />
               </Col>
               <Col md={6} style={{ border: "solid 1px white", paddingRight: "20px", paddingLeft: "20px" }}>
@@ -681,7 +677,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   secondButtonName="Harvest"
                   onSecondButtonClick={harvest}
                   refreshCounter={refreshCounter}
-                  nothingMessage={<div>Nothing Crystals growing.</div>}
+                  nothingMessage={<div>No Crystals growing</div>}
                 />
               </Col>
             </Row>

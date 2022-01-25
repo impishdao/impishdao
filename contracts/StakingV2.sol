@@ -259,16 +259,19 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     }
   }
 
-  function pendingRewards(address owner) internal view returns (uint256) {
+  function pendingRewards(address owner) public view returns (uint256) {
     uint256 lastClaimedEpoch = stakedNFTsAndTokens[owner].lastClaimEpoch;
-    uint256 accumulated = 0;
 
+    // Start with already claimed epochs
+    uint256 accumulated = stakedNFTsAndTokens[owner].claimedSpiralBits;
+
+    // Add up all pending epochs
     if (lastClaimedEpoch > 0) {
       accumulated += _getRewardsAccumulated(owner, lastClaimedEpoch);
     }
 
+    // Add potentially upcoming epoch
     RewardEpoch memory newEpoch = _getNextEpoch();
-
     if (newEpoch.epochDurationSec > 0) {
       // Accumulate what will probably be the next epoch
       if (newEpoch.totalSpiralBitsStaked > 0) {

@@ -146,6 +146,7 @@ export class NFTCardInfo {
   tokenId: number;
   image: string;
   contractIdMultiplier: number;
+  progress?: number;
 
   constructor(tokenId: number, contractIdMultiplier: number, image: string) {
     this.tokenId = tokenId;
