@@ -257,7 +257,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
           props.selectedAddress
         )) as Array<BigNumber>;
 
-        setV1StakedNFTs(getNFTCardInfo(stakedRwNFTIds, spirals));
+        setV1StakedNFTs(getNFTCardInfo([], stakedRwNFTIds, spirals));
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -273,6 +273,9 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const rwNFTIDs: Array<BigNumber> = [];
         const spiralsNFTIDs: Array<BigNumber> = [];
         const crystalNFTIDs: Array<BigNumber> = [];
+
+        console.log("Wallet is");
+        nftWallet.forEach((t) => console.log(t.toNumber()));
 
         nftWallet.forEach((contractTokenId) => {
           const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
@@ -295,6 +298,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
         // Get all the metadata for the spirals
         let stakedNFTCards = getNFTCardInfo(
+          nftWallet,
           rwNFTIDs.map((t) => BigNumber.from(t)),
           await getSeedsForSpiralTokenIds(spiralsNFTIDs),
           await getMetadataForCrystalTokenIds(crystalNFTIDs)
@@ -312,7 +316,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         // allocate the pending rewards to the growing crystals to make them grow.
         growingCrystals = growingCrystals.map((gc) => {
           const crystalInfo = gc.metadata as CrystalInfo;
-          const crystalCapacity = Eth1k.mul(100 - crystalInfo.size);
+          const crystalCapacity = Eth1k.mul(crystalInfo.sym).mul(100 - crystalInfo.size);
           if (pendingRewards.gt(crystalCapacity)) {
             crystalInfo.size = 100;
 
@@ -320,7 +324,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
             gc.image = getCrystalImage(crystalInfo);
             pendingRewards = pendingRewards.sub(crystalCapacity);
           } else if (pendingRewards.gt(0)) {
-            crystalInfo.size += Math.floor(pendingRewards.div(Eth1k).toNumber());
+            crystalInfo.size += Math.floor(pendingRewards.div(Eth1k.mul(crystalInfo.sym)).toNumber());
 
             gc.progress = crystalInfo.size;
             gc.image = getCrystalImage(crystalInfo);
@@ -425,13 +429,32 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const unstakeV2 = async (contractTokenIdsSet: Set<number>) => {
     if (props.contracts && props.selectedAddress) {
       const contractTokenIds = Array.from(contractTokenIdsSet);
+      
+      console.log("Unstaking");
+      contractTokenIds?.forEach((t) => console.log(t));
 
       await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeNFTs(contractTokenIds, true), "Unstaking");
       setRefreshCounter(refreshCounter + 1);
     }
   };
 
-  const harvest = async () => {};
+  const harvest = async (contractTokenIdsSet: Set<number>) => {
+    if (props.contracts && props.selectedAddress) {
+      const contractTokenIds = Array.from(contractTokenIdsSet);
+      const harvestable = growingCrystalNFTCards
+        ?.filter((nft) => nft.progress === 100)
+        .map((nft) => BigNumber.from(nft.getContractTokenId()));
+
+      harvestable?.forEach((t) => console.log(t.toNumber()));
+
+      if (harvestable && harvestable.length > 0) {
+        await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable));
+        setRefreshCounter(refreshCounter + 1);
+      } else {
+        props.showModal("Nothing to harvest", <div>There are no fully grown crystals to harvest</div>);
+      }
+    }
+  };
 
   const stakeSpiralBits = async () => {
     if (props.contracts && props.selectedAddress && approvedForStakingv2) {
@@ -523,7 +546,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
     }
   };
 
-  const walletNFTs = getNFTCardInfo(walletRWNFTs, walletSpirals, walletCrystals);
+  const walletNFTs = getNFTCardInfo([], walletRWNFTs, walletSpirals, walletCrystals);
 
   return (
     <>
@@ -673,7 +696,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                   refreshCounter={refreshCounter}
                   nothingMessage={
                     <div>
-                      No Spirals.{" "}
+                      No RandomWalkNFT, Spirals or Crystals.{" "}
                       <Link to="/spirals" style={{ color: "#ffd454" }}>
                         Mint some to stake
                       </Link>

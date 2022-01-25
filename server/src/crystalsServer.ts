@@ -5,12 +5,14 @@ import express from "express";
 import Crystal from "./contracts/crystal.json";
 import SpiralStakingArtifact from "./contracts/spiralstaking.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
+import StakingV2Artifact from "./contracts/stakingv2.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 
 export function setupCrystals(app: express.Express, provider: ethers.providers.JsonRpcProvider) {
   const _crystal = new ethers.Contract(contractAddresses.Crystal, Crystal.abi, provider);
   const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
   const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
+  const _stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2Artifact.abi, provider);
 
   app.get("/crystalapi/wallet/:address", async (req, res) => {
     const address = req.params.address;
@@ -142,6 +144,15 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       crystalMetadataCache.delete(tokenId);
     }
   );
+
+  // Note that crystals can grow or shrink from the staking contract as well.
+  _stakingv2.on(
+    _crystal.filters.CrystalChangeEvent(),
+    async (tokenId: number, eventType: number, size: number, event: any) => {
+      console.log(`New Crystal Event ${tokenId} type: ${eventType} size: ${size}`);
+      crystalMetadataCache.delete(tokenId);
+    }
+  )
 
   _crystal.on(_crystal.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
     console.log(`Crystal transfered: ${from} -> ${to} for # ${tokenId.toString()}`);

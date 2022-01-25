@@ -60,9 +60,9 @@ async function main() {
   const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
   await spiralbits.connect(prodSigner).addAllowedMinter(stakingv2.address);
 
-  // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
-  // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
-  // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
+  await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
+  await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
+  await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
 }
 
 function saveFrontendFiles(stakingv2: Contract) {

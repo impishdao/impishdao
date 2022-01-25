@@ -87,7 +87,7 @@ export function retryTillSucceed(fn: () => Promise<void>, ctr?: number) {
       // If it succeeds, return
       return;
     } catch (e) {
-      console.log(e);
+      console.log(JSON.stringify(e));
       setTimeout(() => retryTillSucceed(fn), 1000 * 2, (ctr || 0) + 1);
     }
   })();

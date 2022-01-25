@@ -66,6 +66,7 @@ export function getCrystalImage(crystal: CrystalInfo): string {
 }
 
 export function getNFTCardInfo(
+  nftWallet: BigNumber[],
   rwNFTs?: BigNumber[],
   spiralNFTs?: SpiralDetail[],
   crystalNFTs?: CrystalInfo[]
@@ -84,10 +85,24 @@ export function getNFTCardInfo(
     }) || []
   );
 
+  // Build the contract multiplier Map
+  const contractMultiplierMap = new Map<number, number>();
+  nftWallet.forEach((contractTokenId) => {
+    const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
+    contractMultiplierMap.set(tokenId.toNumber(), contractMultiplier.toNumber());
+  });
+
   result = result.concat(
     crystalNFTs?.map((crystal) => {
-      const contractMultiplier = crystal.size === 100 ? 4000000 : 3000000;
-      return new NFTCardInfo(crystal.tokenId.toNumber(), contractMultiplier, getCrystalImage(crystal), crystal);
+      const contractMultiplier =
+        contractMultiplierMap.get(crystal.tokenId.toNumber()) || (crystal.size < 100 ? 3000000 : 4000000);
+
+      return new NFTCardInfo(
+        crystal.tokenId.toNumber(),
+        contractMultiplier,
+        getCrystalImage(crystal),
+        crystal
+      );
     }) || []
   );
 

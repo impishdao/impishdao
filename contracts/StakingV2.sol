@@ -25,6 +25,8 @@ import "./ImpishCrystal.sol";
 import "./ImpishSpiral.sol";
 import "./SpiralBits.sol";
 
+import "hardhat/console.sol";
+
 contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
   // Since this is an upgradable implementation, the storage layout is important.
   // Please be careful changing variable positions when upgrading.
@@ -538,64 +540,73 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     crystalTargetSyms[contractCrystalTokenId] = targetSym;
   }
 
-  function harvestCrystal(uint32 crystalTokenId) external nonReentrant {
-    uint32 contractCrystalTokenId = crystalTokenId + 3_000_000;
-    require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
-
+  function harvestCrystals(uint32[] calldata contractCrystalTokenIds) external nonReentrant {
     _updateRewards(msg.sender);
 
     // How many spiralbits are available to grow
     uint96 availableSpiralBits = stakedNFTsAndTokens[msg.sender].claimedSpiralBits;
     stakedNFTsAndTokens[msg.sender].claimedSpiralBits = 0;
     spiralbits.mintSpiralBits(address(this), availableSpiralBits);
+    console.log("Available SpiralBits", availableSpiralBits);
 
-    // Grow the crystal to max that it can
-    (uint8 currentCrystalSize, , uint8 currentSym, , ) = crystals.crystals(crystalTokenId);
-    if (currentCrystalSize < 100) {
-      uint96 spiralBitsNeeded = uint96(
-        crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
-      );
-      if (availableSpiralBits > spiralBitsNeeded) {
-        crystals.grow(crystalTokenId, 100 - currentCrystalSize);
-        availableSpiralBits -= spiralBitsNeeded;
+    for (uint256 i = 0; i < contractCrystalTokenIds.length; i++) {
+      uint32 contractCrystalTokenId = contractCrystalTokenIds[i];
+      console.log("Harvesting " , contractCrystalTokenId);
+
+      uint32 crystalTokenId = contractCrystalTokenId - 3_000_000;
+      require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
+
+      // Grow the crystal to max that it can
+      (uint8 currentCrystalSize, , uint8 currentSym, , ) = crystals.crystals(crystalTokenId);
+      if (currentCrystalSize < 100) {
+        uint96 spiralBitsNeeded = uint96(
+          crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
+        );
+        console.log("Need SpiralBits to grow ", spiralBitsNeeded);
+        if (availableSpiralBits > spiralBitsNeeded) {
+          console.log("Growing 1");
+          crystals.grow(crystalTokenId, 100 - currentCrystalSize);
+          availableSpiralBits -= spiralBitsNeeded;
+        }
       }
+
+      // Next grow syms
+      if (crystalTargetSyms[contractCrystalTokenId] > 0 && crystalTargetSyms[contractCrystalTokenId] > currentSym) {
+        uint8 growSyms = crystalTargetSyms[contractCrystalTokenId] - currentSym;
+
+        uint96 spiralBitsNeeded = uint96(crystals.SPIRALBITS_PER_SYM() * uint256(growSyms));
+        if (availableSpiralBits > spiralBitsNeeded) {
+          crystals.addSym(crystalTokenId, growSyms);
+          availableSpiralBits -= spiralBitsNeeded;
+        }
+      }
+
+      // And then grow the Crystal again to max size if possible
+      (currentCrystalSize, , currentSym, , ) = crystals.crystals(crystalTokenId);
+      if (currentCrystalSize < 100) {
+        uint96 spiralBitsNeeded = uint96(
+          crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
+        );
+        if (availableSpiralBits > spiralBitsNeeded) {
+          crystals.grow(crystalTokenId, 100 - currentCrystalSize);
+          availableSpiralBits -= spiralBitsNeeded;
+        }
+      }
+
+      delete crystalTargetSyms[contractCrystalTokenId];
+
+      // Unstake growing crystal
+      _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
+      stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
+
+      // Stake fully grown crystal
+      uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
+      _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
+      stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
+      stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
     }
 
-    // Next grow syms
-    if (crystalTargetSyms[contractCrystalTokenId] > 0 && crystalTargetSyms[contractCrystalTokenId] > currentSym) {
-      uint8 growSyms = crystalTargetSyms[contractCrystalTokenId] - currentSym;
-
-      uint96 spiralBitsNeeded = uint96(crystals.SPIRALBITS_PER_SYM() * uint256(growSyms));
-      if (availableSpiralBits > spiralBitsNeeded) {
-        crystals.addSym(crystalTokenId, growSyms);
-        availableSpiralBits -= spiralBitsNeeded;
-      }
-    }
-
-    // And then grow the Crystal again to max size if possible
-    (currentCrystalSize, , currentSym, , ) = crystals.crystals(crystalTokenId);
-    if (currentCrystalSize < 100) {
-      uint96 spiralBitsNeeded = uint96(
-        crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
-      );
-      if (availableSpiralBits > spiralBitsNeeded) {
-        crystals.grow(crystalTokenId, 100 - currentCrystalSize);
-        availableSpiralBits -= spiralBitsNeeded;
-      }
-    }
-
-    delete crystalTargetSyms[contractCrystalTokenId];
-
-    // Unstake growing crystal
-    _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
-    stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
-
-    // Stake fully grown crystal
-    uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
-    _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
-    stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
-    stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
-
+    console.log("Returning Spiralbits ", availableSpiralBits);
     // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
     // instead of returning a large amount of SPIRALBITS back to the user here.
     spiralbits.burn(availableSpiralBits);
