@@ -3,6 +3,11 @@ import { CrystalInfo, NFTCardInfo, SpiralDetail } from "../AppState";
 import { crystal_image } from "../crystalRenderer";
 import { pad } from "./utils";
 
+export type MultiTxItem = {
+  tx: () => Promise<any>;
+  title: string;
+};
+
 export async function getMetadataForCrystalTokenIds(tokenIds: Array<BigNumber>): Promise<Array<CrystalInfo>> {
   const crystalDetails = await Promise.all(
     tokenIds.map(async (t) => {

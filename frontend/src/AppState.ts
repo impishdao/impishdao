@@ -1,6 +1,7 @@
 import { BigNumber, Contract } from "ethers";
 import ImpishDAOConfig from "./impishdao-config.json";
 import { Web3Provider } from "@ethersproject/providers";
+import { MultiTxItem } from "./components/walletutils";
 
 export const ARBITRUM_NETWORK_ID = "42161";
 
@@ -26,6 +27,13 @@ export type ToastInfo = {
   autohide: boolean;
   show: boolean;
 };
+
+export type MultiTxModalState = {
+  show: boolean;
+  txns: MultiTxItem[];
+  resolve?: (value: boolean) => void;
+  reject?: (reason: any) => void;
+}
 
 export class DappState {
   networkError?: string;
@@ -60,7 +68,11 @@ export class DappState {
   // Toasts currently Displaying
   currentToasts: Array<ToastInfo>;
 
+  // All the contracts
   contracts?: DappContracts;
+
+  // State of Modals
+  multiTxModal: MultiTxModalState;
 
   constructor() {
     this.impishTokenBalance = BigNumber.from(0);
@@ -74,6 +86,8 @@ export class DappState {
     this.impishTokenBalance = BigNumber.from(0);
     this.nftsWithPrice = [];
     this.currentToasts = [];
+
+    this.multiTxModal = {show: false, txns: []};
   }
 }
 
@@ -89,6 +103,7 @@ export type DappFunctions = {
   readUserData: () => Promise<void>;
   showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
   waitForTxConfirmation: (tx: Promise<any>, title?: string) => Promise<boolean>;
+  executeMultiTx: (txns: MultiTxItem[]) => Promise<boolean>;
 };
 
 export type DappContracts = {
@@ -140,6 +155,15 @@ export class NFTCardInfo {
 
   getContractTokenId(): number {
     return this.tokenId + this.contractIdMultiplier;
+  }
+
+  static NFTTypeFromContractTokenId = (contractTokenId: BigNumber | number): NFTtype => {
+    if (typeof(contractTokenId) === 'number') {
+      contractTokenId = BigNumber.from(contractTokenId);
+    }
+
+    const contractId = NFTCardInfo.SplitFromContractTokenId(contractTokenId)[1];
+    return NFTCardInfo.NFTTypeForContractMultiplier(contractId.toNumber());
   }
 
   static SplitFromContractTokenId = (contractTokenId: BigNumber): [BigNumber, BigNumber] => {

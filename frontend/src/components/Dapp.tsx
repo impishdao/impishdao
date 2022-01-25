@@ -3,7 +3,7 @@
 
 // Import the ethers library
 import "@ethersproject/shims";
-import { BigNumber, Contract, ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
@@ -23,13 +23,7 @@ import contractAddresses from "../contracts/contract-addresses.json";
 import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import {
-  DappState,
-  ERROR_CODE_TX_REJECTED_BY_USER,
-  NFTForSale,
-  ToastInfo,
-  WANTED_NETWORK_ID,
-} from "../AppState";
+import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
@@ -40,6 +34,8 @@ import { SpiralStaking } from "./StakingV2";
 import { cloneDeep } from "lodash";
 import { Crystals } from "./Crystals";
 import { CrystalWallet } from "./Wallet";
+import { MultiTxItem } from "./walletutils";
+import { MultiTxModal } from "./MultiTxModal";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -362,6 +358,31 @@ export class Dapp extends React.Component<DappProps, DappState> {
     return id;
   };
 
+  executeMultiTx = async (txns: MultiTxItem[]): Promise<boolean> => {
+    return new Promise<boolean>((resolve, reject) => {
+      this.setState({ multiTxModal: { show: true, txns, resolve, reject } });
+    });
+    
+  };
+
+  cancelMultiTx = () => {
+    const { reject } = this.state.multiTxModal;
+    this.setState({ multiTxModal: { show: false, txns: [] } });
+    if (reject) {
+      reject("Cancelled");
+    }
+    
+  };
+
+  finishMultiTx = () => {
+    const { resolve } = this.state.multiTxModal;
+    this.setState({ multiTxModal: { show: false, txns: [] } });
+
+    if (resolve) {
+      resolve(true);
+    }
+  };
+
   waitForTxConfirmation = async (tx: Promise<any>, title?: string): Promise<boolean> => {
     const id = this.showToast(title || "Sending Tx", <span>Waiting for confirmations...</span>);
     let success = true;
@@ -385,6 +406,14 @@ export class Dapp extends React.Component<DappProps, DappState> {
     return (
       <BrowserRouter>
         <Container>
+          <MultiTxModal
+            show={this.state.multiTxModal.show}
+            txns={this.state.multiTxModal.txns}
+            onCancel={this.cancelMultiTx}
+            onFinish={this.finishMultiTx}
+            waitForTxConfirmation={this.waitForTxConfirmation}
+          />
+
           <ModalDialog
             message={this.state.modalMessage || <></>}
             title={this.state.modalTitle || ""}
@@ -421,6 +450,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readDappState={this.readDappState}
                   readUserData={this.readUserData}
                   waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
                   showModal={this.showModal}
                 />
               }
@@ -436,6 +466,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readUserData={this.readUserData}
                   showModal={this.showModal}
                   waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
                 />
               }
             />
@@ -450,6 +481,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readUserData={this.readUserData}
                   showModal={this.showModal}
                   waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
                 />
               }
             />
@@ -464,6 +496,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   readUserData={this.readUserData}
                   showModal={this.showModal}
                   waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
                 />
               }
             />
