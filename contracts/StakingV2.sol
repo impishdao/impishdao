@@ -614,32 +614,30 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     stakedNFTsAndTokens[msg.sender].claimedSpiralBits = availableSpiralBits;
   }
 
-  function harvestCrystals(uint32[] calldata contractCrystalTokenIds, bool restake, bool claim) external nonReentrant {
+  function harvestCrystals(uint32[] calldata contractCrystalTokenIds, bool claim) external nonReentrant {
     _updateRewards(msg.sender);
 
     // First, grow all the crystals
     _growCrystals(contractCrystalTokenIds);
 
     // And then transfer the crystals over from growing to staked
-    if (restake) {
-      for (uint256 i = 0; i < contractCrystalTokenIds.length; i++) {
-        uint32 contractCrystalTokenId = contractCrystalTokenIds[i];
-        uint32 crystalTokenId = contractCrystalTokenId - 3_000_000;
+    for (uint256 i = 0; i < contractCrystalTokenIds.length; i++) {
+      uint32 contractCrystalTokenId = contractCrystalTokenIds[i];
+      uint32 crystalTokenId = contractCrystalTokenId - 3_000_000;
 
-        (uint8 currentCrystalSize, , , , ) = crystals.crystals(crystalTokenId);
+      (uint8 currentCrystalSize, , , , ) = crystals.crystals(crystalTokenId);
 
-        // Move this crystal over to be staked only if it is fully grown
-        if (currentCrystalSize == 100) {
-          // Unstake growing crystal
-          _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
-          stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
+      // Move this crystal over to be staked only if it is fully grown
+      if (currentCrystalSize == 100) {
+        // Unstake growing crystal
+        _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
+        stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
 
-          // Stake fully grown crystal
-          uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
-          _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
-          stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
-          stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
-        }
+        // Stake fully grown crystal
+        uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
+        _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
+        stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
+        stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
       }
     }
 

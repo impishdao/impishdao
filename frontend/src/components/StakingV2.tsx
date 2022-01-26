@@ -476,7 +476,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         .map((nft) => BigNumber.from(nft.getContractTokenId()));
 
       if (harvestable && harvestable.length > 0) {
-        await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, true, false));
+        await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, false));
         setRefreshCounter(refreshCounter + 1);
       } else {
         props.showModal("Nothing to harvest", <div>There are no fully grown crystals to harvest</div>);
@@ -490,7 +490,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         ?.filter((nft) => nft.progress === 100)
         .map((nft) => BigNumber.from(nft.getContractTokenId()));
 
-      await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, false, true));
+      await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, true));
       setRefreshCounter(refreshCounter + 1);
     }
   };
