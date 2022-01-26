@@ -38,12 +38,16 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
   uint256 public IMPISH_STAKING_EMISSION_PER_SEC;
 
   // How many SpiralBits per second are awarded to a staked spiral
-  // 0.167 SPIRALBITS per second. (10 SPIRALBIT per 60 seconds)
+  // 0.167 SPIRALBITS per second. (10 SPIRALBITS per 60 seconds)
   uint256 public SPIRALBITS_PER_SECOND_PER_SPIRAL;
 
   // How many SpiralBits per second are awarded to a staked RandomWalkNFTs
-  // 0.0167 SPIRALBITS per second. (1 SPIRALBIT per 60 seconds)
+  // 0.0167 SPIRALBITS per second. (1 SPIRALBITS per 60 seconds)
   uint256 public SPIRALBITS_PER_SECOND_PER_RW;
+
+  // How many SpiralBits per second are awarded to a staked, fully grown
+  // spiral. 0.0835 SPIRALBITS per second (5 SPIRALBITS per 60 seconds)
+  uint256 public SPIRALBITS_PER_SECOND_PER_CRYSTAL;
 
   // We're staking this NFT in this contract
   IERC721 public randomWalkNFT;
@@ -99,6 +103,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     IMPISH_STAKING_EMISSION_PER_SEC = 1 ether;
     SPIRALBITS_PER_SECOND_PER_SPIRAL = 0.167 ether;
     SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether;
+    SPIRALBITS_PER_SECOND_PER_CRYSTAL = 0.0835 ether;
 
     crystals = ImpishCrystal(_crystals);
     impishspiral = ImpishSpiral(crystals.spirals());
@@ -299,7 +304,10 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
       accumulated += newEpoch.epochDurationSec * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
 
-      // TODO: Reward for Fully Grown Crystals
+      accumulated +=
+        newEpoch.epochDurationSec *
+        SPIRALBITS_PER_SECOND_PER_CRYSTAL *
+        stakedNFTsAndTokens[owner].numFullCrystalsStaked;
     }
 
     return accumulated;
@@ -394,7 +402,10 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     // Rewards for staked RandomWalks
     rewardsAccumulated += totalDuration * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
 
-    // TODO: Reward for Fully Grown Crystals
+    rewardsAccumulated +=
+      totalDuration *
+      SPIRALBITS_PER_SECOND_PER_CRYSTAL *
+      stakedNFTsAndTokens[owner].numFullCrystalsStaked;
 
     return rewardsAccumulated;
   }
@@ -551,7 +562,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
     for (uint256 i = 0; i < contractCrystalTokenIds.length; i++) {
       uint32 contractCrystalTokenId = contractCrystalTokenIds[i];
-      console.log("Harvesting " , contractCrystalTokenId);
+      console.log("Harvesting ", contractCrystalTokenId);
 
       uint32 crystalTokenId = contractCrystalTokenId - 3_000_000;
       require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");

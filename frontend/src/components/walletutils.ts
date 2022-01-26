@@ -109,5 +109,7 @@ export function getNFTCardInfo(
   return result;
 }
 
+export const Eth1 = ethers.utils.parseEther("1");
 export const Eth1k = ethers.utils.parseEther("1000");
+export const Eth1M = ethers.utils.parseEther("1000000");
 export const Eth2B = ethers.utils.parseEther("2000000000");
