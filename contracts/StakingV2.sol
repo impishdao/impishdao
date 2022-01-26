@@ -25,8 +25,6 @@ import "./ImpishCrystal.sol";
 import "./ImpishSpiral.sol";
 import "./SpiralBits.sol";
 
-import "hardhat/console.sol";
-
 contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
   // Since this is an upgradable implementation, the storage layout is important.
   // Please be careful changing variable positions when upgrading.
@@ -557,11 +555,9 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     uint96 availableSpiralBits = stakedNFTsAndTokens[msg.sender].claimedSpiralBits;
     stakedNFTsAndTokens[msg.sender].claimedSpiralBits = 0;
     spiralbits.mintSpiralBits(address(this), availableSpiralBits);
-    console.log("Available SpiralBits", availableSpiralBits);
 
     for (uint256 i = 0; i < contractCrystalTokenIds.length; i++) {
       uint32 contractCrystalTokenId = contractCrystalTokenIds[i];
-      console.log("Harvesting ", contractCrystalTokenId);
 
       uint32 crystalTokenId = contractCrystalTokenId - 3_000_000;
       require(stakedTokenOwners[contractCrystalTokenId].owner == msg.sender, "NotYourCrystal");
@@ -572,9 +568,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
         uint96 spiralBitsNeeded = uint96(
           crystals.SPIRALBITS_PER_SYM_PER_SIZE() * uint256(100 - currentCrystalSize) * uint256(currentSym)
         );
-        console.log("Need SpiralBits to grow ", spiralBitsNeeded);
         if (availableSpiralBits > spiralBitsNeeded) {
-          console.log("Growing 1");
           crystals.grow(crystalTokenId, 100 - currentCrystalSize);
           availableSpiralBits -= spiralBitsNeeded;
         }
@@ -605,9 +599,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
       delete crystalTargetSyms[contractCrystalTokenId];
     }
-
-    console.log("Returning Spiralbits ", availableSpiralBits);
-
+    
     // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
     // instead of returning a large amount of SPIRALBITS back to the user here.
     spiralbits.burn(availableSpiralBits);
