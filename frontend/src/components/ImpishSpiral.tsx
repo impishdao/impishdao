@@ -371,12 +371,12 @@ export function ImpishSpiral(props: SpiralProps) {
               <li>Minting starts at ETH 0.005, and the price goes up by 0.5% for each Spiral NFT that is minted</li>
               <li>All the ETH used to mint is held in the NFT contract till the game ends.</li>
               <li>
-                The game ends when no one mints a new NFT for 48 hours. After this, no more Spiral NFTs can be minted
+                The game ends when no one mints a new NFT for 72 hours. After this, no more Spiral NFTs can be minted
               </li>
               <li>
                 The last 10 Spiral NFTs minted will win the prize pool!
                 <ul>
-                  <li>The last NFT minted after the game stops gets 10% of all the ETH in the contract.</li>
+                  <li>The last NFT minted before the game stops gets 10% of all the ETH in the contract.</li>
                   <li>2nd place gets 9% of the prize ETH</li>
                   <li>3rd place gets 8% of the prize ETH</li>
                   <li>....</li>
