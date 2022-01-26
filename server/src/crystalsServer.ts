@@ -138,7 +138,7 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
   _crystal.on(
     _crystal.filters.CrystalChangeEvent(),
     async (tokenId: number, eventType: number, size: number, event: any) => {
-      console.log(`New Crystal Event on orig ${tokenId} type: ${eventType} size: ${size}`);
+      console.log(`New Crystal Event ${tokenId} type: ${eventType} size: ${size}`);
       crystalMetadataCache.delete(tokenId);
     }
   );

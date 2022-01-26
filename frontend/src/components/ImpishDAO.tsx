@@ -6,7 +6,7 @@ import { Button, InputGroup, FormControl, Row, Col, Stack, Table } from "react-b
 import Whitepaper from "./Whitepaper";
 import { format4Decimals, formatUSD, secondsToDhms } from "./utils";
 import React, { useEffect, useState } from "react";
-import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { Navigation } from "./Navigation";
 import { ImpishDAOBuyNFTs } from "./ImpishDaoBuyNFT";
 import { Route, Routes } from "react-router-dom";

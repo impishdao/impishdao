@@ -2,7 +2,7 @@ import { ethers, BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Alert, Button, Col, Container, FormControl, InputGroup, Row, Tab, Table, Tabs } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
-import { CrystalInfo, DappContracts, DappFunctions, DappState } from "../AppState";
+import { CrystalInfo, DappFunctions, DappState } from "../AppState";
 import { setup_crystal } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
 import { TransferAddressModal } from "./NFTTransferModal";

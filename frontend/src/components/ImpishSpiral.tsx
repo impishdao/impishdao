@@ -1,5 +1,5 @@
 import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
-import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { format4Decimals, formatUSD, range, secondsToDhms, THREE_DAYS } from "./utils";
 import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";

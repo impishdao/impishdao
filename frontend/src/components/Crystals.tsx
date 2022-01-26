@@ -2,7 +2,7 @@ import { BigNumber, ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
 import { Link, Route, Routes, useNavigate } from "react-router-dom";
-import { DappContracts, DappFunctions, DappState } from "../AppState";
+import { DappFunctions, DappState } from "../AppState";
 import { CrystalDetail } from "./CrystalDetail";
 import { Navigation } from "./Navigation";
 import { format4Decimals, range } from "./utils";

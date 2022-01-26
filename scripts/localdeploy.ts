@@ -64,9 +64,9 @@ async function main() {
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
   // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
 
-  for (let i = 0; i < 10; i++) {
-    await rwnft.mint({ value: await rwnft.getMintPrice() });
-  }
+  // for (let i = 0; i < 10; i++) {
+  //   await rwnft.mint({ value: await rwnft.getMintPrice() });
+  // }
 }
 
 function saveFrontendFiles(stakingv2: Contract) {

@@ -285,9 +285,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const spiralsNFTIDs: Array<BigNumber> = [];
         const crystalNFTIDs: Array<BigNumber> = [];
 
-        console.log("Wallet is");
-        nftWallet.forEach((t) => console.log(t.toNumber()));
-
         nftWallet.forEach((contractTokenId) => {
           const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
           switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
@@ -328,6 +325,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         growingCrystals = growingCrystals.map((gc) => {
           const crystalInfo = gc.metadata as CrystalInfo;
           const crystalCapacity = Eth1k.mul(crystalInfo.sym).mul(100 - crystalInfo.size);
+
           if (pendingRewards.gt(crystalCapacity)) {
             crystalInfo.size = 100;
 
@@ -340,6 +338,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
             gc.progress = crystalInfo.size;
             gc.image = getCrystalImage(crystalInfo);
             pendingRewards = BigNumber.from(0);
+          } else {
+            gc.progress = crystalInfo.size;
           }
 
           return gc;
@@ -475,10 +475,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
         ?.filter((nft) => nft.progress === 100)
         .map((nft) => BigNumber.from(nft.getContractTokenId()));
 
-      harvestable?.forEach((t) => console.log(t.toNumber()));
-
       if (harvestable && harvestable.length > 0) {
-        await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable));
+        await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, true, false));
         setRefreshCounter(refreshCounter + 1);
       } else {
         props.showModal("Nothing to harvest", <div>There are no fully grown crystals to harvest</div>);
@@ -488,7 +486,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
   const withdrawRewards = async () => {
     if (props.contracts && props.selectedAddress) {
-      await props.waitForTxConfirmation(props.contracts.stakingv2.unstakeNFTs([], true), "Withdrawing Rewards");
+      const harvestable = growingCrystalNFTCards
+        ?.filter((nft) => nft.progress === 100)
+        .map((nft) => BigNumber.from(nft.getContractTokenId()));
+
+      await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, false, true));
       setRefreshCounter(refreshCounter + 1);
     }
   };
@@ -750,7 +752,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                     color: "#ffd454",
                   }}
                 >
-                  Staked
+                  Staked NFTs
                 </h2>
 
                 <StakingPageDisplay

@@ -3,7 +3,7 @@
 import { BigNumber, ContractTransaction } from "ethers";
 import { useEffect, useState } from "react";
 import { Button, ButtonGroup, Col, Dropdown, Row } from "react-bootstrap";
-import { DappContracts, DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
 import { NFTCard } from "./NFTcard";
 import { formatkmb, pad, range, retryTillSucceed } from "./utils";
 

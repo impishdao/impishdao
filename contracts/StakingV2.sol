@@ -551,9 +551,8 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     crystalTargetSyms[contractCrystalTokenId] = targetSym;
   }
 
-  function harvestCrystals(uint32[] calldata contractCrystalTokenIds) external nonReentrant {
-    _updateRewards(msg.sender);
-
+  // Grow all the given crystals to max size for the target symmetry
+  function _growCrystals(uint32[] memory contractCrystalTokenIds) internal {
     // How many spiralbits are available to grow
     uint96 availableSpiralBits = stakedNFTsAndTokens[msg.sender].claimedSpiralBits;
     stakedNFTsAndTokens[msg.sender].claimedSpiralBits = 0;
@@ -605,23 +604,48 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
       }
 
       delete crystalTargetSyms[contractCrystalTokenId];
-
-      // Unstake growing crystal
-      _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
-      stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
-
-      // Stake fully grown crystal
-      uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
-      _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
-      stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
-      stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
     }
 
     console.log("Returning Spiralbits ", availableSpiralBits);
+
     // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
     // instead of returning a large amount of SPIRALBITS back to the user here.
     spiralbits.burn(availableSpiralBits);
     stakedNFTsAndTokens[msg.sender].claimedSpiralBits = availableSpiralBits;
+  }
+
+  function harvestCrystals(uint32[] calldata contractCrystalTokenIds, bool restake, bool claim) external nonReentrant {
+    _updateRewards(msg.sender);
+
+    // First, grow all the crystals
+    _growCrystals(contractCrystalTokenIds);
+
+    // And then transfer the crystals over from growing to staked
+    if (restake) {
+      for (uint256 i = 0; i < contractCrystalTokenIds.length; i++) {
+        uint32 contractCrystalTokenId = contractCrystalTokenIds[i];
+        uint32 crystalTokenId = contractCrystalTokenId - 3_000_000;
+
+        (uint8 currentCrystalSize, , , , ) = crystals.crystals(crystalTokenId);
+
+        // Move this crystal over to be staked only if it is fully grown
+        if (currentCrystalSize == 100) {
+          // Unstake growing crystal
+          _removeTokenFromOwnerEnumeration(msg.sender, contractCrystalTokenId);
+          stakedNFTsAndTokens[msg.sender].numGrowingCrystalsStaked -= 1;
+
+          // Stake fully grown crystal
+          uint256 contractFullyGrownTokenId = 4_000_000 + crystalTokenId;
+          _addTokenToOwnerEnumeration(msg.sender, contractFullyGrownTokenId);
+          stakedTokenOwners[contractFullyGrownTokenId].owner = msg.sender;
+          stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked += 1;
+        }
+      }
+    }
+
+    if (claim) {
+      _claimRewards(msg.sender);
+    }
   }
 
   // ------------------
