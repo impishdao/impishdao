@@ -557,30 +557,39 @@ export function SpiralStaking(props: SpiralStakingProps) {
     if (props.contracts && props.selectedAddress && v1StakedNFTs) {
       const beforeSpiralBits = props.spiralBitsBalance;
 
+      const txns: MultiTxItem[] = [];
+
       const rwTokenIds = v1StakedNFTs.filter((nft) => nft.getNFTtype() === "RandomWalkNFT").map((nft) => nft.tokenId);
-      await props.waitForTxConfirmation(
-        props.contracts.rwnftstaking.unstakeNFTs(rwTokenIds, true),
-        "Unstaking RandomWalkNFTs"
-      );
+      if (rwTokenIds.length > 0) {
+        txns.push({
+          title: "Unstaking All RandomWalkNFTs",
+          tx: () => props.contracts?.rwnftstaking.unstakeNFTs(rwTokenIds, true),
+        });
+      }
 
       const spiralTokenIds = v1StakedNFTs
-        .filter((nft) => nft.getNFTtype() === "RandomWalkNFT")
+        .filter((nft) => nft.getNFTtype() === "Spiral")
         .map((nft) => nft.tokenId);
-      await props.waitForTxConfirmation(
-        props.contracts.spiralstaking.unstakeNFTs(spiralTokenIds, true),
-        "Unstaking Spirals"
-      );
+      if (spiralTokenIds.length > 0) {
+        txns.push({
+          title: "Unstaking All Spirals",
+          tx: () => props.contracts?.spiralstaking.unstakeNFTs(spiralTokenIds, true),
+        });
+      }
 
-      setRefreshCounter(refreshCounter + 1);
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        setRefreshCounter(refreshCounter + 1);
 
-      const afterSpiralBits = await props.contracts.spiralbits.balanceOf(props.selectedAddress);
-      if (afterSpiralBits.gt(beforeSpiralBits)) {
-        props.showModal(
-          "Claimed SPIRALBITS",
-          <div>
-            You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
-          </div>
-        );
+        const afterSpiralBits = await props.contracts.spiralbits.balanceOf(props.selectedAddress);
+        if (afterSpiralBits.gt(beforeSpiralBits)) {
+          props.showModal(
+            "Claimed SPIRALBITS",
+            <div>
+              You successfully claimed {formatkmb(afterSpiralBits.sub(beforeSpiralBits))} SPIRALBITS into your wallet.
+            </div>
+          );
+        }
       }
     }
   };
@@ -833,7 +842,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
             </Row>
             {v1StakedNFTs && v1StakedNFTs.length > 0 && (
               <Row>
-                <Col md={12}>
+                <Col md={12} style={{ border: "solid 1px white", paddingRight: "20px", paddingLeft: "20px" }}>
                   <StakingPageDisplay
                     title="V1 Staked"
                     buttonName="Unstake All"
