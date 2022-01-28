@@ -203,6 +203,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   const [stakedNFTCards, setStakedNFTCards] = useState<Array<NFTCardInfo>>();
   const [growingCrystalNFTCards, setGrowingCrystalNFTCards] = useState<Array<NFTCardInfo>>();
   const [v1StakedNFTs, setV1StakedNFTs] = useState<Array<NFTCardInfo>>();
+  const [v1RewardsPending, setV1RewardsPending] = useState<BigNumber>(BigNumber.from(0));
 
   const [stakedSpiralBits, setStakedSpiralBits] = useState<BigNumber>();
   const [stakedImpish, setStakedImpish] = useState<BigNumber>();
@@ -258,7 +259,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   // Get the v1 staked Spirals and RWNFTs
   useEffect(() => {
     retryTillSucceed(async () => {
-      if (props.contracts) {
+      if (props.selectedAddress && props.contracts) {
         const stakedSpiralIds = (await props.contracts.spiralstaking.walletOfOwner(
           props.selectedAddress
         )) as Array<BigNumber>;
@@ -269,6 +270,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
         )) as Array<BigNumber>;
 
         setV1StakedNFTs(getNFTCardInfo([], stakedRwNFTIds, spirals));
+
+        // If there are any staked in V1, calculate pending rewards
+        let pendingV1Rewards = BigNumber.from(0);
+        if (stakedRwNFTIds.length > 0) {
+          const rwPending = await props.contracts.rwnftstaking.claimsPendingTotal(props.selectedAddress);
+          const bonus = await props.contracts.rwnftstaking.currentBonusInBips();
+          pendingV1Rewards = pendingV1Rewards.add(rwPending.mul(bonus).div(10000));
+        }
+
+        if (spirals.length > 0) {
+          const rwPending = await props.contracts.spiralstaking.claimsPendingTotal(props.selectedAddress);
+          const bonus = await props.contracts.spiralstaking.currentBonusInBips();
+          pendingV1Rewards = pendingV1Rewards.add(rwPending.mul(bonus).div(10000));
+        }
+
+        setV1RewardsPending(pendingV1Rewards);
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -825,6 +842,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
                         SPIRALBITS
                       </td>
                     </tr>
+                    {v1RewardsPending.gt(0) && (
+                      <tr>
+                      <td style={{ textAlign: "left" }}>Staking V1 Rewards</td>
+                      <td style={{ textAlign: "right" }}>{formatkmb(v1RewardsPending)} SPIRALBITS</td>
+                    </tr>
+                    )}
                   </tbody>
                 </Table>
                 <Row>
