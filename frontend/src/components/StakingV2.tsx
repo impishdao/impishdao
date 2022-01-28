@@ -276,13 +276,13 @@ export function SpiralStaking(props: SpiralStakingProps) {
         if (stakedRwNFTIds.length > 0) {
           const rwPending = await props.contracts.rwnftstaking.claimsPendingTotal(props.selectedAddress);
           const bonus = await props.contracts.rwnftstaking.currentBonusInBips();
-          pendingV1Rewards = pendingV1Rewards.add(rwPending.mul(bonus).div(10000));
+          pendingV1Rewards = pendingV1Rewards.add(rwPending.mul(bonus).div(10000)).add(rwPending);
         }
 
         if (spirals.length > 0) {
-          const rwPending = await props.contracts.spiralstaking.claimsPendingTotal(props.selectedAddress);
+          const spiralPending = await props.contracts.spiralstaking.claimsPendingTotal(props.selectedAddress);
           const bonus = await props.contracts.spiralstaking.currentBonusInBips();
-          pendingV1Rewards = pendingV1Rewards.add(rwPending.mul(bonus).div(10000));
+          pendingV1Rewards = pendingV1Rewards.add(spiralPending.mul(bonus).div(10000)).add(spiralPending);
         }
 
         setV1RewardsPending(pendingV1Rewards);
