@@ -1,7 +1,8 @@
+import { BigNumber } from "ethers";
 import { useEffect, useState } from "react";
 import { Card, Col, Container, Dropdown, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { CrystalInfo, DappState, SpiralDetail } from "../AppState";
+import { CrystalInfo, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
 import { crystal_image } from "../crystalRenderer";
 import { Navigation } from "./Navigation";
 import { formatkmb, range } from "./utils";
@@ -13,9 +14,15 @@ type CrystalWalletProps = DappState & {
 
 export function CrystalWallet(props: CrystalWalletProps) {
   const { type, address } = useParams();
-  const [crystals, setCrystals] = useState<Array<CrystalInfo> | undefined>();
+  
+  const [crystals, setCrystals] = useState<Array<CrystalInfo>>();
   const [spirals, setSpirals] = useState<Array<SpiralDetail>>([]);
-  const [stakedSpirals, setStakedSpirals] = useState<Array<SpiralDetail>>([]);
+
+  const [stakedv1Spirals, setStakedv1Spirals] = useState<Array<SpiralDetail>>([]);
+
+  const [stakedv2Spirals, setStakedv2Spirals] = useState<Array<SpiralDetail>>([]);
+  const [stakedv2Crystals, setStakedv2Crystals] = useState<Array<CrystalInfo>>([]);
+
   const [startPage, setStartPage] = useState(0);
 
   useEffect(() => {
@@ -45,13 +52,49 @@ export function CrystalWallet(props: CrystalWalletProps) {
       .then((data) => {
         (async () => {
           const spiralDetails = await getSeedsForSpiralTokenIds(data);
-          setStakedSpirals(spiralDetails);
+          setStakedv1Spirals(spiralDetails);
         })();
       });
+
+    // Get V2 Staked Tokens
+    fetch(`/stakingv2api/wallet/${address}`)
+    .then((r) => r.json())
+    .then((data) => {
+      (async () => {
+        const nftWallet = data.map((d: any) => BigNumber.from(d))  as Array<BigNumber>;
+
+        // Split up into RWs, spirals and crystals
+        const rwIDs: Array<BigNumber> = [];
+        const spiralIDs: Array<BigNumber> = [];
+        const crystalIDs: Array<BigNumber> = [];
+
+        nftWallet.forEach((contractTokenId) => {
+          const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
+          switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
+            case "RandomWalkNFT": {
+              rwIDs.push(tokenId);
+              break;
+            }
+            case "Spiral": {
+              spiralIDs.push(tokenId);
+              break;
+            }
+            case "GrowingCrystal":
+            case "Crystal": {
+              crystalIDs.push(tokenId);
+              break;
+            }
+          }
+        });
+
+        setStakedv2Crystals(await getMetadataForCrystalTokenIds(crystalIDs));
+        setStakedv2Spirals(await getSeedsForSpiralTokenIds(spiralIDs));
+      })();
+    });
   }, [address]);
 
-  const allSpirals = spirals.concat(stakedSpirals);
-  const allCrystals = crystals;
+  const allSpirals = spirals.concat(stakedv1Spirals).concat(stakedv2Spirals);
+  const allCrystals = crystals?.concat(stakedv2Crystals);
 
   const numItems = type === "spirals" ? allSpirals.length : allCrystals?.length || 0;
 
@@ -135,7 +178,7 @@ export function CrystalWallet(props: CrystalWalletProps) {
                             style={{ width: "300px", height: "300px" }}
                           />
                           <Card.Body>
-                            <Card.Title>#{s.tokenId.toString()}</Card.Title>
+                            <Card.Title>#{s.tokenId.toString()} {s.indirectOwner && <>(Staked)</>}</Card.Title>
                           </Card.Body>
                         </Card>
                       </Col>

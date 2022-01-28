@@ -16,6 +16,7 @@ import ImpishDAOConfig from "./impishdao-config.json";
 import { setupSpiralMarket } from "./marketServer";
 import { setupSpirals } from "./spiralsServer";
 import { setupCrystals } from "./crystalsServer";
+import { setupStakingV2 } from "./stakingv2Server";
 
 const app = express();
 
@@ -232,6 +233,9 @@ setupSpirals(app, provider, transferListener);
 
 // Setup Crystals API
 setupCrystals(app, provider);
+
+// Setup Staking V2 API
+setupStakingV2(app, provider);
 
 // Serve static files
 app.use("/spirals", express.static(path.join(__dirname, "index.html")));

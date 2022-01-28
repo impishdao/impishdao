@@ -24,6 +24,7 @@ export async function getMetadataForCrystalTokenIds(tokenIds: Array<BigNumber>):
           seed: BigNumber.from(attributes.seed),
           spiralBitsStored: BigNumber.from(attributes.spiralBitsStored),
           owner: attributes.owner,
+          indirectOwner: attributes.indirectOwner,
         };
 
         return info;

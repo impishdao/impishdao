@@ -7,6 +7,8 @@ import path from "path";
 
 import SpiralStakingArtifact from "./contracts/spiralstaking.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
+import StakingV2Artifact from "./contracts/stakingv2.json";
+
 import contractAddresses from "./contracts/contract-addresses.json";
 
 export function setupSpirals(
@@ -16,6 +18,7 @@ export function setupSpirals(
 ) {
   const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
   const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
+  const _v2staking = new ethers.Contract(contractAddresses.StakingV2, StakingV2Artifact.abi, provider);
 
   _impishspiral.on(_impishspiral.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
     console.log(`Spiral transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
@@ -43,6 +46,7 @@ export function setupSpirals(
     }
   });
 
+  // V1 staked spirals
   app.get("/spiralapi/stakedwallet/:address", async (req, res) => {
     const address = req.params.address;
 
@@ -115,6 +119,9 @@ export function setupSpirals(
       if (owner === contractAddresses.SpiralStaking) {
         // Get the indirect owner
         indirectOwner = (await _spiralstaking.stakedTokenOwners(id)).owner;
+      } else if (owner === contractAddresses.StakingV2) {
+        // Get the indirect owner
+        indirectOwner = (await _v2staking.stakedTokenOwners(id.add(2000000))).owner;
       }
 
       seedToIdCache.set(id.toNumber(), { id, seed, owner, indirectOwner });

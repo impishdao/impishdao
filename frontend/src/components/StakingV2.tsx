@@ -913,8 +913,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 many IMPISH you have staked
               </li>
             </ul>
-            <br />
-            <br />
             You can stake, unstake and/or withdraw your accumulated SPIRALBITS at any time, there are no lockins.
             However, note that if you have any Crystals that are growing, you might want to harvest them first, allowing
             them to grow to full size.

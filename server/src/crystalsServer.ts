@@ -5,12 +5,14 @@ import express from "express";
 import Crystal from "./contracts/crystal.json";
 import SpiralStakingArtifact from "./contracts/spiralstaking.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
+import StakingV2Artifact from "./contracts/stakingv2.json";
 import contractAddresses from "./contracts/contract-addresses.json";
 
 export function setupCrystals(app: express.Express, provider: ethers.providers.JsonRpcProvider) {
   const _crystal = new ethers.Contract(contractAddresses.Crystal, Crystal.abi, provider);
   const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
   const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
+  const _v2staking = new ethers.Contract(contractAddresses.StakingV2, StakingV2Artifact.abi, provider);
 
   app.get("/crystalapi/wallet/:address", async (req, res) => {
     const address = req.params.address;
@@ -97,6 +99,7 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
     seed: BigNumber;
     spiralBitsStored: BigNumber;
     owner: string;
+    indirectOwner: string;
   };
   const crystalMetadataCache = new Map<number, CrystalInfo>();
   app.get("/crystalapi/crystal/metadata/:id", async (req, res) => {
@@ -110,6 +113,16 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
         const crystalInfo: CrystalInfo = await _crystal.crystals(id);
         const owner = await _crystal.ownerOf(id);
 
+        let indirectOwner;
+        if (owner === contractAddresses.StakingV2) {
+          // Get the indirect owner
+          indirectOwner = (await _v2staking.stakedTokenOwners(id.add(3000000))).owner as string;
+          console.log(`indirect owner ${indirectOwner} of type ${typeof indirectOwner}`);
+          if (BigNumber.from(indirectOwner).eq(0)) {
+            indirectOwner = (await _v2staking.stakedTokenOwners(id.add(4000000))).owner as string;
+          }
+        }
+
         attributes = {
           size: crystalInfo.size,
           generation: crystalInfo.generation,
@@ -117,6 +130,7 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
           seed: BigNumber.from(crystalInfo.seed),
           spiralBitsStored: crystalInfo.spiralBitsStored,
           owner,
+          indirectOwner,
         };
         crystalMetadataCache.set(id.toNumber(), attributes);
       }
