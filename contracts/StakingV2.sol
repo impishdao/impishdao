@@ -295,18 +295,23 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
           uint256(newEpoch.totalImpishStaked);
       }
 
+      // Rewards for Staked Spirals
       accumulated +=
         newEpoch.epochDurationSec *
         SPIRALBITS_PER_SECOND_PER_SPIRAL *
         stakedNFTsAndTokens[owner].numSpiralsStaked;
 
+      // Rewards for staked RandomWalks
       accumulated += newEpoch.epochDurationSec * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
 
+      // Rewards for staked fully grown crystals
       accumulated +=
         newEpoch.epochDurationSec *
         SPIRALBITS_PER_SECOND_PER_CRYSTAL *
         stakedNFTsAndTokens[owner].numFullCrystalsStaked;
     }
+
+    // Note: Growing crystals do not accumulate rewards
 
     return accumulated;
   }
@@ -400,10 +405,13 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     // Rewards for staked RandomWalks
     rewardsAccumulated += totalDuration * SPIRALBITS_PER_SECOND_PER_RW * stakedNFTsAndTokens[owner].numRWStaked;
 
+    // Rewards for staked fully grown crystals
     rewardsAccumulated +=
       totalDuration *
       SPIRALBITS_PER_SECOND_PER_CRYSTAL *
       stakedNFTsAndTokens[owner].numFullCrystalsStaked;
+
+    // Note: Growing crystals do not accumulate rewards
 
     return rewardsAccumulated;
   }
