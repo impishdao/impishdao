@@ -901,8 +901,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
             <br />
             Staking your NFTs and tokens earns you SPIRALBITS at the following rates:
             <ul>
-              <li>RandomWalkNFT earns you 1 SPIRALBITS per minute, or 1.4K SPIRALBITS per day.</li>
-              <li>Impish Spiral earns you a 10 SPIRALBITS per minute or 14.4K SPIRALBITS per day.</li>
+              <li>RandomWalkNFT earns you 1 SPIRALBITS per minute, or 1.4K SPIRALBITS per day plus bonuses.</li>
+              <li>Impish Spiral earns you a 10 SPIRALBITS per minute or 14.4K SPIRALBITS per day plus bonuses.</li>
               <li>Staking a fully grown crystal earns you 7,2K SPIRALBITS per day.</li>
               <li>
                 All Staked SPIRALBITS earn 4 SPIRALBITS per second, and you will earn a part of this in proportion to
@@ -963,6 +963,16 @@ export function SpiralStaking(props: SpiralStakingProps) {
                 SPIRALBITS
               </li>
             </ul>
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What happens to my Spirals and RandomWalkNFTs staked in the previous contract?</span>
+            <br />
+            Your previously staked RandomWalkNFTs and Spirals are available under the "Staked in V1" section. While these are still earning SPIRALBITS, they
+            don't help your Crystals grow automatically, so you should consider unstaking them from V1 and re-staking them into the
+            new staking interface.
+            <br />
+            <br />
           </div>
 
           <div className="mb-3">
