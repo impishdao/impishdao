@@ -99,8 +99,8 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
     SPIRALBITS_STAKING_EMISSION_PER_SEC = 4 ether;
     IMPISH_STAKING_EMISSION_PER_SEC = 1 ether;
-    SPIRALBITS_PER_SECOND_PER_SPIRAL = 0.167 ether;
-    SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether;
+    SPIRALBITS_PER_SECOND_PER_SPIRAL = 0.167 ether * 1.1; // 10% bonus
+    SPIRALBITS_PER_SECOND_PER_RW = 0.0167 ether * 1.8; // 80% bonus
     SPIRALBITS_PER_SECOND_PER_CRYSTAL = 0.0835 ether;
 
     crystals = ImpishCrystal(_crystals);
@@ -599,7 +599,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
 
       delete crystalTargetSyms[contractCrystalTokenId];
     }
-    
+
     // Burn any unused spiralbits and credit the user back, so we can harvest more crystals
     // instead of returning a large amount of SPIRALBITS back to the user here.
     spiralbits.burn(availableSpiralBits);
