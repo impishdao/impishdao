@@ -20,7 +20,7 @@ type FixtureType = {
   stakingv2: StakingV2;
 };
 
-describe.only("SpiralStaking V2", function () {
+describe("SpiralStaking V2", function () {
   const Zero = BigNumber.from(0);
   const Eth2B = ethers.utils.parseEther("2000000000");
   const Eth100 = ethers.utils.parseEther("100");
