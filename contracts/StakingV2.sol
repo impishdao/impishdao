@@ -143,7 +143,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     // Impish accounting
     stakedNFTsAndTokens[msg.sender].spiralBitsStaked = 0;
 
-    // Transfer impish out.
+    // Transfer Spiralbits out.
     spiralbits.transfer(msg.sender, amount);
 
     if (claimReward) {

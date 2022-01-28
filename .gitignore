@@ -6,7 +6,7 @@ coverage.json
 typechain
 
 # OpenZeppelin
-.openzeppelin/unknown-*.json
+.openzeppelin/unknown-31337.json
 
 /deploy.sh
 /proddata
