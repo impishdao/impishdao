@@ -23,7 +23,7 @@ const mintCostsForEachGen = [
 type CrystalsProps = DappState & DappFunctions & {};
 export function Crystals(props: CrystalsProps) {
   const [numCrystals, setNumCrystals] = useState(1);
-  const [mintGen, setMintGen] = useState(0);
+  const [mintGen, setMintGen] = useState(-2);
   const [mintableAtEachGen, setMintableAtEachGen] = useState<BigNumber[][]>([]);
 
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -44,20 +44,6 @@ export function Crystals(props: CrystalsProps) {
   };
 
   useEffect(() => {
-    if (mintableAtEachGen) {
-      for (let i = 0; i < mintableAtEachGen.length; i++) {
-        if (mintableAtEachGen[i]?.length > 0) {
-          console.log(`Setting mintGen to ${i}`);
-          setMintGen(i);
-          return;
-        }
-      }
-    }
-
-    setMintGen(-1);
-  }, [mintableAtEachGen]);
-
-  useEffect(() => {
     if (props.selectedAddress) {
       fetch(`/crystalapi/getmintable/${props.selectedAddress}`)
         .then((d) => d.json())
@@ -73,6 +59,14 @@ export function Crystals(props: CrystalsProps) {
 
           const mintable = countMintableAtEachGen(minted);
           setMintableAtEachGen(mintable);
+
+          setMintGen(-1);
+          for (let i = 0; i < mintable.length; i++) {
+            if (mintable[i]?.length > 0) {
+              setMintGen(i);
+              break;
+            }
+          }
         });
     }
   }, [props.selectedAddress, refreshCounter]);
@@ -104,6 +98,8 @@ export function Crystals(props: CrystalsProps) {
       }
     }
   };
+
+  console.log(`Mint Gen is ${mintGen}`);
 
   return (
     <>
@@ -138,7 +134,16 @@ export function Crystals(props: CrystalsProps) {
                 </Row>
                 {props.selectedAddress && (
                   <>
-                    {mintGen < 0 && (
+                    {mintGen === -2 && (
+                      <div style={{ marginTop: "50px", marginBottom: "100px" }}>
+                        <div>
+                          Loading...
+                          <br />
+                        </div>
+                      </div>
+                    )}
+
+                    {mintGen === -1 && (
                       <div style={{ marginTop: "50px", marginBottom: "100px" }}>
                         <div>
                           You don't have any Spirals that can be minted into Crystals.
