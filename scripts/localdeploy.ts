@@ -33,6 +33,7 @@ async function main() {
   const SpiralMarket = await ethers.getContractFactory("SpiralMarket");
   const MultiMint = await ethers.getContractFactory("MultiMint");
   const SpiralBits = await ethers.getContractFactory("SpiralBits");
+  const RWNFTStaking = await ethers.getContractFactory("RWNFTStaking");
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
@@ -44,6 +45,7 @@ async function main() {
   const impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiral.interface, signer);
   const spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarket.interface, signer);
   const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
+  const rwnftstaking = new ethers.Contract(contractAddresses.RWNFTStaking, RWNFTStaking.interface, signer);
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
 
   const StakingV2 = await ethers.getContractFactory("StakingV2");
@@ -64,9 +66,19 @@ async function main() {
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
   // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
 
-  // for (let i = 0; i < 10; i++) {
-  //   await rwnft.mint({ value: await rwnft.getMintPrice() });
-  // }
+  rwnft.setApprovalForAll(rwnftstaking.address, true);
+  impishspiral.setApprovalForAll(spiralstakign.address, true);
+
+  for (let i = 0; i < 10; i++) {
+    const rtokenId = await rwnft.nextTokenId();
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
+
+    const stokenId = await impishspiral._tokenIdCounter();
+    await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
+
+    await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
+    await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
+  }
 }
 
 function saveFrontendFiles(stakingv2: Contract) {

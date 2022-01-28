@@ -567,9 +567,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         });
       }
 
-      const spiralTokenIds = v1StakedNFTs
-        .filter((nft) => nft.getNFTtype() === "Spiral")
-        .map((nft) => nft.tokenId);
+      const spiralTokenIds = v1StakedNFTs.filter((nft) => nft.getNFTtype() === "Spiral").map((nft) => nft.tokenId);
       if (spiralTokenIds.length > 0) {
         txns.push({
           title: "Unstaking All Spirals",
