@@ -38,7 +38,6 @@ async function main() {
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
   const ImpishCrystal = await ethers.getContractFactory("ImpishCrystal");
-  const StakingV2 = await ethers.getContractFactory("StakingV2");
 
   const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
   const impish = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAO.interface, signer);
@@ -48,20 +47,25 @@ async function main() {
   const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
   const rwnftstaking = new ethers.Contract(contractAddresses.RWNFTStaking, RWNFTStaking.interface, signer);
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
-  const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, signer);
-
-  // We also save the contract's artifacts and address in the frontend directory
-  // saveFrontendFiles(stakingv2);
-
+  
   await network.provider.request({
     method: "hardhat_impersonateAccount",
     params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
   });
   const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
 
-  await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
-  await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
-  await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
+  const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
+  const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
+  await stakingv2.deployed();
+  stakingv2.init2();
+
+  // We also save the contract's artifacts and address in the frontend directory
+  saveFrontendFiles(stakingv2);
+
+  
+  // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
+  // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
+  // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
 
   // rwnft.setApprovalForAll(rwnftstaking.address, true);
   // impishspiral.setApprovalForAll(spiralstakign.address, true);
