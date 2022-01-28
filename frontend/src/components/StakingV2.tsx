@@ -882,8 +882,8 @@ export function SpiralStaking(props: SpiralStakingProps) {
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How does the Staking work?</span>
             <br />
-            "Chapter 2: The SpiralBits" lets you stake your Impish NFTs and tokens to earn
-            SPIRALBITS tokens. The currently supported NFTs and Tokens are:
+            "Chapter 2: The SpiralBits" lets you stake your Impish NFTs and tokens to earn SPIRALBITS tokens. The
+            currently supported NFTs and Tokens are:
             <ul>
               <li>RandomWalk NFT</li>
               <li>Impish Spiral</li>
@@ -891,34 +891,45 @@ export function SpiralStaking(props: SpiralStakingProps) {
               <li>IMPISH tokens</li>
               <li>SPIRALBITS tokens</li>
             </ul>
-            
-            Staking is the process of depositing your NFTs and tokens into a staking
-            contract, and earning a stream of SPIRALBITS tokens for the duration that the NFTs are kept in the staking
-            contracts.
+            Staking is the process of depositing your NFTs and tokens into a staking contract, and earning a stream of
+            SPIRALBITS tokens for the duration that the NFTs are kept in the staking contracts.
             <br />
             <br />
             SPIRALBITS is an ERC-20 token on Arbitrum, and the currency that will be used throughout the rest of the
             Impish Chapters.
             <br />
-            Staking a Impish Spiral earns you a 10 SPIRALBITS per minute or 14.4K SPIRALBITS per day. Staking a
-            RandomWalkNFT earns you 1 SPIRALBITS per minute, or 1.4K SPIRALBITS per day. Staking a fully grown crystal earns you
-            7,2K SPIRALBITS per day.
+            <br />
+            Staking your NFTs and tokens earns you SPIRALBITS at the following rates:
+            <ul>
+              <li>RandomWalkNFT earns you 1 SPIRALBITS per minute, or 1.4K SPIRALBITS per day.</li>
+              <li>Impish Spiral earns you a 10 SPIRALBITS per minute or 14.4K SPIRALBITS per day.</li>
+              <li>Staking a fully grown crystal earns you 7,2K SPIRALBITS per day.</li>
+              <li>
+                All Staked SPIRALBITS earn 4 SPIRALBITS per second, and you will earn a part of this in proportion to
+                how many SPIRALBITS you have staked
+              </li>
+              <li>
+                All Staked IMPISH earn 1 SPIRALBITS per second, and you will earn a part of this in proportion to how
+                many IMPISH you have staked
+              </li>
+            </ul>
             <br />
             <br />
             You can stake, unstake and/or withdraw your accumulated SPIRALBITS at any time, there are no lockins.
-            However, note that if you have any Crystals that are growing, you might want to harvest them first, allowing them 
-            to grow to full size.
+            However, note that if you have any Crystals that are growing, you might want to harvest them first, allowing
+            them to grow to full size.
           </div>
 
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How do I grow my Crystals?</span>
             <br />
-            If you stake a Impish Crystal that is not fully grown yet (i.e., not size 100), then it will automatically absorb 
-            SPIRALBITS rewards earned by the other NFTs and tokens you have staked and grow. 
-            <br/>
-            After the Crystal has grown to full size, you may "Harvest" it, turning it into a fully grown Crystal. Fully grown
-            Crystals will then start earning Staking rewards themselves
-            <br/><br/>
+            If you stake a Impish Crystal that is not fully grown yet (i.e., not size 100), then it will automatically
+            absorb SPIRALBITS rewards earned by the other NFTs and tokens you have staked and grow.
+            <br />
+            After the Crystal has grown to full size, you may "Harvest" it, turning it into a fully grown Crystal. Fully
+            grown Crystals will then start earning Staking rewards themselves
+            <br />
+            <br />
             Of course, you can unstake any NFT or Token at any time - There are no lockins.
           </div>
 
@@ -954,7 +965,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
             </ul>
           </div>
 
-                   <div className="mb-3">
+          <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>What utility do SPIRALBITS have?</span>
             <br />
             SPIRALBITS are the utility token for the rest of the Impish Chapters. All details will be released 2nd week
