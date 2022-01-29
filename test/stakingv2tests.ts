@@ -285,6 +285,14 @@ describe("SpiralStaking V2", function () {
     const { impishSpiral, stakingv2, spiralbits } = await loadContracts();
     const [signer, signer2] = await ethers.getSigners();
 
+    // Can't initialzize again
+    await expect(stakingv2.connect(signer2).initialize(spiralbits.address)).to.be.revertedWith(
+      "Initializable: contract is already initialized"
+    );
+    await expect(stakingv2.initialize(spiralbits.address)).to.be.revertedWith(
+      "Initializable: contract is already initialized"
+    );
+
     // Can't stake Spiralbits that we don't have
     await spiralbits.connect(signer2).approve(stakingv2.address, Eth2B);
     await expect(stakingv2.connect(signer2).stakeSpiralBits(Eth10)).to.be.revertedWith(
