@@ -503,12 +503,22 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
   const withdrawRewards = async () => {
     if (props.contracts && props.selectedAddress) {
+      const txns: MultiTxItem[] = [];
       const harvestable = growingCrystalNFTCards
         ?.filter((nft) => nft.progress === 100)
-        .map((nft) => BigNumber.from(nft.getContractTokenId()));
+        .map((nft) => BigNumber.from(nft.getContractTokenId())) as Array<BigNumber> | [];
 
-      await props.waitForTxConfirmation(props.contracts.stakingv2.harvestCrystals(harvestable, true));
-      setRefreshCounter(refreshCounter + 1);
+      txns.push({title: "Withdrawing V2 rewards", tx: () => props.contracts?.stakingv2.harvestCrystals(harvestable, true)});
+
+      if (v1RewardsPending.gt(0)) {
+        txns.push({title: "Withdrawing V1 RWNFT rewards", tx: () => props.contracts?.rwnftstaking.unstakeNFTs([], true)});
+        txns.push({title: "Withdrawing V1 Spiral rewards", tx: () => props.contracts?.spiralstaking.unstakeNFTs([], true)});
+      }
+
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        setRefreshCounter(refreshCounter + 1);
+      }
     }
   };
 
