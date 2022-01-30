@@ -165,7 +165,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       stakingv2.unstakeNFTs(contractTokenIDs, true);
 
       if (!players[player].revealed) {
-        // BAD! Player didn't reveal their commitment, fine them
+        // BAD! Player didn't reveal their commitment, fine them by shattering all
+        // their crystals.
         for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
           uint32 tokenId = players[player].crystalIDs[j];
           crystals.shatter(tokenId);
@@ -173,8 +174,10 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       }
     }
 
-    // Each team attacks the next team and defends from the previous team
+    // Record the smallest team size to calculate the bonus for being in the smallest team.
     uint32 smallestTeamSize = 2**32 - 1;
+    
+    // Each team attacks the next team and defends from the previous team
     for (uint256 i = 0; i < 3; i++) {
       if (teams[i].numCrystals < smallestTeamSize) {
         smallestTeamSize = teams[i].numCrystals;
