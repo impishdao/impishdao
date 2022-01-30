@@ -17,7 +17,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     Reveal,
     Resolve,
     Claim,
-    Finished
+    Finished,
+    Shutdown
   }
   Stages public stage;
   uint32 public lastRoundStartTime;
@@ -28,11 +29,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   modifier atStage(Stages _stage) {
     require(stage == _stage);
     _;
-  }
-
-  modifier transitionAfter() {
-    _;
-    nextStage();
   }
 
   modifier timedTransitions() {
@@ -275,8 +271,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     claimForOwner(msg.sender);
   }
 
-  // After a round is finished, reset for next round. 
-  function resetForNextRound() external {
+  // After a round is finished, reset for next round.
+  function resetForNextRound(bool shutdown) external {
     // If not finished, then claim on behalf of all remaining people
     if (stage == Stages.Claim) {
       for (uint256 i = allPlayers.length - 1; i >= 0; i--) {
@@ -287,13 +283,17 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     require(stage == Stages.Finished, "CouldntClaimForEveryone");
     require(allPlayers.length == 0, "Safety assert1");
 
-    // Reset all the team info
-    for (uint256 i = 0; i < 3; i++) {
+    if (shutdown) {
+      stage = Stages.Shutdown;
+    } else {
+      // Reset all the team info
+      for (uint256 i = 0; i < 3; i++) {
         teams[i] = TeamInfo(0, 0, 0, 0);
+      }
+      smallestTeamBonus = SmallestTeamBonusInfo(0, 0, 0);
+      stage = Stages.Commit;
+      lastRoundStartTime = uint32(block.timestamp);
     }
-    smallestTeamBonus = SmallestTeamBonusInfo(0, 0, 0);
-    stage = Stages.Commit;
-    lastRoundStartTime = uint32(block.timestamp);
   }
 
   // function generateCommitment(uint128 salt, uint8 team) public pure returns (bytes32) {
