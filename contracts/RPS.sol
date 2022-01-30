@@ -290,7 +290,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   }
 
   // After a round is finished, reset for next round.
-  function resetForNextRound(bool shutdown) external {
+  function resetForNextRound(bool shutdown) external onlyOwner {
     // If not finished, then claim on behalf of all remaining people
     if (stage == Stages.Claim) {
       for (uint256 i = allPlayers.length - 1; i >= 0; i--) {
