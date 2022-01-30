@@ -21,7 +21,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     Shutdown
   }
   Stages public stage;
-  uint32 public lastRoundStartTime;
+  uint32 public roundStartTime;
 
   //------------------
   // Stage transitions
@@ -32,10 +32,10 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   }
 
   modifier timedTransitions() {
-    if (stage == Stages.Commit && block.timestamp >= lastRoundStartTime + 3 days) {
+    if (stage == Stages.Commit && block.timestamp >= roundStartTime + 3 days) {
       nextStage();
     }
-    if (stage == Stages.Reveal && block.timestamp >= lastRoundStartTime + 6 days) {
+    if (stage == Stages.Reveal && block.timestamp >= roundStartTime + 6 days) {
       nextStage();
     }
     _;
@@ -57,8 +57,11 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     uint8 symmetriesLost;
     uint32 numCrystals;
   }
-  TeamInfo[3] teams;
+  TeamInfo[3] public teams;
 
+  //------------------
+  // Players
+  //-------------------
   struct PlayerInfo {
     bytes32 commitment;
     bool revealed;
@@ -67,9 +70,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     uint32[] crystalIDs;
   }
 
-  //------------------
-  // Players
-  //-------------------
   // Data about all the bets made per address
   mapping(address => PlayerInfo) public players;
   // List of all addresses that are in the current round.
@@ -92,7 +92,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     // Allow staking to work for this address with Crystals
     crystals.setApprovalForAll(_stakingv2, true);
 
-    lastRoundStartTime = uint32(block.timestamp);
+    roundStartTime = uint32(block.timestamp);
     stage = Stages.Commit;
   }
 
@@ -241,56 +241,53 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   function _claimForOwner(address player) internal nonReentrant atStage(Stages.Claim) {
     uint8 team = players[player].team;
 
-    if (teams[team].numCrystals > 0) {
-      uint96 myWinnings = (teams[team].winningSpiralBits * uint96(players[player].crystalIDs.length)) /
-        uint96(teams[team].numCrystals);
+    // TODO
+    require(teams[team].numCrystals > 0, "SafetyAssert2");
 
-      // See if we got a small team bonus
-      if (teams[team].numCrystals == smallestTeamBonus.teamSize && smallestTeamBonus.totalCrystalsInSmallestTeams > 0) {
-        myWinnings +=
-          (smallestTeamBonus.bonusInSpiralBits * uint96(players[player].crystalIDs.length)) /
-          smallestTeamBonus.totalCrystalsInSmallestTeams;
-      }
+    uint96 myWinnings = (teams[team].winningSpiralBits * uint96(players[player].crystalIDs.length)) /
+      uint96(teams[team].numCrystals);
 
-      // See if we lost, and if we did, remove a symmetry for each crystal
-      if (teams[team].symmetriesLost > 0) {
-        // It costs 20k SPIRALBITS to remove symmetries, so mint it. This will be burned
-        SpiralBits(stakingv2.spiralbits()).mintSpiralBits(
-          address(this),
-          20000 ether * players[player].crystalIDs.length
-        );
-        for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
-          uint256 tokenId = players[player].crystalIDs[j];
-          crystals.decSym(uint32(tokenId), 1);
-        }
-      }
+    // See if we got a small team bonus
+    if (teams[team].numCrystals == smallestTeamBonus.teamSize && smallestTeamBonus.totalCrystalsInSmallestTeams > 0) {
+      myWinnings +=
+        (smallestTeamBonus.bonusInSpiralBits * uint96(players[player].crystalIDs.length)) /
+        smallestTeamBonus.totalCrystalsInSmallestTeams;
+    }
 
-      // Generate winnings for the user. Note that this includes the smallest team bonus,
-      // which was previously burned, so we just mint it again. Saves on approvals.
-      if (myWinnings > 0) {
-        SpiralBits(stakingv2.spiralbits()).mintSpiralBits(player, myWinnings);
-      }
-
-      // And transfer the crystals back to the user
+    // See if we lost, and if we did, remove a symmetry for each crystal
+    if (teams[team].symmetriesLost > 0) {
+      // It costs 20k SPIRALBITS to remove symmetries, so mint it. This will be burned
+      SpiralBits(stakingv2.spiralbits()).mintSpiralBits(address(this), 20000 ether * players[player].crystalIDs.length);
       for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
         uint256 tokenId = players[player].crystalIDs[j];
-        crystals.safeTransferFrom(address(this), player, tokenId);
-      }
-
-      // Delete player from the structure
-      uint256 index = players[player].allPlayersIndex;
-      // Swap with the last element
-      allPlayers[index] = allPlayers[allPlayers.length - 1];
-      allPlayers.pop();
-      delete players[player];
-
-      // If all players have been claimed, then advance the stage
-      if (allPlayers.length == 0) {
-        stage = Stages.Finished;
+        crystals.decSym(uint32(tokenId), 1);
       }
     }
-  }
 
+    // Generate winnings for the user. Note that this includes the smallest team bonus,
+    // which was previously burned, so we just mint it again. Saves on approvals.
+    if (myWinnings > 0) {
+      SpiralBits(stakingv2.spiralbits()).mintSpiralBits(player, myWinnings);
+    }
+
+    // And transfer the crystals back to the user
+    for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
+      uint256 tokenId = players[player].crystalIDs[j];
+      crystals.safeTransferFrom(address(this), player, tokenId);
+    }
+
+    // Delete player from the structure
+    uint256 index = players[player].allPlayersIndex;
+    // Swap with the last element
+    allPlayers[index] = allPlayers[allPlayers.length - 1];
+    allPlayers.pop();
+    delete players[player];
+
+    // If all players have been claimed, then advance the stage
+    if (allPlayers.length == 0) {
+      stage = Stages.Finished;
+    }
+  }
 
   // After a round is finished, reset for next round.
   function resetForNextRound(bool shutdown) external {
@@ -302,7 +299,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     }
 
     require(stage == Stages.Finished, "CouldntClaimForEveryone");
-    require(allPlayers.length == 0, "Safety assert1");
+    // TODO
+    require(allPlayers.length == 0, "Safety assert");
 
     if (shutdown) {
       stage = Stages.Shutdown;
@@ -313,7 +311,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       }
       smallestTeamBonus = SmallestTeamBonusInfo(0, 0, 0);
       stage = Stages.Commit;
-      lastRoundStartTime = uint32(block.timestamp);
+      roundStartTime = uint32(block.timestamp);
     }
   }
 
