@@ -78,6 +78,10 @@ describe.only("RPS", function() {
         const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
         await rps.commit(commitment, signer.address, []);
 
+        // Advance 3 days
+        await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+        await network.provider.send("evm_mine");
+
         await rps.revealCommitment(salt, 1);
     });
 });
