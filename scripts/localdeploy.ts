@@ -57,29 +57,27 @@ async function main() {
   const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
   const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
   await stakingv2.deployed();
-  stakingv2.init2();
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(stakingv2);
 
-  
   // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
   // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
 
-  // rwnft.setApprovalForAll(rwnftstaking.address, true);
-  // impishspiral.setApprovalForAll(spiralstakign.address, true);
+  rwnft.setApprovalForAll(rwnftstaking.address, true);
+  impishspiral.setApprovalForAll(spiralstakign.address, true);
 
-  // for (let i = 0; i < 10; i++) {
-  //   const rtokenId = await rwnft.nextTokenId();
-  //   await rwnft.mint({ value: await rwnft.getMintPrice() });
+  for (let i = 0; i < 5; i++) {
+    const rtokenId = await rwnft.nextTokenId();
+    await rwnft.mint({ value: await rwnft.getMintPrice() });
 
-  //   const stokenId = await impishspiral._tokenIdCounter();
-  //   await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
+    const stokenId = await impishspiral._tokenIdCounter();
+    await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
 
-  //   await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
-  //   await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
-  // }
+    await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
+    await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
+  }
 }
 
 function saveFrontendFiles(stakingv2: Contract) {

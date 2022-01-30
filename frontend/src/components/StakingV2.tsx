@@ -508,11 +508,20 @@ export function SpiralStaking(props: SpiralStakingProps) {
         ?.filter((nft) => nft.progress === 100)
         .map((nft) => BigNumber.from(nft.getContractTokenId())) as Array<BigNumber> | [];
 
-      txns.push({title: "Withdrawing V2 rewards", tx: () => props.contracts?.stakingv2.harvestCrystals(harvestable, true)});
+      txns.push({
+        title: "Withdrawing V2 rewards",
+        tx: () => props.contracts?.stakingv2.harvestCrystals(harvestable, true),
+      });
 
       if (v1RewardsPending.gt(0)) {
-        txns.push({title: "Withdrawing V1 RWNFT rewards", tx: () => props.contracts?.rwnftstaking.unstakeNFTs([], true)});
-        txns.push({title: "Withdrawing V1 Spiral rewards", tx: () => props.contracts?.spiralstaking.unstakeNFTs([], true)});
+        txns.push({
+          title: "Withdrawing V1 RWNFT rewards",
+          tx: () => props.contracts?.rwnftstaking.unstakeNFTs([], true),
+        });
+        txns.push({
+          title: "Withdrawing V1 Spiral rewards",
+          tx: () => props.contracts?.spiralstaking.unstakeNFTs([], true),
+        });
       }
 
       const success = await props.executeMultiTx(txns);
@@ -854,9 +863,9 @@ export function SpiralStaking(props: SpiralStakingProps) {
                     </tr>
                     {v1RewardsPending.gt(0) && (
                       <tr>
-                      <td style={{ textAlign: "left" }}>Staking V1 Rewards</td>
-                      <td style={{ textAlign: "right" }}>{formatkmb(v1RewardsPending)} SPIRALBITS</td>
-                    </tr>
+                        <td style={{ textAlign: "left" }}>Staking V1 Rewards</td>
+                        <td style={{ textAlign: "right" }}>{formatkmb(v1RewardsPending)} SPIRALBITS</td>
+                      </tr>
                     )}
                   </tbody>
                 </Table>
@@ -997,11 +1006,13 @@ export function SpiralStaking(props: SpiralStakingProps) {
           </div>
 
           <div className="mb-3">
-            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What happens to my Spirals and RandomWalkNFTs staked in the previous contract?</span>
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>
+              What happens to my Spirals and RandomWalkNFTs staked in the previous contract?
+            </span>
             <br />
-            Your previously staked RandomWalkNFTs and Spirals are available under the "Staked in V1" section. While these are still earning SPIRALBITS, they
-            don't help your Crystals grow automatically, so you should consider unstaking them from V1 and re-staking them into the
-            new staking interface.
+            Your previously staked RandomWalkNFTs and Spirals are available under the "Staked in V1" section. While
+            these are still earning SPIRALBITS, they don't help your Crystals grow automatically, so you should consider
+            unstaking them from V1 and re-staking them into the new staking interface.
             <br />
             <br />
           </div>
