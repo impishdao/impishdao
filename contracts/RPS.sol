@@ -207,6 +207,9 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       totalCrystalsInSmallestTeams
     );
 
+    // Burn the bonuses so we can mint it for the individual users again
+    SpiralBits(stakingv2.spiralbits()).burn(smallestTeamBonus.bonusInSpiralBits);
+
     // Set the stage to claim, so everyone can claim their winnings and crystals
     stage = Stages.Claim;
   }
@@ -222,9 +225,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
         uint96(teams[team].numCrystals);
 
       // See if we got a small team bonus
-      uint96 mySmallestTeamBonus = 0;
       if (teams[team].numCrystals == smallestTeamBonus.teamSize && smallestTeamBonus.totalCrystalsInSmallestTeams > 0) {
-        mySmallestTeamBonus +=
+        myWinnings +=
           (smallestTeamBonus.bonusInSpiralBits * uint96(players[player].crystalIDs.length)) /
           smallestTeamBonus.totalCrystalsInSmallestTeams;
       }
@@ -242,14 +244,10 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
         }
       }
 
-      // Generate winnings for the user
+      // Generate winnings for the user. Note that this includes the smallest team bonus,
+      // which was previously burned, so we just mint it again. Saves on approvals.
       if (myWinnings > 0) {
         SpiralBits(stakingv2.spiralbits()).mintSpiralBits(player, myWinnings);
-      }
-
-      // Transfer the smallest Team bonus to the user
-      if (mySmallestTeamBonus > 0) {
-        SpiralBits(stakingv2.spiralbits()).transferFrom(address(this), player, mySmallestTeamBonus);
       }
 
       // And transfer the crystals back to the user
@@ -264,11 +262,38 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       allPlayers[index] = allPlayers[allPlayers.length - 1];
       allPlayers.pop();
       delete players[player];
+
+      // If all players have been claimed, then advance the stage
+      if (allPlayers.length == 0) {
+        stage = Stages.Finished;
+      }
     }
   }
 
+  // Claim for msg.sender directly to save on gas
   function claim() external {
     claimForOwner(msg.sender);
+  }
+
+  // After a round is finished, reset for next round. 
+  function resetForNextRound() external {
+    // If not finished, then claim on behalf of all remaining people
+    if (stage == Stages.Claim) {
+      for (uint256 i = allPlayers.length - 1; i >= 0; i--) {
+        claimForOwner(allPlayers[i]);
+      }
+    }
+
+    require(stage == Stages.Finished, "CouldntClaimForEveryone");
+    require(allPlayers.length == 0, "Safety assert1");
+
+    // Reset all the team info
+    for (uint256 i = 0; i < 3; i++) {
+        teams[i] = TeamInfo(0, 0, 0, 0);
+    }
+    smallestTeamBonus = SmallestTeamBonusInfo(0, 0, 0);
+    stage = Stages.Commit;
+    lastRoundStartTime = uint32(block.timestamp);
   }
 
   // function generateCommitment(uint128 salt, uint8 team) public pure returns (bytes32) {
