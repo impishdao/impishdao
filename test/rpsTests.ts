@@ -69,19 +69,42 @@ describe.only("RPS", function() {
       return { impishSpiral, spiralbits, crystal, stakingv2, rps };
     }
 
-    it("Commits And Verify", async function () {
-        const { impishSpiral, stakingv2, rps } = await loadContracts();
+    it("Commits And Verify Simple", async function () {
+        const { impishSpiral, stakingv2, spiralbits, crystal, rps } = await loadContracts();
         const [signer] = await ethers.getSigners();
+
+        // Mint a spiral and then a crystal
+        const spiralTokenId = await impishSpiral._tokenIdCounter();
+        await impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()});
+        const crystalTokenId = await crystal._tokenIdCounter();
+        await crystal.mintCrystals([spiralTokenId], 0);
+
+        await spiralbits.approve(crystal.address, Eth2B);
+        await crystal.grow(crystalTokenId, 70);
+
+        await crystal.setApprovalForAll(rps.address, true);
 
         const password = "password";
         const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password))).shr(128);
         const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
-        await rps.commit(commitment, signer.address, []);
+        await rps.commit(commitment, signer.address, [crystalTokenId]);
+
+        expect(await crystal.ownerOf(crystalTokenId)).to.be.equals(stakingv2.address);
 
         // Advance 3 days
         await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
         await network.provider.send("evm_mine");
 
         await rps.revealCommitment(salt, 1);
+
+        // Advance 3 days
+        await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+        await network.provider.send("evm_mine");
+
+        // Directly claim, which should also resolve
+        await rps.claim();
+
+        // Make sure the Crystal came back to us. 
+        expect(await crystal.ownerOf(crystalTokenId)).to.be.equals(signer.address);
     });
 });

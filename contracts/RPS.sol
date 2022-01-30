@@ -89,6 +89,9 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     stakingv2 = StakingV2(_stakingv2);
     crystals = ImpishCrystal(stakingv2.crystals());
 
+    // Allow staking to work for this address with Crystals
+    crystals.setApprovalForAll(_stakingv2, true);
+
     lastRoundStartTime = uint32(block.timestamp);
     stage = Stages.Commit;
   }
@@ -100,6 +103,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     uint32[] calldata crystalIDs
   ) external nonReentrant timedTransitions atStage(Stages.Commit) {
     require(crystalIDs.length > 0, "NeedAtLeastOne");
+    require(players[player].crystalIDs.length == 0, "AlreadyPlaying");
 
     // Make sure the user owns or has staked the Crystal
     uint32[] memory contractTokenIDs = new uint32[](crystalIDs.length);
@@ -111,7 +115,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
 
       // Transfer in all the Crystals and stake them.
       crystals.transferFrom(msg.sender, address(this), tokenId);
-      contractTokenIDs[i] = 3000000 + tokenId;
+      contractTokenIDs[i] = 4_000_000 + tokenId;
     }
 
     // Stake all the Crystals, to start earning SPIRALBITS
@@ -123,16 +127,29 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
 
   // Reveal the commitment
   function revealCommitment(uint128 salt, uint8 team) external nonReentrant timedTransitions atStage(Stages.Reveal) {
+    address player = msg.sender;
     // You can reveal commitments from day 3 to 6
-    require(players[msg.sender].commitment == keccak256(abi.encodePacked(salt, team)), "BadCommitment");
+    require(players[player].commitment == keccak256(abi.encodePacked(salt, team)), "BadCommitment");
 
     // Record all the info that was revealed
-    players[msg.sender].team = team;
-    players[msg.sender].revealed = true;
+    players[player].team = team;
+    players[player].revealed = true;
+
+    // Do the team accounting.
+    uint96 playerScore = 0;
+    for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
+      (, , , , uint192 spiralBitsStored) = crystals.crystals(players[player].crystalIDs[j]);
+      playerScore += uint96(spiralBitsStored);
+
+      // TODO: Add a gen bonus for Crystals
+    }
+
+    // Add the score to the team
+    teams[team].totalScore += playerScore;
+    teams[team].numCrystals += uint32(players[player].crystalIDs.length);
   }
 
-  // After all commitments are revealed, we need to resolve it
-  function resolve() external nonReentrant timedTransitions atStage(Stages.Resolve) {
+  function _resolve() internal nonReentrant timedTransitions atStage(Stages.Resolve) {
     // Shatter and burn all unrevealed crystals.
     for (uint256 i = 0; i < allPlayers.length; i++) {
       address player = allPlayers[i];
@@ -141,7 +158,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       uint32[] memory contractTokenIDs = new uint32[](players[player].crystalIDs.length);
       for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
         uint32 tokenId = players[player].crystalIDs[j];
-        contractTokenIDs[j] = 3000000 + tokenId;
+        contractTokenIDs[j] = 4_000_000 + tokenId;
       }
 
       // Unstake and collect the spiralbits
@@ -153,19 +170,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
           uint32 tokenId = players[player].crystalIDs[j];
           crystals.shatter(tokenId);
         }
-      } else {
-        // Do the team accounting.
-        uint96 playerScore = 0;
-        for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
-          (, , , , uint192 spiralBitsStored) = crystals.crystals(players[player].crystalIDs[j]);
-          playerScore += uint96(spiralBitsStored);
-          // TODO: Add a gen bonus for Crystals
-        }
-
-        // Add the score to the team
-        uint8 team = players[player].team;
-        teams[team].totalScore += playerScore;
-        teams[team].numCrystals += uint32(players[player].crystalIDs.length);
       }
     }
 
@@ -210,10 +214,31 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     stage = Stages.Claim;
   }
 
+  // After all commitments are revealed, we need to resolve it
+  function resolve() external {
+    _resolve();
+  }
+
+  // Claim for msg.sender directly to save on gas
+  function claim() external {
+    claimForOwner(msg.sender);
+  }
+
   // Claim the winnings or losses for a player. This can be called for anyone by anyone,
   // so that we can return the winnings to a user even if they don't claim in time.
-  function claimForOwner(address player) public nonReentrant atStage(Stages.Claim) {
+  function claimForOwner(address player) public {
     require(players[player].revealed, "NotRevealed");
+
+    if (stage == Stages.Reveal) {
+      // Attempt to resolve first
+      _resolve();
+    }
+
+    _claimForOwner(player);
+  }
+
+  // Claim for owner internal function
+  function _claimForOwner(address player) internal nonReentrant atStage(Stages.Claim) {
     uint8 team = players[player].team;
 
     if (teams[team].numCrystals > 0) {
@@ -266,10 +291,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     }
   }
 
-  // Claim for msg.sender directly to save on gas
-  function claim() external {
-    claimForOwner(msg.sender);
-  }
 
   // After a round is finished, reset for next round.
   function resetForNextRound(bool shutdown) external {
