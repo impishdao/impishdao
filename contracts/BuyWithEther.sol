@@ -10,6 +10,16 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+import "./StakingV2.sol";
+
+abstract contract InterfaceImpishDAO {
+  function buyNFTPrice(uint256 tokenID) public view virtual returns (uint256);
+
+  function buyNFT(uint256 tokenID) public virtual;
+
+  function deposit() public payable virtual;
+}
+
 abstract contract IRWMarket {
   function acceptSellOffer(uint256 offerId) public payable virtual;
 }
@@ -36,18 +46,6 @@ abstract contract IWETH9 {
   function balanceOf(address owner) external virtual returns (uint256);
 }
 
-abstract contract IImpishDAO {
-  function buyNFTPrice(uint256 tokenID) public view virtual returns (uint256);
-
-  function buyNFT(uint256 tokenID) public virtual;
-
-  function deposit() public payable virtual;
-}
-
-abstract contract IImpishStaking {
-  function stakeNFTsForOwner(uint32[] calldata tokenIds, address owner) public virtual;
-}
-
 contract BuyWithEther is IERC721Receiver {
   // Uniswap v3router
   ISwapRouter public immutable swapRouter;
@@ -57,11 +55,11 @@ contract BuyWithEther is IERC721Receiver {
   address public constant IMPISH = 0x36F6d831210109719D15abAEe45B327E9b43D6C6;
   address public constant RWNFT = 0x895a6F444BE4ba9d124F61DF736605792B35D66b;
   address public constant IMPISHSPIRAL = 0xB6945B73ed554DF8D52ecDf1Ab08F17564386e0f;
+  address public constant IMPISHCRYSTAL = 0x2dC9a47124E15619a07934D14AB497A085C2C918;
   address public constant SPIRALBITS = 0x650A9960673688Ba924615a2D28c39A8E015fB19;
-  address public constant RWNFTSTAKING = 0xD9403e7497051b317cf1aE88eEaf46ee4E8eAD68;
-  address public constant SPIRALSTAKING = 0xFa798e448dB7987A5D7ab3620D7C3d5ECb18275E;
   address public constant SPIRALMARKET = 0x75ae378320E1cDe25a496Dfa22972d253Fc2270F;
   address public constant RWMARKET = 0x47eF85Dfb775aCE0934fBa9EEd09D22e6eC0Cc08;
+  address payable public constant STAKINGV2 = payable(0x2069cB988d5B17Bab70d73076d6F1a9757A4f963);
 
   // We will set the pool fee to 1%.
   uint24 public constant POOL_FEE = 10000;
@@ -73,9 +71,15 @@ contract BuyWithEther is IERC721Receiver {
     TransferHelper.safeApprove(WETH9, address(swapRouter), 2**256 - 1);
     TransferHelper.safeApprove(SPIRALBITS, address(swapRouter), 2**256 - 1);
 
-    // Approve the NFTs for this contract as well.
-    IERC721(RWNFT).setApprovalForAll(RWNFTSTAKING, true);
-    IERC721(IMPISHSPIRAL).setApprovalForAll(SPIRALSTAKING, true);
+    // Approve the NFTs and tokens for this contract as well.
+    IERC721(RWNFT).setApprovalForAll(STAKINGV2, true);
+    IERC721(IMPISHSPIRAL).setApprovalForAll(STAKINGV2, true);
+    IERC721(IMPISHCRYSTAL).setApprovalForAll(STAKINGV2, true);
+    IERC20(SPIRALBITS).approve(STAKINGV2, 2**256 - 1);
+    IERC20(IMPISH).approve(STAKINGV2, 2**256 - 1);
+
+    // Allow ImpishCrystals to spend our SPIRALBITS (to grow crystals)
+    IERC20(SPIRALBITS).approve(IMPISHCRYSTAL, 2**256 - 1);
   }
 
   function maybeStakeRW(uint256 tokenId, bool stake) internal {
@@ -84,23 +88,23 @@ contract BuyWithEther is IERC721Receiver {
       IERC721(RWNFT).safeTransferFrom(address(this), msg.sender, tokenId);
     } else {
       uint32[] memory tokens = new uint32[](1);
-      tokens[0] = uint32(tokenId);
-      IImpishStaking(RWNFTSTAKING).stakeNFTsForOwner(tokens, msg.sender);
+      tokens[0] = uint32(tokenId) + 1_000_000; // ContractId for RWNFT is 1,000,000
+      StakingV2(STAKINGV2).stakeNFTsForOwner(tokens, msg.sender);
     }
   }
 
   // Buy and Stake a RWNFT
   function buyAndStakeRW(uint256 tokenId, bool stake) internal {
-    IImpishDAO(IMPISH).buyNFT(tokenId);
+    InterfaceImpishDAO(IMPISH).buyNFT(tokenId);
     maybeStakeRW(tokenId, stake);
   }
 
   function buyRwNFTFromDaoWithEthDirect(uint256 tokenId, bool stake) external payable {
-    uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
+    uint256 nftPriceInIMPISH = InterfaceImpishDAO(IMPISH).buyNFTPrice(tokenId);
 
     // We add 1 wei, because we've divided by 1000, which will remove the smallest 4 digits
     // and we need to add it back because he actual price has those 4 least significant digits.
-    IImpishDAO(IMPISH).deposit{value: (nftPriceInIMPISH / 1000) + 1}();
+    InterfaceImpishDAO(IMPISH).deposit{value: (nftPriceInIMPISH / 1000) + 1}();
     buyAndStakeRW(tokenId, stake);
 
     // Return any excess
@@ -112,8 +116,8 @@ contract BuyWithEther is IERC721Receiver {
 
   function buyRwNFTFromDaoWithEth(uint256 tokenId, bool stake) external payable {
     // Get the buyNFT price
-    uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
-    swapExactOutputSingleToImpish(nftPriceInIMPISH, msg.value);
+    uint256 nftPriceInIMPISH = InterfaceImpishDAO(IMPISH).buyNFTPrice(tokenId);
+    swapExactOutputImpishFromEth(nftPriceInIMPISH, msg.value);
 
     buyAndStakeRW(tokenId, stake);
   }
@@ -124,8 +128,8 @@ contract BuyWithEther is IERC721Receiver {
     bool stake
   ) external {
     // Get the buyNFT price
-    uint256 nftPriceInIMPISH = IImpishDAO(IMPISH).buyNFTPrice(tokenId);
-    swapExactOutputMultiple(nftPriceInIMPISH, maxSpiralBits);
+    uint256 nftPriceInIMPISH = InterfaceImpishDAO(IMPISH).buyNFTPrice(tokenId);
+    swapExactOutputImpishFromSpiralBits(nftPriceInIMPISH, maxSpiralBits);
 
     buyAndStakeRW(tokenId, stake);
   }
@@ -139,7 +143,7 @@ contract BuyWithEther is IERC721Receiver {
     (uint256 priceInEth, ) = ISpiralMarket(SPIRALMARKET).forSale(tokenId);
 
     // Swap SPIRALBITS -> WETH9
-    swapExactOutputSingleToETH(priceInEth, maxSpiralBits);
+    swapExactOutputEthFromSpiralBits(priceInEth, maxSpiralBits);
 
     // WETH9 -> ETH
     IWETH9(WETH9).withdraw(priceInEth);
@@ -152,8 +156,8 @@ contract BuyWithEther is IERC721Receiver {
       IERC721(IMPISHSPIRAL).safeTransferFrom(address(this), msg.sender, tokenId);
     } else {
       uint32[] memory tokens = new uint32[](1);
-      tokens[0] = uint32(tokenId);
-      IImpishStaking(SPIRALSTAKING).stakeNFTsForOwner(tokens, msg.sender);
+      tokens[0] = uint32(tokenId) + 2_000_000; // ContractId for Spirals is 2,000,000;
+      StakingV2(STAKINGV2).stakeNFTsForOwner(tokens, msg.sender);
     }
   }
 
@@ -165,7 +169,7 @@ contract BuyWithEther is IERC721Receiver {
     bool stake
   ) external {
     // Swap SPIRALBITS -> WETH9
-    swapExactOutputSingleToETH(priceInEth, maxSpiralBits);
+    swapExactOutputEthFromSpiralBits(priceInEth, maxSpiralBits);
 
     // WETH9 -> ETH
     IWETH9(WETH9).withdraw(IWETH9(WETH9).balanceOf(address(this)));
@@ -177,8 +181,92 @@ contract BuyWithEther is IERC721Receiver {
     maybeStakeRW(tokenId, stake);
   }
 
+  // A megamint does many things at once:
+  // Mint a RWNFT
+  // Mint a Companion Spiral
+  // Mint a gen0 Crystal
+  // Buy SPIRALBITS on Uniswap
+  // Grow the crystals to max size
+  // Stake all NFTs and IMPISH and SPIRALBITS
+  function megaMint(uint32 count) external payable {
+    // The TokenId of the first token minted
+    uint256 rwTokenId = IRandomWalkNFT(RWNFT).nextTokenId();
+
+    for (uint256 i = 0; i < count; i++) {
+      IRandomWalkNFT(RWNFT).mint{value: IRandomWalkNFT(RWNFT).getMintPrice()}();
+    }
+
+    // Spirals
+    uint256 spiralTokenId = ImpishSpiral(IMPISHSPIRAL)._tokenIdCounter();
+    uint32[] memory spiralTokenIds = new uint32[](count);
+    for (uint256 i = 0; i < count; i++) {
+      spiralTokenIds[i] = uint32(spiralTokenId + i);
+      ImpishSpiral(IMPISHSPIRAL).mintSpiralWithRWNFT{value: ImpishSpiral(IMPISHSPIRAL).getMintPrice()}(rwTokenId + i);
+    }
+
+    // Crystals
+    uint256 crystalTokenId = ImpishCrystal(IMPISHCRYSTAL)._tokenIdCounter();
+    ImpishCrystal(IMPISHCRYSTAL).mintCrystals(spiralTokenIds, 0);
+
+    // Swap all remaining ETH into SPIRALBITS. Note this doesn't refund anything back to the user.
+    swapExactInputSpiralBitsFromEthNoRefund(address(this).balance);
+
+    // Grow all the crystals to max size
+    for (uint256 i = 0; i < count; i++) {
+      // Newly created crystals are size 30, so we need to grow them 70 more.
+      ImpishCrystal(IMPISHCRYSTAL).grow(uint32(crystalTokenId + i), 70);
+    }
+
+    // Calculate all the contractTokenIDs, needed for staking
+    uint32[] memory contractTokenIds = new uint32[](count * 3);
+    for (uint256 i = 0; i < count; i++) {
+      contractTokenIds[i * 3 + 0] = uint32(rwTokenId + i + 1_000_000);
+      contractTokenIds[i * 3 + 1] = uint32(spiralTokenId + i + 2_000_000);
+
+      // Fully grown crystals are contractID 4,000,000
+      contractTokenIds[i * 3 + 2] = uint32(crystalTokenId + i + 4_000_000);
+    }
+    StakingV2(STAKINGV2).stakeNFTsForOwner(contractTokenIds, msg.sender);
+
+    // Stake any remaining SPIRALBITS
+    uint256 spiralBitsBalance = IERC20(SPIRALBITS).balanceOf(address(this));
+    if (spiralBitsBalance > 0) {
+      StakingV2(STAKINGV2).stakeSpiralBitsForOwner(spiralBitsBalance, msg.sender);
+    }
+
+    // Stake any remaining IMPISH
+    uint256 impishBalance = IERC20(IMPISH).balanceOf(address(this));
+    if (impishBalance > 0) {
+      StakingV2(STAKINGV2).stakeImpishForOwner(impishBalance, msg.sender);
+    }
+  }
+
+  /// ------- SWAP Functions
+
+  function swapExactInputSpiralBitsFromEthNoRefund(uint256 amountIn) internal returns (uint256 amountOut) {
+    // Convert to WETH, since thats what Uniswap uses
+    IWETH9(WETH9).deposit{value: address(this).balance}();
+
+    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+      tokenIn: WETH9,
+      tokenOut: SPIRALBITS,
+      fee: POOL_FEE,
+      recipient: address(this),
+      deadline: block.timestamp,
+      amountIn: amountIn,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0
+    });
+
+    // Executes the swap returning the amountIn needed to spend to receive the desired amountOut.
+    amountOut = swapRouter.exactInputSingle(params);
+  }
+
   /// Swap with Uniswap V3 for the exact amountOut, using upto amountInMaximum of ETH
-  function swapExactOutputSingleToETH(uint256 amountOut, uint256 amountInMaximum) internal returns (uint256 amountIn) {
+  function swapExactOutputEthFromSpiralBits(uint256 amountOut, uint256 amountInMaximum)
+    internal
+    returns (uint256 amountIn)
+  {
     // Transfer spiralbits in
     TransferHelper.safeTransferFrom(SPIRALBITS, msg.sender, address(this), amountInMaximum);
 
@@ -205,7 +293,7 @@ contract BuyWithEther is IERC721Receiver {
   }
 
   /// Swap with Uniswap V3 for the exact amountOut, using upto amountInMaximum of ETH
-  function swapExactOutputSingleToImpish(uint256 amountOut, uint256 amountInMaximum)
+  function swapExactOutputImpishFromEth(uint256 amountOut, uint256 amountInMaximum)
     internal
     returns (uint256 amountIn)
   {
@@ -237,7 +325,10 @@ contract BuyWithEther is IERC721Receiver {
   }
 
   /// Swap with Uniswap V3 for the exact amountOut, using upto amountInMaximum of SPIRALBITS
-  function swapExactOutputMultiple(uint256 amountOut, uint256 amountInMaximum) internal returns (uint256 amountIn) {
+  function swapExactOutputImpishFromSpiralBits(uint256 amountOut, uint256 amountInMaximum)
+    internal
+    returns (uint256 amountIn)
+  {
     // Transfer spiralbits in
     TransferHelper.safeTransferFrom(SPIRALBITS, msg.sender, address(this), amountInMaximum);
 
