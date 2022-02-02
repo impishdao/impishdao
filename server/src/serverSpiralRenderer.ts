@@ -4,7 +4,7 @@ import { CanvasRenderingContext2D, createCanvas } from "canvas";
 import { sha3_256 } from "js-sha3";
 
 const fromHexString = (hexString: string): Uint8Array => {
-  let m = hexString.match(/.{1,2}/g);
+  const m = hexString.match(/.{1,2}/g);
   if (!m) {
     return new Uint8Array();
   }
@@ -261,7 +261,6 @@ function draw_path_with_rot(
     pixels[off + 3] = alpha;
   }
 
-  //ctx.putImageData(id, 0, 0);
   const newCanvas = createCanvas(id.width, id.height);
 
   newCanvas.getContext("2d")?.putImageData(id, 0, 0);
@@ -271,7 +270,6 @@ function draw_path_with_rot(
   ctx.fillStyle = "black";
   ctx.fill();
 
-  //ctx.filter = 'blur(1px)';
   ctx.drawImage(newCanvas, 0, 0);
 }
 
@@ -335,5 +333,6 @@ process.on("message", (m) => {
 
   // For some reason, it doesn't cleanly exit, so we wait 60 seconds
   // after returning the data to exit.
+  // eslint-disable-next-line no-process-exit
   setTimeout(() => process.exit(0), 60 * 1000);
 });
