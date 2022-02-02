@@ -110,8 +110,9 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     for (uint256 i = 0; i < crystalIDs.length; i++) {
       uint32 tokenId = crystalIDs[i];
       require(crystals.ownerOf(tokenId) == msg.sender, "NotYourCrystal");
-      (uint8 currentCrystalSize, , , , ) = crystals.crystals(tokenId);
+      (uint8 currentCrystalSize, , uint8 currentSym, , ) = crystals.crystals(tokenId);
       require(currentCrystalSize == 100, "NeedFullyGrownCrystal");
+      require(currentSym >= 5, "NeedAtLeast5Sym");
 
       // Transfer in all the Crystals and stake them.
       crystals.transferFrom(msg.sender, address(this), tokenId);
@@ -165,18 +166,25 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       stakingv2.unstakeNFTs(contractTokenIDs, true);
 
       if (!players[player].revealed) {
-        // BAD! Player didn't reveal their commitment, fine them by shattering all
-        // their crystals.
+        // BAD! Player didn't reveal their commitment, fine them by removing 2 symmetries
+        // Mint and burn the SPIRALBITS needed to reduce Symmetries
+        SpiralBits(stakingv2.spiralbits()).mintSpiralBits(
+          address(this),
+          players[player].crystalIDs.length * 2 * 20000 ether
+        );
         for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
           uint32 tokenId = players[player].crystalIDs[j];
-          crystals.shatter(tokenId);
+          crystals.decSym(tokenId, 2);
+
+          // Send the crystal back to the user
+          crystals.safeTransferFrom(address(this), player, tokenId);
         }
       }
     }
 
     // Record the smallest team size to calculate the bonus for being in the smallest team.
     uint32 smallestTeamSize = 2**32 - 1;
-    
+
     // Each team attacks the next team and defends from the previous team
     for (uint256 i = 0; i < 3; i++) {
       if (teams[i].numCrystals < smallestTeamSize) {
@@ -203,15 +211,15 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       }
     }
 
-    // Record all the spiralbits we have for the smallest team bonus
+    // Record all the spiralbits we have for the smallest team bonus. Smallest team gets 1M SPIRALBITS bonus
+    // plus all the staking SPIRALBITS income
     smallestTeamBonus = SmallestTeamBonusInfo(
-      uint96(SpiralBits(stakingv2.spiralbits()).balanceOf(address(this))),
+      1_000_000 ether + uint96(SpiralBits(stakingv2.spiralbits()).balanceOf(address(this))),
       smallestTeamSize,
       totalCrystalsInSmallestTeams
     );
-
     // Burn the bonuses so we can mint it for the individual users again
-    SpiralBits(stakingv2.spiralbits()).burn(smallestTeamBonus.bonusInSpiralBits);
+    SpiralBits(stakingv2.spiralbits()).burn(SpiralBits(stakingv2.spiralbits()).balanceOf(address(this)));
 
     // Set the stage to claim, so everyone can claim their winnings and crystals
     stage = Stages.Claim;
@@ -302,8 +310,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     }
 
     require(stage == Stages.Finished, "CouldntClaimForEveryone");
-    // TODO
-    require(allPlayers.length == 0, "Safety assert");
+    require(allPlayers.length == 0, "SafetyAssert");
 
     if (shutdown) {
       stage = Stages.Shutdown;

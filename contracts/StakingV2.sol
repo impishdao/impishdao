@@ -190,7 +190,6 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     }
   }
 
-
   function stakeNFTsForOwner(uint32[] calldata contractTokenIds, address owner) external nonReentrant {
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(owner);
