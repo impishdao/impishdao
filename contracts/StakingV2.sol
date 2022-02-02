@@ -119,18 +119,22 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     lastEpochTime = uint32(block.timestamp);
   }
 
-  function stakeSpiralBits(uint256 amount) external nonReentrant {
+  function stakeSpiralBits(uint256 amount) external {
+    stakeSpiralBitsForOwner(amount, msg.sender);
+  }
+
+  function stakeSpiralBitsForOwner(uint256 amount, address owner) public nonReentrant {
     require(amount > 0, "Need SPIRALBITS");
+
+    // Transfer the SpiralBits in. If amount is bad or user doesn't have enough tokens, this will fail.
+    spiralbits.transferFrom(msg.sender, address(this), amount);
 
     // Update the owner's rewards. The newly added epoch doesn't matter, because it's duration is 0.
     // This has to be done before
-    _updateRewards(msg.sender);
-
-    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
-    spiralbits.transferFrom(msg.sender, address(this), amount);
+    _updateRewards(owner);
 
     // Spiralbits accounting
-    stakedNFTsAndTokens[msg.sender].spiralBitsStaked += uint96(amount);
+    stakedNFTsAndTokens[owner].spiralBitsStaked += uint96(amount);
   }
 
   function unstakeSpiralBits(bool claimReward) external nonReentrant {
@@ -151,17 +155,21 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     }
   }
 
-  function stakeImpish(uint256 amount) external nonReentrant {
+  function stakeImpish(uint256 amount) external {
+    stakeImpishForOwner(amount, msg.sender);
+  }
+
+  function stakeImpishForOwner(uint256 amount, address owner) public nonReentrant {
     require(amount > 0, "Need IMPISH");
 
     // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
     impish.transferFrom(msg.sender, address(this), amount);
 
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
-    _updateRewards(msg.sender);
+    _updateRewards(owner);
 
     // Impish accounting
-    stakedNFTsAndTokens[msg.sender].impishStaked += uint96(amount);
+    stakedNFTsAndTokens[owner].impishStaked += uint96(amount);
   }
 
   function unstakeImpish(bool claimReward) external nonReentrant {
@@ -181,6 +189,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
       _claimRewards(msg.sender);
     }
   }
+
 
   function stakeNFTsForOwner(uint32[] calldata contractTokenIds, address owner) external nonReentrant {
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
