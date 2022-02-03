@@ -260,7 +260,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const growCrystal = async () => {
-    if (props.selectedAddress && props.contracts && crystalInfo) {
+    if (props.selectedAddress && props.contracts && crystalInfo && id) {
       // Check for approval needed first
       if (await approveSpiralBits()) {
         const success = await props.waitForTxConfirmation(
@@ -280,7 +280,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const doAddSym = async () => {
-    if (props.selectedAddress && props.contracts && crystalInfo) {
+    if (props.selectedAddress && props.contracts && crystalInfo && id) {
       // Check for approval needed first
       if (await approveSpiralBits()) {
         const success = await props.waitForTxConfirmation(
@@ -300,7 +300,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const doReduceSym = async () => {
-    if (props.selectedAddress && props.contracts && crystalInfo) {
+    if (props.selectedAddress && props.contracts && crystalInfo && id) {
       // Check for approval needed first
       if (await approveSpiralBits()) {
         const success = await props.waitForTxConfirmation(
@@ -319,7 +319,7 @@ export function CrystalDetail(props: CrystalDetailProps) {
   };
 
   const shatter = async () => {
-    if (props.selectedAddress && props.contracts) {
+    if (props.selectedAddress && props.contracts && id) {
       const success = await props.waitForTxConfirmation(props.contracts.crystal.shatter(id), "Shatter Crystal");
 
       if (success) {
