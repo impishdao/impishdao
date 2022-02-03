@@ -92,6 +92,9 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     // Allow staking to work for this address with Crystals
     crystals.setApprovalForAll(_stakingv2, true);
 
+    // Allow crystals to spend our spiralbits - Needed to reduce sym for offending players
+    SpiralBits(stakingv2.spiralbits()).approve(address(crystals), 2**256 - 1);
+
     roundStartTime = uint32(block.timestamp);
     stage = Stages.Commit;
   }

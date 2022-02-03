@@ -56,7 +56,7 @@ describe.only("RPS", function () {
     await stakingv2.initialize(crystal.address);
 
     // Allow spiral staking to mint spiralbits
-    spiralbits.addAllowedMinter(stakingv2.address);
+    await spiralbits.addAllowedMinter(stakingv2.address);
 
     // Start the mints
     await impishSpiral.startMints();
@@ -64,6 +64,9 @@ describe.only("RPS", function () {
     const RPS = await ethers.getContractFactory("RPS");
     const rps = await RPS.deploy(stakingv2.address);
     await rps.deployed();
+
+    // Allow RPS to mint
+    await spiralbits.addAllowedMinter(rps.address);
 
     return { impishSpiral, spiralbits, crystal, stakingv2, rps };
   }
@@ -167,5 +170,43 @@ describe.only("RPS", function () {
     // Now this will work
     await rps.resolve();
     await rps.claim();
+  });
+
+  it("Resolve without reveal", async function () {
+    const { impishSpiral, spiralbits, crystal, rps } = await loadContracts();
+    const [signer] = await ethers.getSigners();
+
+    await spiralbits.approve(crystal.address, Eth2B);
+
+    // Mint a spiral and then a crystal
+    const spiralTokenId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+    const crystalTokenId = await crystal._tokenIdCounter();
+    await crystal.mintCrystals([spiralTokenId], 0);
+    await crystal.grow(crystalTokenId, 70);
+
+    const beforeSym = (await crystal.crystals(crystalTokenId)).sym;
+
+    await crystal.setApprovalForAll(rps.address, true);
+
+    const password = "password";
+    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password))).shr(128);
+    const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
+    await rps.commit(commitment, signer.address, [crystalTokenId]);
+
+    // Advance 6 days without revealing
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 6]);
+    await network.provider.send("evm_mine");
+
+    // Can't reveal now, since time has already passed
+    await expect(rps.revealCommitment(salt, 1)).to.be.revertedWith("WrongStage");
+
+    // ... but can resolve
+    await rps.resolve();
+
+    // This should return our crystal, but with 2 reduced symmetries
+    const afterSym = (await crystal.crystals(crystalTokenId)).sym;
+    expect(await crystal.ownerOf(crystalTokenId)).to.be.equals(signer.address);
+    expect(beforeSym - afterSym).to.be.equals(2);
   });
 });
