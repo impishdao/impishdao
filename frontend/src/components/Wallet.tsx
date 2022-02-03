@@ -14,7 +14,7 @@ type CrystalWalletProps = DappState & {
 
 export function CrystalWallet(props: CrystalWalletProps) {
   const { type, address } = useParams();
-  
+
   const [crystals, setCrystals] = useState<Array<CrystalInfo>>();
   const [spirals, setSpirals] = useState<Array<SpiralDetail>>([]);
 
@@ -58,39 +58,39 @@ export function CrystalWallet(props: CrystalWalletProps) {
 
     // Get V2 Staked Tokens
     fetch(`/stakingv2api/wallet/${address}`)
-    .then((r) => r.json())
-    .then((data) => {
-      (async () => {
-        const nftWallet = data.map((d: any) => BigNumber.from(d))  as Array<BigNumber>;
+      .then((r) => r.json())
+      .then((data) => {
+        (async () => {
+          const nftWallet = data.map((d: any) => BigNumber.from(d)) as Array<BigNumber>;
 
-        // Split up into RWs, spirals and crystals
-        const rwIDs: Array<BigNumber> = [];
-        const spiralIDs: Array<BigNumber> = [];
-        const crystalIDs: Array<BigNumber> = [];
+          // Split up into RWs, spirals and crystals
+          const rwIDs: Array<BigNumber> = [];
+          const spiralIDs: Array<BigNumber> = [];
+          const crystalIDs: Array<BigNumber> = [];
 
-        nftWallet.forEach((contractTokenId) => {
-          const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
-          switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
-            case "RandomWalkNFT": {
-              rwIDs.push(tokenId);
-              break;
+          nftWallet.forEach((contractTokenId) => {
+            const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
+            switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
+              case "RandomWalkNFT": {
+                rwIDs.push(tokenId);
+                break;
+              }
+              case "Spiral": {
+                spiralIDs.push(tokenId);
+                break;
+              }
+              case "GrowingCrystal":
+              case "Crystal": {
+                crystalIDs.push(tokenId);
+                break;
+              }
             }
-            case "Spiral": {
-              spiralIDs.push(tokenId);
-              break;
-            }
-            case "GrowingCrystal":
-            case "Crystal": {
-              crystalIDs.push(tokenId);
-              break;
-            }
-          }
-        });
+          });
 
-        setStakedv2Crystals(await getMetadataForCrystalTokenIds(crystalIDs));
-        setStakedv2Spirals(await getSeedsForSpiralTokenIds(spiralIDs));
-      })();
-    });
+          setStakedv2Crystals(await getMetadataForCrystalTokenIds(crystalIDs));
+          setStakedv2Spirals(await getSeedsForSpiralTokenIds(spiralIDs));
+        })();
+      });
   }, [address]);
 
   const allSpirals = spirals.concat(stakedv1Spirals).concat(stakedv2Spirals);
@@ -178,7 +178,9 @@ export function CrystalWallet(props: CrystalWalletProps) {
                             style={{ width: "300px", height: "300px" }}
                           />
                           <Card.Body>
-                            <Card.Title>#{s.tokenId.toString()} {s.indirectOwner && <>(Staked)</>}</Card.Title>
+                            <Card.Title>
+                              #{s.tokenId.toString()} {s.indirectOwner && <>(Staked)</>}
+                            </Card.Title>
                           </Card.Body>
                         </Card>
                       </Col>
