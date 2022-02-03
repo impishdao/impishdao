@@ -13,7 +13,6 @@ import {
   Eth1k,
   Eth1M,
   Eth2B,
-  getCrystalImage,
   getMetadataForCrystalTokenIds,
   getNFTCardInfo,
   getSeedsForSpiralTokenIds,
@@ -203,7 +202,8 @@ export function RPS(props: RPSProps) {
         .then((r) => r.json())
         .then((data) => {
           (async () => {
-            const crystalDetails = await getMetadataForCrystalTokenIds(data);
+            let crystalDetails = await getMetadataForCrystalTokenIds(data);
+            crystalDetails = crystalDetails.filter((card) => card.size === 100);
             setWalletCrystals(crystalDetails);
           })();
         });
@@ -244,13 +244,13 @@ export function RPS(props: RPSProps) {
         // Get all the metadata for the spirals
         let stakedNFTCards = getNFTCardInfo(
           nftWallet,
-          rwNFTIDs.map((t) => BigNumber.from(t)),
-          await getSeedsForSpiralTokenIds(spiralsNFTIDs),
+          [],
+          [],
           await getMetadataForCrystalTokenIds(crystalNFTIDs)
         );
 
         // Split the NFT Cards into growing Crystals and everything else
-        stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() !== "GrowingCrystal");
+        stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() === "Crystal");
 
         setStakedNFTCards(stakedNFTCards);
       }
@@ -310,8 +310,8 @@ export function RPS(props: RPSProps) {
                   nothingMessage={
                     <div>
                       No Fully Grown Crystals.{" "}
-                      <Link to="/Crystals" style={{ color: "#ffd454" }}>
-                        Mint some to stake
+                      <Link to="/crystals" style={{ color: "#ffd454" }}>
+                        Mint some to play
                       </Link>
                     </div>
                   }
