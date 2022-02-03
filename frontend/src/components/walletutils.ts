@@ -4,7 +4,7 @@ import { crystal_image } from "../crystalRenderer";
 import { pad } from "./utils";
 
 export type MultiTxItem = {
-  tx: () => Promise<any>;
+  tx: () => Promise<any> | undefined;
   title: string;
 };
 

@@ -20,10 +20,12 @@ export function MultiTxModal({ show, txns, waitForTxConfirmation, onCancel, onFi
         for (let i = 0; i < txns.length; i++) {
           setAtTxNum(i);
           const txToExecute = txns[i].tx();
-          const success = await waitForTxConfirmation(txToExecute, txns[i].title);
-          if (!success) {
-            onCancel();
-            break;
+          if (txToExecute) {
+            const success = await waitForTxConfirmation(txToExecute, txns[i].title);
+            if (!success) {
+              onCancel();
+              break;
+            }
           }
         }
 

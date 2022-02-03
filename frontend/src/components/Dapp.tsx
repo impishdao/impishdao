@@ -23,7 +23,14 @@ import contractAddresses from "../contracts/contract-addresses.json";
 import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
+import {
+  DappContracts,
+  DappState,
+  ERROR_CODE_TX_REJECTED_BY_USER,
+  NFTForSale,
+  ToastInfo,
+  WANTED_NETWORK_ID,
+} from "../AppState";
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
@@ -159,7 +166,8 @@ export class Dapp extends React.Component<DappProps, DappState> {
       buywitheth,
       crystal,
       stakingv2,
-    };
+    } as DappContracts; // Forcibly cast so that we can get autocomplete suggestions.
+
     this.setState({ contracts });
 
     this.readDappState();
@@ -323,7 +331,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
       const ethBalance =
         (await this.state.contracts?.provider.getBalance(this.state.selectedAddress)) || BigNumber.from(0);
 
-      this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
+      if (impishTokenBalance && spiralBitsBalance && ethBalance) {
+        this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
+      }
     }
   };
 
