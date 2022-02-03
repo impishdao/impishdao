@@ -27,7 +27,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   // Stage transitions
   //-------------------
   modifier atStage(Stages _stage) {
-    require(stage == _stage);
+    require(stage == _stage, "WrongStage");
     _;
   }
 
