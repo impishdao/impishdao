@@ -871,7 +871,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
                           }
 
                           if (stakingYield && stakedImpish) {
-                            rewardRate = rewardRate.add(stakingYield.impish.mul(stakedImpish));
+                            rewardRate = rewardRate.add(stakingYield.impish.mul(stakedImpish).div(Eth1));
                           }
 
                           const stakedRW =
@@ -897,11 +897,12 @@ export function SpiralStaking(props: SpiralStakingProps) {
                           // 10 SPIRALBITS per min + 1.1x bonus
                           rewardRate = rewardRate.add(
                             Eth1.mul(10)
-                              .mul(stakedCrystals)
+                              .mul(stakedSpirals)
                               .mul(60 * 24)
                               .mul(11)
                               .div(10)
                           );
+                          // console.log(ethers.utils.formatEther(rewardRate));
 
                           return formatkmb(rewardRate);
                         })()}{" "}
