@@ -861,6 +861,54 @@ export function SpiralStaking(props: SpiralStakingProps) {
                         SPIRALBITS
                       </td>
                     </tr>
+                    <tr>
+                      <td style={{ textAlign: "left" }}>Earning Rate Per Day</td>
+                      <td style={{ textAlign: "right" }}>
+                        {(() => {
+                          let rewardRate = BigNumber.from(0);
+                          if (stakingYield && stakedSpiralBits) {
+                            rewardRate = rewardRate.add(stakingYield.spiralBitsPerM.mul(stakedSpiralBits.div(Eth1M)));
+                          }
+
+                          if (stakingYield && stakedImpish) {
+                            rewardRate = rewardRate.add(stakingYield.impish.mul(stakedImpish).div(Eth1));
+                          }
+
+                          const stakedRW =
+                            stakedNFTCards?.filter((n) => n.getNFTtype() === "RandomWalkNFT").length || 0;
+                          // 1 SPIRALBIT per min + 1.8x bonus
+                          rewardRate = rewardRate.add(
+                            Eth1.mul(stakedRW)
+                              .mul(60 * 24)
+                              .mul(18)
+                              .div(10)
+                          );
+
+                          const stakedCrystals =
+                            stakedNFTCards?.filter((n) => n.getNFTtype() === "Crystal").length || 0;
+                          // 5 SPIRALBITS per min
+                          rewardRate = rewardRate.add(
+                            Eth1.mul(5)
+                              .mul(stakedCrystals)
+                              .mul(60 * 24)
+                          );
+
+                          const stakedSpirals = stakedNFTCards?.filter((n) => n.getNFTtype() === "Spiral").length || 0;
+                          // 10 SPIRALBITS per min + 1.1x bonus
+                          rewardRate = rewardRate.add(
+                            Eth1.mul(10)
+                              .mul(stakedSpirals)
+                              .mul(60 * 24)
+                              .mul(11)
+                              .div(10)
+                          );
+                          // console.log(ethers.utils.formatEther(rewardRate));
+
+                          return formatkmb(rewardRate);
+                        })()}{" "}
+                        SPIRALBITS
+                      </td>
+                    </tr>
                     {v1RewardsPending.gt(0) && (
                       <tr>
                         <td style={{ textAlign: "left" }}>Staking V1 Rewards</td>

@@ -7,6 +7,7 @@ import SpiralStakingArtifact from "./contracts/spiralstaking.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import StakingV2Artifact from "./contracts/stakingv2.json";
 import contractAddresses from "./contracts/contract-addresses.json";
+import { crystal_image } from "./serverCrystalRenderer";
 
 export function setupCrystals(app: express.Express, provider: ethers.providers.JsonRpcProvider) {
   const _crystal = new ethers.Contract(contractAddresses.Crystal, Crystal.abi, provider);
@@ -135,13 +136,33 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
         crystalMetadataCache.set(id.toNumber(), attributes);
       }
       const r = {
-        image: ``,
+        image: `https://impishdao.com/crystalapi/crystal/image/${id.toString()}.png`,
         description: "ImpishDAO Crystals",
         attributes,
       };
 
       res.contentType("application/json");
       res.send(JSON.stringify(r));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Something went wrong generating metadata");
+    }
+  });
+
+  app.get("/crystalapi/crystal/image/:tokenId.png", async (req, res) => {
+    try {
+      const id = BigNumber.from(req.params.tokenId);
+      const crystalInfo: CrystalInfo = await _crystal.crystals(id);
+
+      const pngBuf = crystal_image(
+        BigNumber.from(crystalInfo.seed).toHexString(),
+        crystalInfo.sym,
+        crystalInfo.generation,
+        crystalInfo.size / 100
+      );
+
+      res.contentType("png");
+      res.send(pngBuf);
     } catch (err) {
       console.log(err);
       res.status(500).send("Something went wrong generating metadata");
