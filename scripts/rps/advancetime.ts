@@ -3,9 +3,9 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import type { ImpishSpiral } from "../typechain/ImpishSpiral";
+import type { ImpishSpiral } from "../../typechain/ImpishSpiral";
 import { artifacts, ethers, network, upgrades } from "hardhat";
-import contractAddresses from "../proddata/contracts/contract-addresses.json";
+import contractAddresses from "../../proddata/contracts/contract-addresses.json";
 
 async function main() {
   // eslint-disable-next-line no-unused-vars
