@@ -3,7 +3,6 @@ import ImpishDAOConfig from "./impishdao-config.json";
 import { Web3Provider } from "@ethersproject/providers";
 import { MultiTxItem } from "./components/walletutils";
 
-
 import type { ImpishSpiral } from "../../typechain/ImpishSpiral";
 import type { ImpishCrystal } from "../../typechain/ImpishCrystal";
 import type { SpiralBits } from "../../typechain/SpiralBits";

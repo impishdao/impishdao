@@ -98,30 +98,32 @@ export function getNFTCardInfo(
       const contractMultiplier =
         contractMultiplierMap.get(crystal.tokenId.toNumber()) || (crystal.size < 100 ? 3000000 : 4000000);
 
-      return new NFTCardInfo(
-        crystal.tokenId.toNumber(),
-        contractMultiplier,
-        getCrystalImage(crystal),
-        crystal
-      );
+      return new NFTCardInfo(crystal.tokenId.toNumber(), contractMultiplier, getCrystalImage(crystal), crystal);
     }) || []
   );
 
   return result;
 }
 
-type RPSStorageItem = {
+export type RPSStorageItem = {
   startTime: number;
   password: string;
   salt: BigNumber;
+  team: number;
 };
 
-export function saveToLocalStorage(address: string, password: string, salt: BigNumber, startTime: number) {
+export function saveToLocalStorage(
+  address: string,
+  password: string,
+  team: number,
+  salt: BigNumber,
+  startTime: number
+) {
   const localStoarge = window.localStorage;
 
   const existingString = localStoarge.getItem(address);
   const items = (existingString ? JSON.parse(existingString) : []) as Array<any>;
-  items.push({startTime, password, salt: salt.toHexString()});
+  items.push({ startTime, password, team, salt: salt.toHexString() });
 
   localStoarge.setItem(address, JSON.stringify(items));
 }
@@ -133,12 +135,11 @@ export function getRPSItemsFromStorage(address: string): RPSStorageItem[] {
   const items = (existingString ? JSON.parse(existingString) : []) as Array<any>;
 
   const parsed = items.map((i) => {
-    return {startTime: i.startTime, password: i.password, salt: BigNumber.from(i.salt)};
+    return { startTime: i.startTime, password: i.password, team: i.team, salt: BigNumber.from(i.salt) };
   });
 
   return parsed;
 }
-
 
 export const Eth1 = ethers.utils.parseEther("1");
 export const Eth1k = ethers.utils.parseEther("1000");

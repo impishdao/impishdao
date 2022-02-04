@@ -31,6 +31,7 @@ import {
   getRPSItemsFromStorage,
   getSeedsForSpiralTokenIds,
   MultiTxItem,
+  RPSStorageItem,
   saveToLocalStorage,
 } from "./walletutils";
 
@@ -194,6 +195,21 @@ const CrystalListDisplay = ({
   );
 };
 
+enum Stages {
+  Commit = 0,
+  Reveal,
+  Resolve,
+  Claim,
+  Finished,
+  Shutdown,
+}
+
+enum Teams {
+  Rock,
+  Paper,
+  Scissors,
+}
+
 type RPSProps = DappState & DappFunctions & {};
 export function RPSScreen(props: RPSProps) {
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
@@ -202,7 +218,8 @@ export function RPSScreen(props: RPSProps) {
   const [crystalApprovalNeeded, setCrystalApprovalNeeded] = useState(false);
   const [password, setPassword] = useState("");
   const [roundStartTime, setRoundStartTime] = useState(0);
-  const [team, setTeam] = useState("Rock");
+  const [gameStage, setGameStage] = useState<Stages>();
+  const [team, setTeam] = useState(Teams.Rock);
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -266,7 +283,18 @@ export function RPSScreen(props: RPSProps) {
         stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() === "Crystal");
         setStakedNFTCards(stakedNFTCards);
 
-        setRoundStartTime(await props.contracts.rps.roundStartTime());
+        const roundStart = await props.contracts.rps.roundStartTime();
+        setRoundStartTime(roundStart);
+
+        const now = (await props.contracts.provider.getBlock("latest")).timestamp;
+        const daysSinceStart = Math.floor((now - roundStart) / (3600 * 24));
+        if (daysSinceStart < 3) {
+          setGameStage(Stages.Commit);
+        } else if (daysSinceStart < 6) {
+          setGameStage(Stages.Reveal);
+        } else {
+          setGameStage(Stages.Claim);
+        }
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -299,6 +327,32 @@ export function RPSScreen(props: RPSProps) {
     return BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltedPassword))).shr(128);
   };
 
+  const revealTeam = async () => {
+    if (props.contracts && props.selectedAddress && revealDetails) {
+      const txns: MultiTxItem[] = [];
+
+      txns.push({
+        title: `Reveal Team ${Teams[revealDetails?.team]}`,
+        tx: () =>
+          revealDetails ? props.contracts?.rps.revealCommitment(revealDetails.salt, revealDetails.team) : undefined,
+      });
+
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        props.showModal(
+          `Revealed team ${Teams[revealDetails.team]}`,
+          <div>
+            You have Revealed your team to be ${Teams[revealDetails.team]}.
+            <br />
+            <br />
+            You can now watch the team scores, and see if you win. Claim your winnings after 3 days.
+          </div>,
+          () => setRefreshCounter(refreshCounter + 1)
+        );
+      }
+    }
+  };
+
   const joinTeam = async (tokenIds: Set<number>) => {
     if (props.contracts && props.selectedAddress) {
       const txns: MultiTxItem[] = [];
@@ -311,12 +365,12 @@ export function RPSScreen(props: RPSProps) {
       }
 
       const salt = getSalt(password);
-      const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
+      const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, team]);
       const crystalIDs = Array.from(tokenIds)
         .map((n) => (n >= 4000000 ? n - 4000000 : n))
         .map((n) => BigNumber.from(n));
       txns.push({
-        title: `Joining ${team} secretly`,
+        title: `Secretly Joining ${Teams[team]}`,
         tx: () =>
           props.selectedAddress
             ? props.contracts?.rps.commit(commitment, props.selectedAddress, crystalIDs)
@@ -328,12 +382,12 @@ export function RPSScreen(props: RPSProps) {
         console.log(`Success. "${password}" - ${salt.toHexString()}`);
 
         // Also store the password in localstorage
-        saveToLocalStorage(props.selectedAddress, password, salt, roundStartTime);
+        saveToLocalStorage(props.selectedAddress, password, team, salt, roundStartTime);
 
         props.showModal(
-          `Joined team ${team}`,
+          `Joined team ${Teams[team]}`,
           <div>
-            You have joined team {team} with password "{password}".
+            You have joined team {Teams[team]} with password "{password}".
             <br />
             <br />
             Remember to come back in 3 days and reveal your team, and see if you won!
@@ -346,6 +400,11 @@ export function RPSScreen(props: RPSProps) {
 
   const walletNFTs = getNFTCardInfo([], [], [], walletCrystals);
 
+  let revealDetails: RPSStorageItem | undefined;
+  if (gameStage === Stages.Reveal && props.selectedAddress) {
+    revealDetails = getRPSItemsFromStorage(props.selectedAddress).find((i) => i.startTime === roundStartTime);
+  }
+
   return (
     <>
       <Navigation {...props} />
@@ -356,61 +415,116 @@ export function RPSScreen(props: RPSProps) {
       >
         <h1 className="mb-5">Chapter 4: Rock, Paper, Scissors</h1>
 
+        <h5>Current Stage {gameStage} </h5>
+
         {props.selectedAddress && (
           <>
-            <Row>
-              <Col md={12} style={{ border: "solid 1px white" }}>
-                <h2
-                  style={{
-                    textAlign: "center",
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    padding: "10px",
-                    color: "#ffd454",
-                  }}
-                >
-                  Fully Grown Crystals Available
-                </h2>
+            {gameStage === Stages.Commit && (
+              <Row>
+                <Col md={12} style={{ border: "solid 1px white" }}>
+                  <h2
+                    style={{
+                      textAlign: "center",
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      padding: "10px",
+                      color: "#ffd454",
+                    }}
+                  >
+                    Fully Grown Crystals Available
+                  </h2>
 
-                <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                  <div style={{ width: "50%" }}>
-                    <InputGroup style={{ width: "600px" }}>
-                      <InputGroup.Text>Commitment Password</InputGroup.Text>
-                      <FormControl type="text" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                    </InputGroup>
-                    <div className="mb-3" style={{ textAlign: "right" }}>
-                      Type in a password to hide your commitment. You will need this password to reveal the team you
-                      joined in 3 days.
+                  <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                    <div style={{ width: "50%" }}>
+                      <InputGroup style={{ width: "600px" }}>
+                        <InputGroup.Text>Commitment Password</InputGroup.Text>
+                        <FormControl
+                          type="text"
+                          value={password}
+                          onChange={(e) => setPassword(e.currentTarget.value)}
+                        />
+                      </InputGroup>
+                      <div className="mb-3" style={{ textAlign: "right" }}>
+                        Type in a password to hide your commitment. You will need this password to reveal the team you
+                        joined in 3 days.
+                      </div>
+                    </div>
+
+                    <div>
+                      <FloatingLabel label="Join Team" style={{ color: "black", width: "200px" }}>
+                        <Form.Select value={team} onChange={(e) => setTeam(parseInt(e.currentTarget.value))}>
+                          <option value={Teams.Rock}>Rock</option>
+                          <option value={Teams.Paper}>Paper</option>
+                          <option value={Teams.Scissors}>Scissors</option>
+                        </Form.Select>
+                      </FloatingLabel>
+                    </div>
+                  </div>
+                  <CrystalListDisplay
+                    title=""
+                    buttonName={`Join team ${Teams[team]}`}
+                    pageSize={6}
+                    nfts={walletNFTs}
+                    onButtonClick={joinTeam}
+                    refreshCounter={refreshCounter}
+                    nothingMessage={
+                      <div>
+                        No Fully Grown Crystals.{" "}
+                        <Link to="/crystals" style={{ color: "#ffd454" }}>
+                          Mint some to play
+                        </Link>
+                      </div>
+                    }
+                  />
+                </Col>
+              </Row>
+            )}
+
+            {gameStage === Stages.Reveal && (
+              <Row>
+                <Col md={12} style={{ border: "solid 1px white" }}>
+                  <h2
+                    style={{
+                      textAlign: "center",
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      padding: "10px",
+                      color: "#ffd454",
+                    }}
+                  >
+                    Reveal your Team
+                  </h2>
+
+                  <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                    <div style={{ width: "50%" }}>
+                      <InputGroup style={{ width: "600px" }}>
+                        <InputGroup.Text>Commitment Password</InputGroup.Text>
+                        <FormControl
+                          type="text"
+                          value={revealDetails?.password}
+                          onChange={(e) => setPassword(e.currentTarget.value)}
+                        />
+                      </InputGroup>
+                    </div>
+
+                    <div>
+                      <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
+                        <Form.Select
+                          value={revealDetails?.team}
+                          onChange={(e) => setTeam(parseInt(e.currentTarget.value))}
+                        >
+                          <option value={Teams.Rock}>Rock</option>
+                          <option value={Teams.Paper}>Paper</option>
+                          <option value={Teams.Scissors}>Scissors</option>
+                        </Form.Select>
+                      </FloatingLabel>
                     </div>
                   </div>
 
                   <div>
-                    <FloatingLabel label="Join Team" style={{ color: "black", width: "200px" }}>
-                      <Form.Select value={team} onChange={(e) => setTeam(e.currentTarget.value)}>
-                        <option value="Rock">Rock</option>
-                        <option value="Paper">Paper</option>
-                        <option value="Scissors">Scissors</option>
-                      </Form.Select>
-                    </FloatingLabel>
+                    <Button onClick={revealTeam}>Reveal</Button>
                   </div>
-                </div>
-                <CrystalListDisplay
-                  title=""
-                  buttonName={`Join team ${team}`}
-                  pageSize={6}
-                  nfts={walletNFTs}
-                  onButtonClick={joinTeam}
-                  refreshCounter={refreshCounter}
-                  nothingMessage={
-                    <div>
-                      No Fully Grown Crystals.{" "}
-                      <Link to="/crystals" style={{ color: "#ffd454" }}>
-                        Mint some to play
-                      </Link>
-                    </div>
-                  }
-                />
-              </Col>
-            </Row>
+                </Col>
+              </Row>
+            )}
           </>
         )}
         {!props.selectedAddress && (
