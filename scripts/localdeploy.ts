@@ -58,8 +58,15 @@ async function main() {
   const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
   await stakingv2.deployed();
 
+  const RPS = await ethers.getContractFactory("RPS");
+  const rps = await RPS.deploy(stakingv2.address);
+  await rps.deployed();
+
+    // Allow RPS to mint
+  await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
+
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(stakingv2);
+  saveFrontendFiles(stakingv2, rps);
 
   // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
@@ -68,19 +75,19 @@ async function main() {
   rwnft.setApprovalForAll(rwnftstaking.address, true);
   impishspiral.setApprovalForAll(spiralstakign.address, true);
 
-  for (let i = 0; i < 5; i++) {
-    const rtokenId = await rwnft.nextTokenId();
-    await rwnft.mint({ value: await rwnft.getMintPrice() });
+  // for (let i = 0; i < 5; i++) {
+  //   const rtokenId = await rwnft.nextTokenId();
+  //   await rwnft.mint({ value: await rwnft.getMintPrice() });
 
-    const stokenId = await impishspiral._tokenIdCounter();
-    await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
+  //   const stokenId = await impishspiral._tokenIdCounter();
+  //   await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
 
-    await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
-    await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
-  }
+  //   await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
+  //   await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
+  // }
 }
 
-function saveFrontendFiles(stakingv2: Contract) {
+function saveFrontendFiles(stakingv2: Contract, rps: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -96,6 +103,7 @@ function saveFrontendFiles(stakingv2: Contract) {
   const newContractAddressStr = JSON.stringify(
     Object.assign(contractAddresses, {
       StakingV2: stakingv2.address,
+      RPS: rps.address
     }),
     undefined,
     2
@@ -103,6 +111,10 @@ function saveFrontendFiles(stakingv2: Contract) {
 
   fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
   fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
+
+  const RPSArtifact = artifacts.readArtifactSync("RPS");
+  fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

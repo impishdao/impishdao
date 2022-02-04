@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { BigNumber, ContractTransaction, ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 import { Button, InputGroup, FormControl, Row, Col, Stack, Table } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";

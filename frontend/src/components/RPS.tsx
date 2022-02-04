@@ -1,6 +1,19 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { Button, Card, Col, Form, OverlayTrigger, ProgressBar, Row, Table, Tooltip } from "react-bootstrap";
+import {
+  Button,
+  Card,
+  Col,
+  FloatingLabel,
+  Form,
+  FormControl,
+  InputGroup,
+  OverlayTrigger,
+  ProgressBar,
+  Row,
+  Table,
+  Tooltip,
+} from "react-bootstrap";
 import { CrystalInfo, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
 import { formatkmb, range, retryTillSucceed } from "./utils";
 import { BigNumber, ethers } from "ethers";
@@ -180,11 +193,14 @@ const CrystalListDisplay = ({
 };
 
 type RPSProps = DappState & DappFunctions & {};
-export function RPS(props: RPSProps) {
+export function RPSScreen(props: RPSProps) {
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
   const [stakedNFTCards, setStakedNFTCards] = useState<Array<NFTCardInfo>>();
 
   const [crystalApprovalNeeded, setCrystalApprovalNeeded] = useState(false);
+  const [password, setPassword] = useState("");
+  const [roundStartTime, setRoundStartTime] = useState(0);
+  const [team, setTeam] = useState("Rock");
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -242,17 +258,13 @@ export function RPS(props: RPSProps) {
         });
 
         // Get all the metadata for the spirals
-        let stakedNFTCards = getNFTCardInfo(
-          nftWallet,
-          [],
-          [],
-          await getMetadataForCrystalTokenIds(crystalNFTIDs)
-        );
+        let stakedNFTCards = getNFTCardInfo(nftWallet, [], [], await getMetadataForCrystalTokenIds(crystalNFTIDs));
 
         // Split the NFT Cards into growing Crystals and everything else
         stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() === "Crystal");
-
         setStakedNFTCards(stakedNFTCards);
+
+        setRoundStartTime(await props.contracts.rps.roundStartTime());
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -263,7 +275,7 @@ export function RPS(props: RPSProps) {
       if (props.contracts && props.selectedAddress) {
         const crystalIsApproved = await props.contracts.crystal.isApprovedForAll(
           props.selectedAddress,
-          props.contracts.stakingv2.address
+          props.contracts.rps.address
         );
 
         setCrystalApprovalNeeded(!crystalIsApproved);
@@ -271,7 +283,52 @@ export function RPS(props: RPSProps) {
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
 
-  const joinTeam = () => {};
+  const getSalt = (pass: string): BigNumber => {
+    const saltedPassword = `${pass}/${roundStartTime}`;
+    return BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltedPassword))).shr(128);
+  };
+
+  const joinTeam = async (tokenIds: Set<number>) => {
+    if (props.contracts && props.selectedAddress) {
+      const txns: MultiTxItem[] = [];
+
+      if (crystalApprovalNeeded) {
+        txns.push({
+          title: "Approving Crystals",
+          tx: () => props.contracts?.crystal.setApprovalForAll(props.contracts?.rps.address, true),
+        });
+      }
+
+      const salt = getSalt(password);
+      const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
+      const crystalIDs = Array.from(tokenIds)
+        .map((n) => (n >= 4000000 ? n - 4000000 : n))
+        .map((n) => BigNumber.from(n));
+      txns.push({
+        title: `Joining ${team} secretly`,
+        tx: () =>
+          props.selectedAddress
+            ? props.contracts?.rps.commit(commitment, props.selectedAddress, crystalIDs)
+            : undefined,
+      });
+
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        console.log(`Success. "${password}" - ${salt.toHexString()}`);
+
+        props.showModal(
+          `Joined team ${team}`,
+          <div>
+            You have joined team {team} with password "{password}".
+            <br />
+            <br />
+            Remember to come back in 3 days and reveal your team, and see if you won!
+          </div>,
+          () => setRefreshCounter(refreshCounter + 1)
+        );
+      }
+    }
+  };
 
   const walletNFTs = getNFTCardInfo([], [], [], walletCrystals);
 
@@ -288,7 +345,7 @@ export function RPS(props: RPSProps) {
         {props.selectedAddress && (
           <>
             <Row>
-              <Col md={6} style={{ border: "solid 1px white" }}>
+              <Col md={12} style={{ border: "solid 1px white" }}>
                 <h2
                   style={{
                     textAlign: "center",
@@ -300,9 +357,31 @@ export function RPS(props: RPSProps) {
                   Fully Grown Crystals Available
                 </h2>
 
+                <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                  <div style={{ width: "50%" }}>
+                    <InputGroup style={{ width: "600px" }}>
+                      <InputGroup.Text>Commitment Password</InputGroup.Text>
+                      <FormControl type="text" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
+                    </InputGroup>
+                    <div className="mb-3" style={{ textAlign: "right" }}>
+                      Type in a password to hide your commitment. You will need this password to reveal the team you
+                      joined in 3 days.
+                    </div>
+                  </div>
+
+                  <div>
+                    <FloatingLabel label="Join Team" style={{ color: "black", width: "200px" }}>
+                      <Form.Select value={team} onChange={(e) => setTeam(e.currentTarget.value)}>
+                        <option value="Rock">Rock</option>
+                        <option value="Paper">Paper</option>
+                        <option value="Scissors">Scissors</option>
+                      </Form.Select>
+                    </FloatingLabel>
+                  </div>
+                </div>
                 <CrystalListDisplay
                   title=""
-                  buttonName={"Stake"}
+                  buttonName={`Join team ${team}`}
                   pageSize={6}
                   nfts={walletNFTs}
                   onButtonClick={joinTeam}
