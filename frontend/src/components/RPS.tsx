@@ -210,6 +210,13 @@ enum Teams {
   Scissors,
 }
 
+type TeamInfo = {
+  totalScore: BigNumber;
+  winningSpiralBits: BigNumber;
+  symmetriesLost: number;
+  numCrystals: number;
+};
+
 type RPSProps = DappState & DappFunctions & {};
 export function RPSScreen(props: RPSProps) {
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
@@ -220,6 +227,7 @@ export function RPSScreen(props: RPSProps) {
   const [roundStartTime, setRoundStartTime] = useState(0);
   const [gameStage, setGameStage] = useState<Stages>();
   const [team, setTeam] = useState(Teams.Rock);
+  const [teamStats, setTeamStats] = useState<Array<TeamInfo>>([]);
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -298,6 +306,26 @@ export function RPSScreen(props: RPSProps) {
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
+
+  useEffect(() => {
+    // Read the team stats
+    fetch("/rpsapi/teamstats")
+      .then((d) => d.json())
+      .then((j) => {
+        const teamStats: Array<TeamInfo> = [];
+        for (let i = 0; i < 3; i++) {
+          const item = j[i];
+          teamStats.push({
+            totalScore: BigNumber.from(item[0]),
+            winningSpiralBits: BigNumber.from(item[1]),
+            symmetriesLost: item[2],
+            numCrystals: item[3],
+          });
+        }
+
+        setTeamStats(teamStats);
+      });
+  }, [refreshCounter]);
 
   // Record all approvals needed
   useEffect(() => {
@@ -480,50 +508,81 @@ export function RPSScreen(props: RPSProps) {
             )}
 
             {gameStage === Stages.Reveal && (
-              <Row>
-                <Col md={12} style={{ border: "solid 1px white" }}>
-                  <h2
-                    style={{
-                      textAlign: "center",
-                      backgroundColor: "rgba(0, 0, 0, 0.5)",
-                      padding: "10px",
-                      color: "#ffd454",
-                    }}
-                  >
-                    Reveal your Team
-                  </h2>
+              <>
+                <Row>
+                  <Col md={12} style={{ border: "solid 1px white" }}>
+                    <h2
+                      style={{
+                        textAlign: "center",
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        padding: "10px",
+                        color: "#ffd454",
+                      }}
+                    >
+                      Reveal your Team
+                    </h2>
 
-                  <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                    <div style={{ width: "50%" }}>
-                      <InputGroup style={{ width: "600px" }}>
-                        <InputGroup.Text>Commitment Password</InputGroup.Text>
-                        <FormControl
-                          type="text"
-                          value={revealDetails?.password}
-                          onChange={(e) => setPassword(e.currentTarget.value)}
-                        />
-                      </InputGroup>
+                    <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                      <div style={{ width: "50%" }}>
+                        <InputGroup style={{ width: "600px" }}>
+                          <InputGroup.Text>Commitment Password</InputGroup.Text>
+                          <FormControl
+                            type="text"
+                            value={revealDetails?.password}
+                            onChange={(e) => setPassword(e.currentTarget.value)}
+                          />
+                        </InputGroup>
+                      </div>
+
+                      <div>
+                        <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
+                          <Form.Select
+                            value={revealDetails?.team}
+                            onChange={(e) => setTeam(parseInt(e.currentTarget.value))}
+                          >
+                            <option value={Teams.Rock}>Rock</option>
+                            <option value={Teams.Paper}>Paper</option>
+                            <option value={Teams.Scissors}>Scissors</option>
+                          </Form.Select>
+                        </FloatingLabel>
+                      </div>
                     </div>
 
                     <div>
-                      <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
-                        <Form.Select
-                          value={revealDetails?.team}
-                          onChange={(e) => setTeam(parseInt(e.currentTarget.value))}
-                        >
-                          <option value={Teams.Rock}>Rock</option>
-                          <option value={Teams.Paper}>Paper</option>
-                          <option value={Teams.Scissors}>Scissors</option>
-                        </Form.Select>
-                      </FloatingLabel>
+                      <Button onClick={revealTeam}>Reveal</Button>
                     </div>
-                  </div>
+                  </Col>
+                </Row>
+                <Row>
+                  {[0, 1, 2].map((teamNum) => {
+                      const teamStat = teamStats[teamNum];
 
-                  <div>
-                    <Button onClick={revealTeam}>Reveal</Button>
-                  </div>
-                </Col>
-              </Row>
+                    return (
+                    <Col key={teamNum} md={4}>
+                      <h3>Team {Teams[teamNum]}</h3>
+                      <Table style={{color: 'white'}}>
+                        <tr>
+                          <td style={{textAlign: 'left'}}>Score</td>
+                          <td>{formatkmb(teamStat.totalScore)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{textAlign: 'left'}}>Number of Crystals in team</td>
+                          <td>{teamStat.numCrystals}</td>
+                        </tr>
+                        <tr>
+                          <td style={{textAlign: 'left'}}>Win against other team?</td>
+                          <td>{formatkmb(teamStat.winningSpiralBits)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{textAlign: 'left'}}>Lose against attacking team?</td>
+                          <td>{teamStat.symmetriesLost}</td>
+                        </tr>
+                      </Table>
+                    </Col>
+                    )}
+                  )}
+                </Row>
+              </>
             )}
           </>
         )}
