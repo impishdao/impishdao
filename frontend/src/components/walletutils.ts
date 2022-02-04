@@ -110,6 +110,36 @@ export function getNFTCardInfo(
   return result;
 }
 
+type RPSStorageItem = {
+  startTime: number;
+  password: string;
+  salt: BigNumber;
+};
+
+export function saveToLocalStorage(address: string, password: string, salt: BigNumber, startTime: number) {
+  const localStoarge = window.localStorage;
+
+  const existingString = localStoarge.getItem(address);
+  const items = (existingString ? JSON.parse(existingString) : []) as Array<any>;
+  items.push({startTime, password, salt: salt.toHexString()});
+
+  localStoarge.setItem(address, JSON.stringify(items));
+}
+
+export function getRPSItemsFromStorage(address: string): RPSStorageItem[] {
+  const localStoarge = window.localStorage;
+  const existingString = localStoarge.getItem(address);
+
+  const items = (existingString ? JSON.parse(existingString) : []) as Array<any>;
+
+  const parsed = items.map((i) => {
+    return {startTime: i.startTime, password: i.password, salt: BigNumber.from(i.salt)};
+  });
+
+  return parsed;
+}
+
+
 export const Eth1 = ethers.utils.parseEther("1");
 export const Eth1k = ethers.utils.parseEther("1000");
 export const Eth1M = ethers.utils.parseEther("1000000");

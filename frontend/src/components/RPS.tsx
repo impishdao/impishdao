@@ -28,8 +28,10 @@ import {
   Eth2B,
   getMetadataForCrystalTokenIds,
   getNFTCardInfo,
+  getRPSItemsFromStorage,
   getSeedsForSpiralTokenIds,
   MultiTxItem,
+  saveToLocalStorage,
 } from "./walletutils";
 
 type CrystalListDisplayProps = {
@@ -283,6 +285,15 @@ export function RPSScreen(props: RPSProps) {
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
 
+  // Load any passwords from localstorage
+  useEffect(() => {
+    if (props.selectedAddress) {
+      const items = getRPSItemsFromStorage(props.selectedAddress);
+      console.log("LocalStorage");
+      console.log(JSON.stringify(items));
+    }
+  }, [props.selectedAddress, refreshCounter]);
+
   const getSalt = (pass: string): BigNumber => {
     const saltedPassword = `${pass}/${roundStartTime}`;
     return BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltedPassword))).shr(128);
@@ -315,6 +326,9 @@ export function RPSScreen(props: RPSProps) {
       const success = await props.executeMultiTx(txns);
       if (success) {
         console.log(`Success. "${password}" - ${salt.toHexString()}`);
+
+        // Also store the password in localstorage
+        saveToLocalStorage(props.selectedAddress, password, salt, roundStartTime);
 
         props.showModal(
           `Joined team ${team}`,
