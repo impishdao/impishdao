@@ -154,6 +154,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   }
 
   function _resolve() internal nonReentrant timedTransitions atStage(Stages.Resolve) {
+    SpiralBits spiralBits = SpiralBits(stakingv2.spiralbits());
+
     // Shatter and burn all unrevealed crystals.
     for (uint256 i = 0; i < allPlayers.length; i++) {
       address player = allPlayers[i];
@@ -171,10 +173,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       if (!players[player].revealed) {
         // BAD! Player didn't reveal their commitment, fine them by removing 2 symmetries
         // Mint and burn the SPIRALBITS needed to reduce Symmetries
-        SpiralBits(stakingv2.spiralbits()).mintSpiralBits(
-          address(this),
-          players[player].crystalIDs.length * 2 * 20000 ether
-        );
+        spiralBits.mintSpiralBits(address(this), players[player].crystalIDs.length * 2 * 20000 ether);
         for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
           uint32 tokenId = players[player].crystalIDs[j];
           crystals.decSym(tokenId, 2);
@@ -217,12 +216,12 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     // Record all the spiralbits we have for the smallest team bonus. Smallest team gets 1M SPIRALBITS bonus
     // plus all the staking SPIRALBITS income
     smallestTeamBonus = SmallestTeamBonusInfo(
-      1_000_000 ether + uint96(SpiralBits(stakingv2.spiralbits()).balanceOf(address(this))),
+      1_000_000 ether + uint96(spiralBits.balanceOf(address(this))),
       smallestTeamSize,
       totalCrystalsInSmallestTeams
     );
     // Burn the bonuses so we can mint it for the individual users again
-    SpiralBits(stakingv2.spiralbits()).burn(SpiralBits(stakingv2.spiralbits()).balanceOf(address(this)));
+    spiralBits.burn(spiralBits.balanceOf(address(this)));
 
     // Set the stage to claim, so everyone can claim their winnings and crystals
     stage = Stages.Claim;
@@ -325,6 +324,10 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       smallestTeamBonus = SmallestTeamBonusInfo(0, 0, 0);
       stage = Stages.Commit;
       roundStartTime = uint32(block.timestamp);
+
+      // Burn any remaining SPIRALBITS, happens if the smallest team was size 0
+      SpiralBits spiralBits = SpiralBits(stakingv2.spiralbits());
+      spiralBits.burn(spiralBits.balanceOf(address(this)));
     }
   }
 

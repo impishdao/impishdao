@@ -355,6 +355,31 @@ export function RPSScreen(props: RPSProps) {
     return BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltedPassword))).shr(128);
   };
 
+  const claim = async () => {
+    if (props.contracts && props.selectedAddress) {
+      const txns: MultiTxItem[] = [];
+
+      txns.push({
+        title: `Claiming Winnings and CrystalsTeam`,
+        tx: () => props.contracts?.rps.claim(),
+      });
+
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        props.showModal(
+          `Claimed`,
+          <div>
+            All your Crystals and SpiralBits have been claimed into your wallet
+            <br />
+            <br />
+            Next round will start Monday.
+          </div>,
+          () => setRefreshCounter(refreshCounter + 1)
+        );
+      }
+    }
+  };
+
   const revealTeam = async () => {
     if (props.contracts && props.selectedAddress && revealDetails) {
       const txns: MultiTxItem[] = [];
@@ -508,81 +533,89 @@ export function RPSScreen(props: RPSProps) {
             )}
 
             {gameStage === Stages.Reveal && (
-              <>
-                <Row>
-                  <Col md={12} style={{ border: "solid 1px white" }}>
-                    <h2
-                      style={{
-                        textAlign: "center",
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                        padding: "10px",
-                        color: "#ffd454",
-                      }}
-                    >
-                      Reveal your Team
-                    </h2>
+              <Row>
+                <Col md={12} style={{ border: "solid 1px white" }}>
+                  <h2
+                    style={{
+                      textAlign: "center",
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      padding: "10px",
+                      color: "#ffd454",
+                    }}
+                  >
+                    Reveal your Team
+                  </h2>
 
-                    <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                      <div style={{ width: "50%" }}>
-                        <InputGroup style={{ width: "600px" }}>
-                          <InputGroup.Text>Commitment Password</InputGroup.Text>
-                          <FormControl
-                            type="text"
-                            value={revealDetails?.password}
-                            onChange={(e) => setPassword(e.currentTarget.value)}
-                          />
-                        </InputGroup>
-                      </div>
-
-                      <div>
-                        <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
-                          <Form.Select
-                            value={revealDetails?.team}
-                            onChange={(e) => setTeam(parseInt(e.currentTarget.value))}
-                          >
-                            <option value={Teams.Rock}>Rock</option>
-                            <option value={Teams.Paper}>Paper</option>
-                            <option value={Teams.Scissors}>Scissors</option>
-                          </Form.Select>
-                        </FloatingLabel>
-                      </div>
+                  <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                    <div style={{ width: "50%" }}>
+                      <InputGroup style={{ width: "600px" }}>
+                        <InputGroup.Text>Commitment Password</InputGroup.Text>
+                        <FormControl
+                          type="text"
+                          value={revealDetails?.password}
+                          onChange={(e) => setPassword(e.currentTarget.value)}
+                        />
+                      </InputGroup>
                     </div>
 
                     <div>
-                      <Button onClick={revealTeam}>Reveal</Button>
+                      <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
+                        <Form.Select
+                          value={revealDetails?.team}
+                          onChange={(e) => setTeam(parseInt(e.currentTarget.value))}
+                        >
+                          <option value={Teams.Rock}>Rock</option>
+                          <option value={Teams.Paper}>Paper</option>
+                          <option value={Teams.Scissors}>Scissors</option>
+                        </Form.Select>
+                      </FloatingLabel>
                     </div>
-                  </Col>
-                </Row>
-                <Row>
-                  {[0, 1, 2].map((teamNum) => {
-                      const teamStat = teamStats[teamNum];
+                  </div>
 
-                    return (
+                  <div>
+                    <Button onClick={revealTeam}>Reveal</Button>
+                  </div>
+                </Col>
+              </Row>
+            )}
+            {(gameStage === Stages.Reveal || gameStage === Stages.Claim) && (
+              <Row>
+                {[0, 1, 2].map((teamNum) => {
+                  const teamStat = teamStats[teamNum];
+
+                  return (
                     <Col key={teamNum} md={4}>
                       <h3>Team {Teams[teamNum]}</h3>
-                      <Table style={{color: 'white'}}>
+                      <Table style={{ color: "white" }}>
                         <tr>
-                          <td style={{textAlign: 'left'}}>Score</td>
+                          <td style={{ textAlign: "left" }}>Score</td>
                           <td>{formatkmb(teamStat.totalScore)}</td>
                         </tr>
                         <tr>
-                          <td style={{textAlign: 'left'}}>Number of Crystals in team</td>
+                          <td style={{ textAlign: "left" }}>Number of Crystals in team</td>
                           <td>{teamStat.numCrystals}</td>
                         </tr>
                         <tr>
-                          <td style={{textAlign: 'left'}}>Win against other team?</td>
+                          <td style={{ textAlign: "left" }}>Win against other team?</td>
                           <td>{formatkmb(teamStat.winningSpiralBits)}</td>
                         </tr>
                         <tr>
-                          <td style={{textAlign: 'left'}}>Lose against attacking team?</td>
+                          <td style={{ textAlign: "left" }}>Lose against attacking team?</td>
                           <td>{teamStat.symmetriesLost}</td>
                         </tr>
                       </Table>
                     </Col>
-                    )}
-                  )}
-                </Row>
-              </>
+                  );
+                })}
+              </Row>
+            )}
+
+            {gameStage === Stages.Claim && (
+              <Row>
+                <Col md={12}>
+                  <Button onClick={claim}>Claim</Button>
+                </Col>
+              </Row>
             )}
           </>
         )}
