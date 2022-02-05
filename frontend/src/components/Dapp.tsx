@@ -512,7 +512,15 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route
               path="/spirals/detail/:id"
               element={
-                <SpiralDetail {...this.state} showModal={this.showModal} connectWallet={() => this._connectWallet()} />
+                <SpiralDetail
+                  {...this.state}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
+                  showModal={this.showModal}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
+                />
               }
             />
 
