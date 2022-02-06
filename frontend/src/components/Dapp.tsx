@@ -549,9 +549,40 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
           <Row
             className="mt-2"
-            style={{ textAlign: "center", backgroundColor: "#222", padding: "20px", height: "150px" }}
+            style={{
+              textAlign: "center",
+              backgroundColor: "#222",
+              padding: "20px",
+              minHeight: "150px",
+              paddingBottom: "20px",
+            }}
           >
-            <Col xs={{ span: 2, offset: 8 }} style={{ marginTop: 30 }}>
+            <Col xs={{ span: 4 }} style={{ marginTop: 30, textAlign: "left" }}>
+              <div style={{ fontSize: "1.1rem", color: "#ffd454" }}>Marketplace</div>
+              <div className="mt-2">
+                <div>
+                  <a
+                    style={{ color: "white" }}
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://tofunft.com/collection/impish-spiral/items"
+                  >
+                    Impish Spirals on TofuNFT
+                  </a>
+                </div>
+                <div>
+                  <a
+                    style={{ color: "white" }}
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://tofunft.com/collection/impish-crystals/items"
+                  >
+                    Impish Crystals on TofuNFT
+                  </a>
+                </div>
+              </div>
+            </Col>
+            <Col xs={{ span: 2, offset: 4 }} style={{ marginTop: 30 }}>
               <a
                 style={{ color: "white", textDecoration: "none" }}
                 target="_blank"
