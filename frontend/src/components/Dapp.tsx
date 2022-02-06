@@ -550,14 +550,14 @@ export class Dapp extends React.Component<DappProps, DappState> {
           <Row
             className="mt-2"
             style={{
-              textAlign: "center",
+              textAlign: "left",
               backgroundColor: "#222",
               padding: "20px",
               minHeight: "150px",
               paddingBottom: "20px",
             }}
           >
-            <Col xs={{ span: 4 }} style={{ marginTop: 30, textAlign: "left" }}>
+            <Col xs={{ span: 4 }} style={{ marginTop: 30 }}>
               <div style={{ fontSize: "1.1rem", color: "#ffd454" }}>Marketplace</div>
               <div className="mt-2">
                 <div>
@@ -584,12 +584,20 @@ export class Dapp extends React.Component<DappProps, DappState> {
             </Col>
             <Col xs={{ span: 2, offset: 4 }} style={{ marginTop: 30 }}>
               <a
-                style={{ color: "white", textDecoration: "none" }}
+                style={{ color: "white", textDecoration: "none", display: "block" }}
                 target="_blank"
                 rel="noreferrer"
                 href="https://www.twitter.com/impishdao"
               >
                 <img src="/twitterlogo.jpg" style={{ width: "30px" }} alt="twitter" /> @impishdao
+              </a>
+              <a
+                style={{ color: "white", textDecoration: "none", display: "block" }}
+                target="_blank"
+                rel="noreferrer"
+                href="https://discord.gg/UH3N8StP5u"
+              >
+                <img src="/discord-logo.jpeg" style={{ width: "30px" }} alt="discord" /> Impish Server
               </a>
             </Col>
           </Row>
