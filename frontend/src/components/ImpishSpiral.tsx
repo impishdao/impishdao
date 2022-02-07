@@ -175,7 +175,10 @@ export function ImpishSpiral(props: SpiralProps) {
 
       txns.push({
         title: `Mega Minting ${numSpirals}`,
-        tx: () => props.contracts?.buywitheth.megaMint(numSpirals, { value: megaMintPriceETH }),
+        tx: () =>
+          props.selectedAddress
+            ? props.contracts?.buywitheth.megaMint(props.selectedAddress, numSpirals, { value: megaMintPriceETH })
+            : undefined,
       });
 
       const success = await props.executeMultiTx(txns);
@@ -293,7 +296,7 @@ export function ImpishSpiral(props: SpiralProps) {
                   <h5>
                     <span style={{ color: "#ffc106" }}>Step 1:</span> What kind of Spiral?
                   </h5>
-                  <Form style={{fontSize: "1.1rem"}}>
+                  <Form style={{ fontSize: "1.1rem" }}>
                     <Form.Check
                       checked={spiralType === "mega"}
                       label="Mega Set"
@@ -324,8 +327,8 @@ export function ImpishSpiral(props: SpiralProps) {
                   <Row className="mt-3">
                     <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
                       <span>
-                        A Mega Set mints a RandomWalkNFT, its companion Spiral and Gen0 Crystal, maxes out the Crystal growth
-                        and stakes all of them to earn SPIRALBITS
+                        A Mega Set mints a RandomWalkNFT, its companion Spiral and Gen0 Crystal, maxes out the Crystal
+                        growth and stakes all of them to earn SPIRALBITS
                       </span>
                     </Col>
                   </Row>
@@ -363,13 +366,13 @@ export function ImpishSpiral(props: SpiralProps) {
               )}
 
               {spiralType === "original" && (
-                 <><Row className="mt-3">
-                  <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
-                    <span>
-                      A brand new Spiral with an Original, one-of-a-kind seed
-                    </span>
-                  </Col>
-                </Row><Row>
+                <>
+                  <Row className="mt-3">
+                    <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
+                      <span>A brand new Spiral with an Original, one-of-a-kind seed</span>
+                    </Col>
+                  </Row>
+                  <Row>
                     <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
                       <h5 style={{ marginTop: "30px" }}>
                         <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
@@ -398,15 +401,17 @@ export function ImpishSpiral(props: SpiralProps) {
                         </Button>
                       </div>
                     </Col>
-                  </Row></>
+                  </Row>
+                </>
               )}
 
               {spiralType === "companion" && (
                 <>
-                 <Row className="mt-3">
+                  <Row className="mt-3">
                     <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
                       <span>
-                        A companion Spiral shares its seed with the RandomWalkNFT, which makes the Spiral look similar to the RandomWalkNFT
+                        A companion Spiral shares its seed with the RandomWalkNFT, which makes the Spiral look similar
+                        to the RandomWalkNFT
                       </span>
                     </Col>
                   </Row>

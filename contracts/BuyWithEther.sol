@@ -54,6 +54,7 @@ contract BuyWithEther is IERC721Receiver {
   address public constant WETH9 = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
   address public constant IMPISH = 0x36F6d831210109719D15abAEe45B327E9b43D6C6;
   address public constant RWNFT = 0x895a6F444BE4ba9d124F61DF736605792B35D66b;
+  address public constant MAGIC = 0x539bdE0d7Dbd336b79148AA742883198BBF60342;
   address public constant IMPISHSPIRAL = 0xB6945B73ed554DF8D52ecDf1Ab08F17564386e0f;
   address public constant IMPISHCRYSTAL = 0x2dC9a47124E15619a07934D14AB497A085C2C918;
   address public constant SPIRALBITS = 0x650A9960673688Ba924615a2D28c39A8E015fB19;
@@ -67,9 +68,10 @@ contract BuyWithEther is IERC721Receiver {
   constructor(ISwapRouter _swapRouter) {
     swapRouter = _swapRouter;
 
-    // Approve the router to spend the WETH9 and SPIRALBITS
+    // Approve the router to spend the WETH9, MAGIC and SPIRALBITS
     TransferHelper.safeApprove(WETH9, address(swapRouter), 2**256 - 1);
     TransferHelper.safeApprove(SPIRALBITS, address(swapRouter), 2**256 - 1);
+    TransferHelper.safeApprove(MAGIC, address(swapRouter), 2**256 - 1);
 
     // Approve the NFTs and tokens for this contract as well.
     IERC721(RWNFT).setApprovalForAll(STAKINGV2, true);
@@ -181,6 +183,32 @@ contract BuyWithEther is IERC721Receiver {
     maybeStakeRW(tokenId, stake);
   }
 
+  function megaMintWithMagic(
+    address owner,
+    uint32 count,
+    uint256 value
+  ) external {
+    // Transfer MAGIC in
+    TransferHelper.safeTransferFrom(MAGIC, msg.sender, address(this), value);
+
+    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+      tokenIn: MAGIC,
+      tokenOut: WETH9,
+      fee: POOL_FEE,
+      recipient: address(this),
+      deadline: block.timestamp,
+      amountIn: value,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0
+    });
+
+    // Executes the swap returning the amountOut that was swapped.
+    uint256 amountOut = swapRouter.exactInputSingle(params);
+    IWETH9(WETH9).withdraw(amountOut);
+
+    megaMint(owner, count);
+  }
+
   // A megamint does many things at once:
   // Mint a RWNFT
   // Mint a Companion Spiral
@@ -188,7 +216,7 @@ contract BuyWithEther is IERC721Receiver {
   // Buy SPIRALBITS on Uniswap
   // Grow the crystals to max size
   // Stake all NFTs and IMPISH and SPIRALBITS
-  function megaMint(uint32 count) external payable {
+  function megaMint(address owner, uint32 count) public payable {
     // The TokenId of the first token minted
     uint256 rwTokenId = IRandomWalkNFT(RWNFT).nextTokenId();
 
@@ -226,18 +254,18 @@ contract BuyWithEther is IERC721Receiver {
       // Fully grown crystals are contractID 4,000,000
       contractTokenIds[i * 3 + 2] = uint32(crystalTokenId + i + 4_000_000);
     }
-    StakingV2(STAKINGV2).stakeNFTsForOwner(contractTokenIds, msg.sender);
+    StakingV2(STAKINGV2).stakeNFTsForOwner(contractTokenIds, owner);
 
     // Stake any remaining SPIRALBITS
     uint256 spiralBitsBalance = IERC20(SPIRALBITS).balanceOf(address(this));
     if (spiralBitsBalance > 0) {
-      StakingV2(STAKINGV2).stakeSpiralBitsForOwner(spiralBitsBalance, msg.sender);
+      StakingV2(STAKINGV2).stakeSpiralBitsForOwner(spiralBitsBalance, owner);
     }
 
     // Stake any remaining IMPISH
     uint256 impishBalance = IERC20(IMPISH).balanceOf(address(this));
     if (impishBalance > 0) {
-      StakingV2(STAKINGV2).stakeImpishForOwner(impishBalance, msg.sender);
+      StakingV2(STAKINGV2).stakeImpishForOwner(impishBalance, owner);
     }
   }
 

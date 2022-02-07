@@ -71,6 +71,14 @@ async function main() {
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(stakingv2, rps, buywithether);
 
+  // Buy some magic for testing
+  // await buywithether.buyMagicTODOTEMP({ value: ethers.utils.parseEther("1") });
+  const MAGIC = await ethers.getContractFactory("ERC20");
+  const magic = new ethers.Contract("0x539bdE0d7Dbd336b79148AA742883198BBF60342", MAGIC.interface, signer);
+  await magic.approve(buywithether.address, ethers.utils.parseEther("2000000"));
+
+  // await buywithether.megaMintWithMagic(signer.address, 1, ethers.utils.parseEther("150"));
+
   // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
   // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
