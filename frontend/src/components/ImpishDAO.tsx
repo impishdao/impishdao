@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/anchor-has-content */
-import { BigNumber, ContractTransaction, ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 import { Button, InputGroup, FormControl, Row, Col, Stack, Table } from "react-bootstrap";
 import Whitepaper from "./Whitepaper";
@@ -337,28 +337,30 @@ export function ImpishDAO(props: ImpishDAOProps) {
 
   const depositIntoDAO = async (amount: BigNumber) => {
     try {
-      // Wait for this Tx to be mined, then refresh all data.
-      let tx: ContractTransaction = await props.contracts?.impdao.deposit({ value: amount });
+      if (props.contracts && props.selectedAddress) {
+        // Wait for this Tx to be mined, then refresh all data.
+        let tx = await props.contracts.impdao.deposit({ value: amount });
 
-      // Wait for Tx confirmation
-      await tx.wait();
+        // Wait for Tx confirmation
+        await tx.wait();
 
-      // Refresh data
-      props.readDappState();
-      props.readUserData();
-
-      const bal = await props.contracts?.impdao.balanceOf(props.selectedAddress);
-
-      props.showModal(
-        "Yay!",
-        <div>You successfully contributed and now have {ethers.utils.formatEther(bal)} IMPISH</div>
-      );
-
-      // Set a timer to refresh data after a few seconds, so that the server has time to process the event
-      setTimeout(() => {
+        // Refresh data
         props.readDappState();
         props.readUserData();
-      }, 1000 * 5);
+
+        const bal = await props.contracts.impdao.balanceOf(props.selectedAddress);
+
+        props.showModal(
+          "Yay!",
+          <div>You successfully contributed and now have {ethers.utils.formatEther(bal)} IMPISH</div>
+        );
+
+        // Set a timer to refresh data after a few seconds, so that the server has time to process the event
+        setTimeout(() => {
+          props.readDappState();
+          props.readUserData();
+        }, 1000 * 5);
+      }
     } catch (e: any) {
       console.log(e);
 
@@ -381,16 +383,18 @@ export function ImpishDAO(props: ImpishDAOProps) {
   const redeemTokens = async () => {
     // Wait for this Tx to be mined, then refresh all data.
     try {
-      let tx: ContractTransaction = await props.contracts?.impdao.redeem();
+      if (props.contracts) {
+        let tx = await props.contracts.impdao.redeem();
 
-      // Wait for Tx confirmation
-      await tx.wait();
+        // Wait for Tx confirmation
+        await tx.wait();
 
-      // Refresh data
-      props.readDappState();
-      props.readUserData();
+        // Refresh data
+        props.readDappState();
+        props.readUserData();
 
-      props.showModal("Successfully Redeemed IMPISH!", <div>You successfully redeemed all your IMPISH.</div>);
+        props.showModal("Successfully Redeemed IMPISH!", <div>You successfully redeemed all your IMPISH.</div>);
+      }
     } catch (e: any) {
       console.log(e);
 

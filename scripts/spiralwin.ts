@@ -55,66 +55,31 @@ async function main() {
   const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
 
   const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
-  const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
-  await stakingv2.deployed();
+  const stakingv2 = await new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, prodSigner);
 
-  const RPS = await ethers.getContractFactory("RPS");
-  const rps = await RPS.deploy(stakingv2.address);
-  await rps.deployed();
-
-    // Allow RPS to mint
-  await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
-
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(stakingv2, rps);
-
-  // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
-  // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
-  // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
-
+  
   rwnft.setApprovalForAll(rwnftstaking.address, true);
   impishspiral.setApprovalForAll(spiralstakign.address, true);
-
-  // for (let i = 0; i < 5; i++) {
-  //   const rtokenId = await rwnft.nextTokenId();
-  //   await rwnft.mint({ value: await rwnft.getMintPrice() });
-
-  //   const stokenId = await impishspiral._tokenIdCounter();
-  //   await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
-
-  //   await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
-  //   await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
-  // }
-}
-
-function saveFrontendFiles(stakingv2: Contract, rps: Contract) {
-  const fs = require("fs");
-  const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
-  const serverDir = path.join(__dirname, "/../server/src/contracts");
-
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
+  
+  await network.provider.send("evm_increaseTime", [3600 * 24 * 3]); 
+  await network.provider.send("evm_mine");
+  
+  let startSpiral = 446;
+  for (let i = 0 ; i < 10; i++) {
+    const spiralId = startSpiral - i;
+    console.log(`Claiming ${spiralId}`);
+    if (await impishspiral.ownerOf(spiralId) === stakingv2.address) {
+      await stakingv2.claimSpiralWin(spiralId);
+      console.log("Success Staking");
+    } else {
+      await impishspiral.claimWin(spiralId);
+      console.log("Success Direct");
+    }
   }
 
-  if (!fs.existsSync(serverDir)) {
-    fs.mkdirSync(serverDir);
-  }
-
-  const newContractAddressStr = JSON.stringify(
-    Object.assign(contractAddresses, {
-      StakingV2: stakingv2.address,
-      RPS: rps.address
-    }),
-    undefined,
-    2
-  );
-
-  fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
-  fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
-
-  const RPSArtifact = artifacts.readArtifactSync("RPS");
-  fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
+  console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
+  await impishspiral.connect(prodSigner).afterAllWinnings();
+  console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

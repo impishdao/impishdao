@@ -17,6 +17,7 @@ import { setupSpiralMarket } from "./marketServer";
 import { setupSpirals } from "./spiralsServer";
 import { setupCrystals } from "./crystalsServer";
 import { setupStakingV2 } from "./stakingv2Server";
+import { setupRPS } from "./rpsServer";
 
 const app = express();
 
@@ -237,6 +238,9 @@ setupCrystals(app, provider);
 // Setup Staking V2 API
 setupStakingV2(app, provider);
 
+// Setup RPS API
+setupRPS(app, provider);
+
 // Serve static files
 app.use("/spirals", express.static(path.join(__dirname, "index.html")));
 app.use("/spirals/*", express.static(path.join(__dirname, "index.html")));
@@ -244,6 +248,9 @@ app.use("/spiralstaking", express.static(path.join(__dirname, "index.html")));
 
 app.use("/crystals", express.static(path.join(__dirname, "index.html")));
 app.use("/crystals/*", express.static(path.join(__dirname, "index.html")));
+
+app.use("/rps", express.static(path.join(__dirname, "index.html")));
+app.use("/rps/*", express.static(path.join(__dirname, "index.html")));
 
 app.use("/wallet/*", express.static(path.join(__dirname, "index.html")));
 

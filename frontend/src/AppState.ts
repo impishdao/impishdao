@@ -3,6 +3,17 @@ import ImpishDAOConfig from "./impishdao-config.json";
 import { Web3Provider } from "@ethersproject/providers";
 import { MultiTxItem } from "./components/walletutils";
 
+import type { ImpishSpiral } from "../../typechain/ImpishSpiral";
+import type { ImpishCrystal } from "../../typechain/ImpishCrystal";
+import type { SpiralBits } from "../../typechain/SpiralBits";
+import type { StakingV2 } from "../../typechain/StakingV2";
+import type { ImpishDAO } from "../../typechain/ImpishDAO";
+import type { SpiralStaking } from "../../typechain/SpiralStaking";
+import type { RWNFTStaking } from "../../typechain/RWNFTStaking";
+import type { BuyWithEther } from "../../typechain/BuyWithEther";
+import type { MultiMint } from "../../typechain/MultiMint";
+import type { RPS } from "../../typechain/RPS";
+
 export const ARBITRUM_NETWORK_ID = "42161";
 
 export const WANTED_NETWORK_ID = ImpishDAOConfig.NetworkID || ARBITRUM_NETWORK_ID;
@@ -110,16 +121,17 @@ export type DappContracts = {
   provider: Web3Provider;
 
   rwnft: Contract;
-  impdao: Contract;
-  impspiral: Contract;
+  impdao: ImpishDAO;
+  impspiral: ImpishSpiral;
   spiralmarket: Contract;
-  multimint: Contract;
-  spiralbits: Contract;
-  spiralstaking: Contract;
-  rwnftstaking: Contract;
-  buywitheth: Contract;
-  crystal: Contract;
-  stakingv2: Contract;
+  multimint: MultiMint;
+  spiralbits: SpiralBits;
+  spiralstaking: SpiralStaking;
+  rwnftstaking: RWNFTStaking;
+  buywitheth: BuyWithEther;
+  crystal: ImpishCrystal;
+  stakingv2: StakingV2;
+  rps: RPS;
 };
 
 export type SpiralDetail = {

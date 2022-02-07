@@ -294,7 +294,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
   useEffect(() => {
     // Get staked wallet
     retryTillSucceed(async () => {
-      if (props.contracts) {
+      if (props.contracts && props.selectedAddress) {
         const nftWallet = (await props.contracts.stakingv2.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
 
         // Split up into RWs, spirals and crystals
@@ -463,7 +463,10 @@ export function SpiralStaking(props: SpiralStakingProps) {
 
       txns.push({
         title: "Staking NFTs",
-        tx: () => props.contracts?.stakingv2.stakeNFTsForOwner(contractTokenIds, props.selectedAddress),
+        tx: () =>
+          props.selectedAddress
+            ? props.contracts?.stakingv2.stakeNFTsForOwner(contractTokenIds, props.selectedAddress)
+            : undefined,
       });
 
       const success = await props.executeMultiTx(txns);

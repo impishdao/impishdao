@@ -18,12 +18,21 @@ import MultiMintArtifact from "../contracts/multimint.json";
 import BuyWithEtherArtifact from "../contracts/buywithether.json";
 import Crystal from "../contracts/crystal.json";
 import StakingV2 from "../contracts/stakingv2.json";
+import RPS from "../contracts/rps.json";
+
 import contractAddresses from "../contracts/contract-addresses.json";
 
 import { Container, Button, Alert, Modal, Row, Col, ToastContainer, Toast } from "react-bootstrap";
 import { ImpishDAO } from "./ImpishDAO";
 import React from "react";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, NFTForSale, ToastInfo, WANTED_NETWORK_ID } from "../AppState";
+import {
+  DappContracts,
+  DappState,
+  ERROR_CODE_TX_REJECTED_BY_USER,
+  NFTForSale,
+  ToastInfo,
+  WANTED_NETWORK_ID,
+} from "../AppState";
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ImpishSpiral } from "./ImpishSpiral";
@@ -36,6 +45,7 @@ import { Crystals } from "./Crystals";
 import { CrystalWallet } from "./Wallet";
 import { MultiTxItem } from "./walletutils";
 import { MultiTxModal } from "./MultiTxModal";
+import { RPSScreen } from "./RPS";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -146,6 +156,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
     // Staking V2
     const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.abi, provider.getSigner(0));
 
+    // RPS
+    const rps = new ethers.Contract(contractAddresses.RPS, RPS.abi, provider.getSigner(0));
+
     const contracts = {
       provider,
       rwnft,
@@ -159,7 +172,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
       buywitheth,
       crystal,
       stakingv2,
-    };
+      rps,
+    } as DappContracts; // Forcibly cast so that we can get autocomplete suggestions.
+
     this.setState({ contracts });
 
     this.readDappState();
@@ -323,7 +338,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
       const ethBalance =
         (await this.state.contracts?.provider.getBalance(this.state.selectedAddress)) || BigNumber.from(0);
 
-      this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
+      if (impishTokenBalance && spiralBitsBalance && ethBalance) {
+        this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
+      }
     }
   };
 
@@ -473,6 +490,21 @@ export class Dapp extends React.Component<DappProps, DappState> {
               path="/spirals"
               element={
                 <ImpishSpiral
+                  {...this.state}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
+                  showModal={this.showModal}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
+                />
+              }
+            />
+
+            <Route
+              path="/rps"
+              element={
+                <RPSScreen
                   {...this.state}
                   connectWallet={this._connectWallet}
                   readDappState={this.readDappState}
