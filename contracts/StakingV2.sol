@@ -25,6 +25,8 @@ import "./ImpishCrystal.sol";
 import "./ImpishSpiral.sol";
 import "./SpiralBits.sol";
 
+// import "hardhat/console.sol";
+
 contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
   // Since this is an upgradable implementation, the storage layout is important.
   // Please be careful changing variable positions when upgrading.
@@ -126,12 +128,12 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
   function stakeSpiralBitsForOwner(uint256 amount, address owner) public nonReentrant {
     require(amount > 0, "Need SPIRALBITS");
 
-    // Transfer the SpiralBits in. If amount is bad or user doesn't have enough tokens, this will fail.
-    spiralbits.transferFrom(msg.sender, address(this), amount);
-
     // Update the owner's rewards. The newly added epoch doesn't matter, because it's duration is 0.
     // This has to be done before
     _updateRewards(owner);
+
+    // Transfer the SpiralBits in. If amount is bad or user doesn't have enough tokens, this will fail.
+    spiralbits.transferFrom(msg.sender, address(this), amount);
 
     // Spiralbits accounting
     stakedNFTsAndTokens[owner].spiralBitsStaked += uint96(amount);
@@ -162,11 +164,11 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
   function stakeImpishForOwner(uint256 amount, address owner) public nonReentrant {
     require(amount > 0, "Need IMPISH");
 
-    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
-    impish.transferFrom(msg.sender, address(this), amount);
-
     // Update the owner's rewards first. This also updates the current epoch, since nothing has changed yet.
     _updateRewards(owner);
+
+    // Transfer the SpiralBits in. If amount is bad or user doesn't have enoug htokens, this will fail.
+    impish.transferFrom(msg.sender, address(this), amount);
 
     // Impish accounting
     stakedNFTsAndTokens[owner].impishStaked += uint96(amount);

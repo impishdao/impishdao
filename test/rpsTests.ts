@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable node/no-missing-import */
 
 import type { ImpishSpiral } from "../typechain/ImpishSpiral";
@@ -18,7 +19,7 @@ type FixtureType = {
   rps: RPS;
 };
 
-describe.only("RPS", function () {
+describe("RPS", function () {
   const Zero = BigNumber.from(0);
   const Eth2B = ethers.utils.parseEther("2000000000");
   const Eth100 = ethers.utils.parseEther("100");

@@ -36,7 +36,6 @@ async function main() {
   const RWNFTStaking = await ethers.getContractFactory("RWNFTStaking");
   const SpiralStaking = await ethers.getContractFactory("SpiralStaking");
   const RwnftStaking = await ethers.getContractFactory("RWNFTStaking");
-  const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
   const ImpishCrystal = await ethers.getContractFactory("ImpishCrystal");
 
   const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
@@ -62,11 +61,15 @@ async function main() {
   const rps = await RPS.deploy(stakingv2.address);
   await rps.deployed();
 
-    // Allow RPS to mint
+  // Allow RPS to mint
   await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
 
+  const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
+  const buywithether = await BuyWithEther.deploy(swapRouter);
+  await buywithether.deployed();
+
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(stakingv2, rps);
+  saveFrontendFiles(stakingv2, rps, buywithether);
 
   // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
@@ -87,7 +90,7 @@ async function main() {
   // }
 }
 
-function saveFrontendFiles(stakingv2: Contract, rps: Contract) {
+function saveFrontendFiles(stakingv2: Contract, rps: Contract, buywithether: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -103,7 +106,8 @@ function saveFrontendFiles(stakingv2: Contract, rps: Contract) {
   const newContractAddressStr = JSON.stringify(
     Object.assign(contractAddresses, {
       StakingV2: stakingv2.address,
-      RPS: rps.address
+      RPS: rps.address,
+      BuyWithEther: buywithether.address,
     }),
     undefined,
     2
@@ -115,6 +119,10 @@ function saveFrontendFiles(stakingv2: Contract, rps: Contract) {
   const RPSArtifact = artifacts.readArtifactSync("RPS");
   fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
   fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
+
+  const BuyWithEtherArtifact = artifacts.readArtifactSync("BuyWithEther");
+  fs.writeFileSync(contractsDir + "/buywithether.json", JSON.stringify(BuyWithEtherArtifact, null, 2));
+  fs.writeFileSync(serverDir + "/buywithether.json", JSON.stringify(BuyWithEtherArtifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

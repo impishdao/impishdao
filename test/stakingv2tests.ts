@@ -222,11 +222,11 @@ describe("SpiralStaking V2", function () {
       for (let i = 0; i < expectedEpochsDeltas.length; i++) {
         expectedSpiralbitsInEpoch = expectedSpiralbitsInEpoch.add(expectedEpochsDeltas[i]);
         const epoch = await stakingv2.epochs(i + 1);
-        expect(epoch[1]).to.be.equals(expectedSpiralbitsInEpoch);
-
         if (debugPrint) {
           console.log(JSON.stringify(epoch));
         }
+
+        expect(epoch[1]).to.be.equals(expectedSpiralbitsInEpoch);
       }
     };
 
