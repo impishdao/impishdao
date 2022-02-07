@@ -3,6 +3,7 @@ import ImpishDAOConfig from "./impishdao-config.json";
 import { Web3Provider } from "@ethersproject/providers";
 import { MultiTxItem } from "./components/walletutils";
 
+import type { RandomWalkNFT } from "../../typechain/RandomWalkNFT";
 import type { ImpishSpiral } from "../../typechain/ImpishSpiral";
 import type { ImpishCrystal } from "../../typechain/ImpishCrystal";
 import type { SpiralBits } from "../../typechain/SpiralBits";
@@ -120,7 +121,7 @@ export type DappFunctions = {
 export type DappContracts = {
   provider: Web3Provider;
 
-  rwnft: Contract;
+  rwnft: RandomWalkNFT;
   impdao: ImpishDAO;
   impspiral: ImpishSpiral;
   spiralmarket: Contract;

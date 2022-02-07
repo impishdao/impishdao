@@ -152,10 +152,15 @@ export function Crystals(props: CrystalsProps) {
                           <Link to="/spirals" style={{ color: "#ffd454" }}>
                             mint some Spirals
                           </Link>{" "}
-                          or buy some at the{" "}
-                          <Link style={{ color: "#ffd454" }} to="/spirals/marketplace">
-                            Marketplace
-                          </Link>
+                          or buy some on the{" "}
+                          <a
+                            style={{ color: "white" }}
+                            target="_blank"
+                            rel="noreferrer"
+                            href="https://tofunft.com/collection/impish-crystals/items"
+                          >
+                            TofuNFT Marketplace.
+                          </a>
                         </div>
                         <br />
                       </div>

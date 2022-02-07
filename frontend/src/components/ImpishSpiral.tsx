@@ -7,8 +7,12 @@ import { setup_image } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
+import { ethers } from "ethers";
+import { Eth1k, Eth1M, MultiTxItem } from "./walletutils";
 
 type SpiralProps = DappState & DappFunctions & {};
+
+type SpiralType = "original" | "companion" | "mega";
 
 export function ImpishSpiral(props: SpiralProps) {
   // const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
@@ -20,8 +24,12 @@ export function ImpishSpiral(props: SpiralProps) {
   const [userRWNFTs, setUserRWNFTs] = useState<Array<BigNumber>>([]);
   const [selectedUserRW, setSelectedUserRW] = useState<BigNumber | null>(null);
 
-  const [spiralType, setSpiralType] = useState("original");
-  const [mintPrice, setMintPrice] = useState<BigNumber>(BigNumber.from(0));
+  const [spiralType, setSpiralType] = useState<SpiralType>("mega");
+  const [spiralMintPrice, setSpiralMintPrice] = useState<BigNumber>(BigNumber.from(0));
+  const [rwMintPrice, setRwMintPrice] = useState<BigNumber>(BigNumber.from(0));
+
+  const [ethPer1MSpiralBits, setEthPer1MSpiralBits] = useState(BigNumber.from(0));
+
   const [numSpirals, setNumSpirals] = useState(1);
   const [previewURL, setPreviewURL] = useState("");
 
@@ -45,6 +53,14 @@ export function ImpishSpiral(props: SpiralProps) {
         const lastMintTime = BigNumber.from(j.lastMintTime || 0);
         console.log(`Last mint time was ${lastMintTime.toNumber()}`);
         setTimeRemaining(lastMintTime.toNumber() + THREE_DAYS - Date.now() / 1000);
+      });
+
+    // Fetch prices
+    fetch("/marketapi/uniswapv3prices")
+      .then((r) => r.json())
+      .then((data) => {
+        const { ETHper1MSPIRALBITS } = data;
+        setEthPer1MSpiralBits(BigNumber.from(ETHper1MSPIRALBITS));
       });
   }, []);
 
@@ -86,7 +102,8 @@ export function ImpishSpiral(props: SpiralProps) {
 
       // Also get the latest mint price
       if (props.contracts) {
-        setMintPrice(await props.contracts.impspiral.getMintPrice());
+        setSpiralMintPrice(await props.contracts.impspiral.getMintPrice());
+        setRwMintPrice(await props.contracts.rwnft.getMintPrice());
       }
     })();
   }, [props.selectedAddress, props.contracts]);
@@ -109,19 +126,87 @@ export function ImpishSpiral(props: SpiralProps) {
     })();
   }, [props.selectedAddress, props.contracts, selectedUserRW]);
 
-  const calcMultiSpiralPrice = (numSpirals: number, basePrice: BigNumber): BigNumber => {
+  const calcMultiSpiralPrice = (numSpirals: number): BigNumber => {
     let amountNeeded = BigNumber.from(0);
-    let mintPrice = basePrice;
+    let basePrice = spiralMintPrice;
     for (let i = 0; i < numSpirals; i++) {
-      amountNeeded = amountNeeded.add(mintPrice);
+      amountNeeded = amountNeeded.add(basePrice);
       // Mint price increases 0.5% everytime
-      mintPrice = mintPrice.mul(1005).div(1000);
+      basePrice = basePrice.mul(1005).div(1000);
     }
 
     return amountNeeded;
   };
 
-  const multiMintPriceETH = calcMultiSpiralPrice(numSpirals, mintPrice);
+  const calcMegaMintPrice = (numSpirals: number): BigNumber => {
+    // First, calculate the price needed for RandomWalkNFTs
+    let amountNeeded = BigNumber.from(0);
+    let basePrice = rwMintPrice;
+    for (let i = 0; i < numSpirals; i++) {
+      amountNeeded = amountNeeded.add(basePrice);
+      // Mint price increases 0.5% everytime
+      basePrice = basePrice.mul(10011).div(10000);
+    }
+
+    // Add price to mint spirals
+    amountNeeded = amountNeeded.add(calcMultiSpiralPrice(numSpirals));
+
+    // Minting Crystals is free, so no need to add that
+    // Calculate ETH needed to grow the Crystals to max.
+    // These are swapped from Uniswap, so we need to get that number
+    // 1K SpiralBits * num of crystals * 70 growth * max number of Symmetries
+    const spiralBitsNeeded = Eth1k.mul(numSpirals).mul(70).mul(8);
+    const EthNeededToGrow = ethPer1MSpiralBits.mul(spiralBitsNeeded).div(Eth1M);
+    amountNeeded = amountNeeded.add(EthNeededToGrow);
+
+    return amountNeeded;
+  };
+
+  const multiMintPriceETH = calcMultiSpiralPrice(numSpirals);
+  const megaMintPriceETH = calcMegaMintPrice(numSpirals);
+
+  const megaMint = async () => {
+    if (!props.contracts || spiralType !== "mega") {
+      return;
+    }
+
+    try {
+      const txns: MultiTxItem[] = [];
+
+      txns.push({
+        title: `Mega Minting ${numSpirals}`,
+        tx: () => props.contracts?.buywitheth.megaMint(numSpirals, { value: megaMintPriceETH }),
+      });
+
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        props.showModal(
+          `Minted!`,
+          <div>
+            Your RandomWalkNFTs, Spirals and Crystals have been minted and staked.
+            <br />
+            <br />
+            You can view them on your staking page.
+          </div>,
+          () => nav("/spiralstaking")
+        );
+      }
+    } catch (e: any) {
+      console.log(e);
+
+      let msg: string | undefined;
+      if (e?.code === ERROR_CODE_TX_REJECTED_BY_USER) {
+        // User cancelled, so do nothing
+        msg = undefined;
+      } else {
+        msg = `Error: ${e?.data?.message}`;
+      }
+
+      if (msg) {
+        props.showModal("Error Minting!", <div>{msg}</div>);
+      }
+    }
+  };
 
   const mintSpiral = async () => {
     if (!props.contracts) {
@@ -142,7 +227,7 @@ export function ImpishSpiral(props: SpiralProps) {
             nav(`/spirals/detail/${id}`);
           });
         } else {
-          const price = calcMultiSpiralPrice(numSpirals, await props.contracts.impspiral.getMintPrice());
+          const price = calcMultiSpiralPrice(numSpirals);
           let tx = await props.contracts.multimint.multiMint(numSpirals, { value: price });
           await tx.wait();
 
@@ -208,7 +293,14 @@ export function ImpishSpiral(props: SpiralProps) {
                   <h5>
                     <span style={{ color: "#ffc106" }}>Step 1:</span> What kind of Spiral?
                   </h5>
-                  <Form>
+                  <Form style={{fontSize: "1.1rem"}}>
+                    <Form.Check
+                      checked={spiralType === "mega"}
+                      label="Mega Set"
+                      type="radio"
+                      onChange={() => setSpiralType("mega")}
+                      id="minttype"
+                    />
                     <Form.Check
                       checked={spiralType === "original"}
                       label="Original Spiral"
@@ -227,8 +319,97 @@ export function ImpishSpiral(props: SpiralProps) {
                 </Col>
               </Row>
 
+              {spiralType === "mega" && (
+                <>
+                  <Row className="mt-3">
+                    <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
+                      <span>
+                        A Mega Set mints a RandomWalkNFT, its companion Spiral and Gen0 Crystal, maxes out the Crystal growth
+                        and stakes all of them to earn SPIRALBITS
+                      </span>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
+                      <h5 style={{ marginTop: "30px" }}>
+                        <span style={{ color: "#ffc106" }}>Step 2:</span> Mint Mega Set!
+                      </h5>
+                      <div>
+                        Total Price: ETH {format4Decimals(megaMintPriceETH)}{" "}
+                        {formatUSD(megaMintPriceETH, props.lastETHPrice)}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
+                        <FloatingLabel label="Number of Mega Sets" style={{ color: "black", width: "200px" }}>
+                          <Form.Select
+                            value={numSpirals.toString()}
+                            onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}
+                          >
+                            {range(10, 1).map((n) => {
+                              return (
+                                <option key={n} value={n}>
+                                  {n}
+                                </option>
+                              );
+                            })}
+                          </Form.Select>
+                        </FloatingLabel>
+                        <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={megaMint}>
+                          Mint Mega Set
+                        </Button>
+                      </div>
+                    </Col>
+                  </Row>
+                </>
+              )}
+
+              {spiralType === "original" && (
+                 <><Row className="mt-3">
+                  <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
+                    <span>
+                      A brand new Spiral with an Original, one-of-a-kind seed
+                    </span>
+                  </Col>
+                </Row><Row>
+                    <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
+                      <h5 style={{ marginTop: "30px" }}>
+                        <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
+                      </h5>
+                      <div>
+                        Mint Price: ETH {format4Decimals(multiMintPriceETH)}{" "}
+                        {formatUSD(multiMintPriceETH, props.lastETHPrice)}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
+                        <FloatingLabel label="Number of Spirals" style={{ color: "black", width: "200px" }}>
+                          <Form.Select
+                            value={numSpirals.toString()}
+                            onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}
+                          >
+                            {range(10, 1).map((n) => {
+                              return (
+                                <option key={n} value={n}>
+                                  {n}
+                                </option>
+                              );
+                            })}
+                          </Form.Select>
+                        </FloatingLabel>
+                        <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={mintSpiral}>
+                          Mint
+                        </Button>
+                      </div>
+                    </Col>
+                  </Row></>
+              )}
+
               {spiralType === "companion" && (
                 <>
+                 <Row className="mt-3">
+                    <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
+                      <span>
+                        A companion Spiral shares its seed with the RandomWalkNFT, which makes the Spiral look similar to the RandomWalkNFT
+                      </span>
+                    </Col>
+                  </Row>
                   <Row>
                     <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
                       <h5 style={{ marginTop: "30px" }}>
@@ -267,7 +448,8 @@ export function ImpishSpiral(props: SpiralProps) {
                             <span style={{ color: "#ffc106" }}>Step 3:</span> Mint!
                           </h5>
                           <div>
-                            Mint Price: ETH {format4Decimals(mintPrice)} {formatUSD(mintPrice, props.lastETHPrice)}
+                            Mint Price: ETH {format4Decimals(spiralMintPrice)}{" "}
+                            {formatUSD(spiralMintPrice, props.lastETHPrice)}
                           </div>
                           <Button style={{ marginTop: "10px" }} variant="warning" onClick={mintSpiral}>
                             Mint
@@ -297,39 +479,6 @@ export function ImpishSpiral(props: SpiralProps) {
                     </Row>
                   )}
                 </>
-              )}
-
-              {spiralType === "original" && (
-                <Row>
-                  <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
-                    <h5 style={{ marginTop: "30px" }}>
-                      <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
-                    </h5>
-                    <div>
-                      Mint Price: ETH {format4Decimals(multiMintPriceETH)}{" "}
-                      {formatUSD(multiMintPriceETH, props.lastETHPrice)}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
-                      <FloatingLabel label="Number of Spirals" style={{ color: "black", width: "200px" }}>
-                        <Form.Select
-                          value={numSpirals.toString()}
-                          onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}
-                        >
-                          {range(10, 1).map((n) => {
-                            return (
-                              <option key={n} value={n}>
-                                {n}
-                              </option>
-                            );
-                          })}
-                        </Form.Select>
-                      </FloatingLabel>
-                      <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={mintSpiral}>
-                        Mint
-                      </Button>
-                    </div>
-                  </Col>
-                </Row>
               )}
 
               <Row className="mt-3">

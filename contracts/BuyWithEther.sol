@@ -362,10 +362,7 @@ contract BuyWithEther is IERC721Receiver {
     address,
     uint256,
     bytes calldata
-  ) public view returns (bytes4) {
-    // Only accept NFT transfers from RandomWalkNFT
-    require(msg.sender == RWNFT || msg.sender == IMPISHSPIRAL, "UnknownNFT");
-
+  ) public pure returns (bytes4) {
     // Return this value to accept the NFT
     return IERC721Receiver.onERC721Received.selector;
   }

@@ -127,11 +127,19 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
 
     const quoterContract = new ethers.Contract(quoterAddress, QuoterABI, provider);
 
-    const quotedAmountEth = await quoterContract.callStatic.quoteExactOutputSingle(
+    const quotedAmountEthper100Impish = await quoterContract.callStatic.quoteExactOutputSingle(
       WETH9,
       IMPISH,
       POOL_FEE,
       ethers.utils.parseEther("100"),
+      0
+    );
+
+    const quotedAmountEthper1MSpiralbits = await quoterContract.callStatic.quoteExactOutputSingle(
+      WETH9,
+      SPIRALBITS,
+      POOL_FEE,
+      ethers.utils.parseEther("1000000"),
       0
     );
 
@@ -145,7 +153,11 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
       ethers.utils.parseEther("100")
     );
 
-    res.send({ ETHper100Impish: quotedAmountEth, SPIRALBITSper100Impish: quotedAmountSpiralBits });
+    res.send({
+      ETHper100Impish: quotedAmountEthper100Impish,
+      SPIRALBITSper100Impish: quotedAmountSpiralBits,
+      ETHper1MSPIRALBITS: quotedAmountEthper1MSpiralbits,
+    });
   });
 
   return [spiralTransferListner];
