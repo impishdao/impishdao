@@ -512,7 +512,15 @@ export class Dapp extends React.Component<DappProps, DappState> {
             <Route
               path="/spirals/detail/:id"
               element={
-                <SpiralDetail {...this.state} showModal={this.showModal} connectWallet={() => this._connectWallet()} />
+                <SpiralDetail
+                  {...this.state}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
+                  showModal={this.showModal}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
+                />
               }
             />
 
@@ -541,16 +549,55 @@ export class Dapp extends React.Component<DappProps, DappState> {
 
           <Row
             className="mt-2"
-            style={{ textAlign: "center", backgroundColor: "#222", padding: "20px", height: "150px" }}
+            style={{
+              textAlign: "left",
+              backgroundColor: "#222",
+              padding: "20px",
+              minHeight: "150px",
+              paddingBottom: "20px",
+            }}
           >
-            <Col xs={{ span: 2, offset: 8 }} style={{ marginTop: 30 }}>
+            <Col xs={{ span: 4 }} style={{ marginTop: 30 }}>
+              <div style={{ fontSize: "1.1rem", color: "#ffd454" }}>Marketplace</div>
+              <div className="mt-2">
+                <div>
+                  <a
+                    style={{ color: "white" }}
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://tofunft.com/collection/impish-spiral/items"
+                  >
+                    Impish Spirals on TofuNFT
+                  </a>
+                </div>
+                <div>
+                  <a
+                    style={{ color: "white" }}
+                    target="_blank"
+                    rel="noreferrer"
+                    href="https://tofunft.com/collection/impish-crystals/items"
+                  >
+                    Impish Crystals on TofuNFT
+                  </a>
+                </div>
+              </div>
+            </Col>
+            <Col xs={{ span: 2, offset: 4 }} style={{ marginTop: 30 }}>
               <a
-                style={{ color: "white", textDecoration: "none" }}
+                style={{ color: "white", textDecoration: "none", display: "block" }}
                 target="_blank"
                 rel="noreferrer"
                 href="https://www.twitter.com/impishdao"
               >
                 <img src="/twitterlogo.jpg" style={{ width: "30px" }} alt="twitter" /> @impishdao
+              </a>
+              <a
+                style={{ color: "white", textDecoration: "none", display: "block" }}
+                target="_blank"
+                rel="noreferrer"
+                href="https://discord.gg/UH3N8StP5u"
+              >
+                <img src="/discord-logo.jpeg" style={{ width: "30px" }} alt="discord" /> Impish Server
               </a>
             </Col>
           </Row>

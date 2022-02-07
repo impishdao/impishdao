@@ -2,11 +2,12 @@ import { BigNumber, Contract, ContractTransaction, ethers } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Badge, Button, Col, Container, Form, ListGroup, Modal, Row, Table } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
+import { DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER, SpiralsState } from "../AppState";
 import { setup_image } from "../spiralRenderer";
 import { Navigation } from "./Navigation";
 import { TransferAddressModal } from "./NFTTransferModal";
-import { format4Decimals, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
+import { format4Decimals, formatkmb, formatUSD, secondsToDhms, THREE_DAYS } from "./utils";
+import { MultiTxItem } from "./walletutils";
 
 type MarketPriceModalProps = {
   show: boolean;
@@ -120,10 +121,7 @@ const MarketPriceModal = ({
   );
 };
 
-type SpiralDetailProps = DappState & {
-  connectWallet: () => void;
-  showModal: (title: string, message: JSX.Element, modalCloseCallBack?: () => void) => void;
-};
+type SpiralDetailProps = DappState & DappFunctions & {};
 
 export function SpiralDetail(props: SpiralDetailProps) {
   const { id } = useParams();
@@ -179,6 +177,7 @@ export function SpiralDetail(props: SpiralDetailProps) {
     };
   }, [timeRemaining]);
 
+  // Fetch the Spiral details
   useLayoutEffect(() => {
     fetch(`/spiralapi/seedforid/${id}`)
       .then((r) => r.json())
@@ -192,13 +191,16 @@ export function SpiralDetail(props: SpiralDetailProps) {
           setup_image(canvasDetailRef.current, `detail${id}`, seed);
         }
       });
+  }, [id]);
 
+  // Fetch the Crystals minted
+  useEffect(() => {
     fetch(`/crystalapi/mintedforspiral/${id}`)
       .then((r) => r.json())
       .then((data) => {
         setMintedCrystals(data);
       });
-  }, [id]);
+  }, [id, refreshDataCounter]);
 
   const downloadHires = () => {
     //creating an invisible element
@@ -367,6 +369,24 @@ export function SpiralDetail(props: SpiralDetailProps) {
     }
   };
 
+  const mintCrystal = async (spiralId: BigNumber, gen: number, amount: BigNumber) => {
+    console.log(`Minting ${spiralId} x ${gen} for ${amount}`);
+    if (props.contracts && props.selectedAddress) {
+      const txns: MultiTxItem[] = [];
+
+      txns.push({
+        title: "Minting Crystals",
+        tx: () => props.contracts?.crystal.mintCrystals([spiralId], gen, { value: amount }),
+      });
+
+      const success = await props.executeMultiTx(txns);
+      if (success) {
+        props.showModal("Successfully Minted!", <div>Your Crystal was successfully minted</div>);
+        setRefreshDataCounter(refreshDataCounter + 1);
+      }
+    }
+  };
+
   return (
     <>
       <MarketPriceModal
@@ -503,7 +523,23 @@ export function SpiralDetail(props: SpiralDetailProps) {
                               </Link>
                             );
                           } else {
-                            item = <span style={{ color: "white" }}>Not Minted</span>;
+                            let costInEth = BigNumber.from(0);
+                            if (i >= 1) {
+                              costInEth = ethers.utils.parseEther("0.01").mul(BigNumber.from(10).pow(i - 1));
+                            }
+                            if (props.selectedAddress && owner.toLowerCase() === props.selectedAddress?.toLowerCase()) {
+                              item = (
+                                <Button
+                                  variant="info"
+                                  style={{ fontSize: "0.75rem" }}
+                                  onClick={() => mintCrystal(BigNumber.from(id), i, costInEth)}
+                                >
+                                  Mint for ETH {formatkmb(costInEth)}
+                                </Button>
+                              );
+                            } else {
+                              item = <span style={{ color: "white" }}>Not Minted</span>;
+                            }
                           }
 
                           return <td key={i}>{item}</td>;

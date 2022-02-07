@@ -47,7 +47,7 @@ async function main() {
   const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
   const rwnftstaking = new ethers.Contract(contractAddresses.RWNFTStaking, RWNFTStaking.interface, signer);
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
-  
+
   await network.provider.request({
     method: "hardhat_impersonateAccount",
     params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
@@ -62,7 +62,6 @@ async function main() {
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(stakingv2);
 
-  
   // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
   // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
   // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));

@@ -376,9 +376,14 @@ export function CrystalDetail(props: CrystalDetailProps) {
                   </>
                 )}
 
-                {props.selectedAddress && props.selectedAddress.toLowerCase() === crystalInfo?.indirectOwner?.toLowerCase() && (
-                  <div className="mb-3">This Crystal is Staked.<br/>Please unstake it to manage</div>
-                )}
+                {props.selectedAddress &&
+                  props.selectedAddress.toLowerCase() === crystalInfo?.indirectOwner?.toLowerCase() && (
+                    <div className="mb-3">
+                      This Crystal is Staked.
+                      <br />
+                      Please unstake it to manage
+                    </div>
+                  )}
 
                 {props.selectedAddress && props.selectedAddress.toLowerCase() === crystalInfo?.owner.toLowerCase() && (
                   <>

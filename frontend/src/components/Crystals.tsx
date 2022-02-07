@@ -243,6 +243,23 @@ export function Crystals(props: CrystalsProps) {
                             </div>
                           </Col>
                         </Row>
+
+                        <Row className="mt-4">
+                          <Col style={{ textAlign: "center" }}>
+                            <div> --- OR ---</div>
+                            <div className="mt-3">
+                              Buy from{" "}
+                              <a
+                                style={{ color: "white" }}
+                                target="_blank"
+                                rel="noreferrer"
+                                href="https://tofunft.com/collection/impish-crystals/items"
+                              >
+                                secondary market on TofuNFT
+                              </a>
+                            </div>
+                          </Col>
+                        </Row>
                       </>
                     )}
                   </>

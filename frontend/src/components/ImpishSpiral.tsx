@@ -332,6 +332,23 @@ export function ImpishSpiral(props: SpiralProps) {
                 </Row>
               )}
 
+              <Row className="mt-3">
+                <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
+                  <div> --- OR ---</div>
+                  <div className="mt-3">
+                    Buy from{" "}
+                    <a
+                      style={{ color: "white" }}
+                      target="_blank"
+                      rel="noreferrer"
+                      href="https://tofunft.com/collection/impish-spiral/items"
+                    >
+                      secondary market on TofuNFT
+                    </a>
+                  </div>
+                </Col>
+              </Row>
+
               <div style={{ marginBottom: "50px" }}></div>
             </>
           )}
