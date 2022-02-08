@@ -174,7 +174,7 @@ export function ImpishSpiral(props: SpiralProps) {
       const txns: MultiTxItem[] = [];
 
       txns.push({
-        title: `Mega Minting ${numSpirals}`,
+        title: `Minting ${numSpirals} Mega Sets`,
         tx: () =>
           props.selectedAddress
             ? props.contracts?.buywitheth.megaMint(props.selectedAddress, numSpirals, { value: megaMintPriceETH })
