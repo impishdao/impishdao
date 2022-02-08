@@ -124,6 +124,10 @@ function saveFrontendFiles(stakingv2: Contract, rps: Contract, buywithether: Con
   fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
   fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
 
+  const StakingV2Artifact = artifacts.readArtifactSync("StakingV2");
+  fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
+  fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
+
   const RPSArtifact = artifacts.readArtifactSync("RPS");
   fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
   fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
