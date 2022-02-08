@@ -11,7 +11,7 @@ import path from "path";
 import contractAddresses from "../proddata/contracts/contract-addresses.json";
 
 async function main() {
-    // eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const [signer, otherSigner] = await ethers.getSigners();
 
   // We get the contract to deploy
@@ -50,13 +50,13 @@ async function main() {
 
   const lastSpiral = 444;
   for (let i = lastSpiral; i > lastSpiral - 10; i--) {
-      const owner = await impishspiral.ownerOf(i);
-      if (owner === stakingv2.address) {
-          await stakingv2.claimSpiralWin(i);
-      } else {
-          await impishspiral.claimWin(i);
-      }
-      console.log(`${i} - ${owner}`);
+    const owner = await impishspiral.ownerOf(i);
+    if (owner === stakingv2.address) {
+      await stakingv2.claimSpiralWin(i);
+    } else {
+      await impishspiral.claimWin(i);
+    }
+    console.log(`${i} - ${owner}`);
   }
 
   console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
@@ -67,7 +67,6 @@ async function main() {
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
+  console.error(error);
+  process.exitCode = 1;
 });
-    

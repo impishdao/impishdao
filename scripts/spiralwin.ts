@@ -57,18 +57,17 @@ async function main() {
   const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
   const stakingv2 = await new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, prodSigner);
 
-  
   rwnft.setApprovalForAll(rwnftstaking.address, true);
   impishspiral.setApprovalForAll(spiralstakign.address, true);
-  
-  await network.provider.send("evm_increaseTime", [3600 * 24 * 3]); 
+
+  await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
   await network.provider.send("evm_mine");
-  
+
   let startSpiral = 446;
-  for (let i = 0 ; i < 10; i++) {
+  for (let i = 0; i < 10; i++) {
     const spiralId = startSpiral - i;
     console.log(`Claiming ${spiralId}`);
-    if (await impishspiral.ownerOf(spiralId) === stakingv2.address) {
+    if ((await impishspiral.ownerOf(spiralId)) === stakingv2.address) {
       await stakingv2.claimSpiralWin(spiralId);
       console.log("Success Staking");
     } else {

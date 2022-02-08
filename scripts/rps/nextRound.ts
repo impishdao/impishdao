@@ -12,7 +12,7 @@ async function main() {
   const [signer, otherSigner] = await ethers.getSigners();
 
   const RPSArtifact = await ethers.getContractFactory("RPS");
-  const rps = new ethers.Contract(contractAddresses.RPS, RPSArtifact.interface, signer) as RPS
+  const rps = new ethers.Contract(contractAddresses.RPS, RPSArtifact.interface, signer) as RPS;
 
   await rps.resetForNextRound(false);
 }
