@@ -27,6 +27,14 @@ import "./SpiralBits.sol";
 
 // import "hardhat/console.sol";
 
+abstract contract IRPS {
+  function commit(
+    bytes32 commitment,
+    address player,
+    uint32[] calldata crystalIDs
+  ) external virtual;
+}
+
 contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
   // Since this is an upgradable implementation, the storage layout is important.
   // Please be careful changing variable positions when upgrading.
@@ -92,6 +100,10 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
   mapping(address => StakedNFTAndTokens) public stakedNFTsAndTokens;
 
   mapping(uint32 => uint8) public crystalTargetSyms;
+
+  // V2 fields
+  // They have to be at the end, because we don't want to overwrite the storage
+  address public rps;
 
   // Upgradable contracts use initialize instead of contructors
   function initialize(address _crystals) public initializer {
@@ -654,6 +666,37 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
     if (claim) {
       _claimRewards(msg.sender);
     }
+  }
+
+  // -----------------
+  // RPS Functions
+  // -----------------
+  // Note that this function is not nonReentrant because the RPS.commit will
+  // reenter via stakeNFTs, and that's OK.
+  function rpsCommit(bytes32 commitment, uint32[] calldata crystalIDs) external {
+    require(rps != address(0), "RPSNotSet");
+
+    // Update the owner's rewards first. This also updates the current epoch.
+    _updateRewards(msg.sender);
+
+    // Unstake the crystals
+    for (uint256 i = 0; i < crystalIDs.length; i++) {
+      uint256 contractTokenId = 4_000_000 + uint256(crystalIDs[i]);
+      require(stakedTokenOwners[contractTokenId].owner == msg.sender, "DontOwnNFT");
+
+      _removeTokenFromOwnerEnumeration(msg.sender, contractTokenId);
+    }
+    stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked -= uint16(crystalIDs.length);
+
+    // Commit it for the player
+    IRPS(rps).commit(commitment, msg.sender, crystalIDs);
+  }
+
+  function setRPS(address _rps) external onlyOwner {
+    rps = _rps;
+
+    // Authorize the rps to move out Crystals for the RPS game
+    crystals.setApprovalForAll(rps, true);
   }
 
   // ------------------
