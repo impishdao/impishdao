@@ -57,19 +57,19 @@ async function main() {
   const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
   await stakingv2.deployed();
 
-  const RPS = await ethers.getContractFactory("RPS");
-  const rps = await RPS.deploy(stakingv2.address);
-  await rps.deployed();
+  // const RPS = await ethers.getContractFactory("RPS");
+  // const rps = await RPS.deploy(stakingv2.address);
+  // await rps.deployed();
 
-  // Allow RPS to mint
-  await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
+  // // Allow RPS to mint
+  // await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
 
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
   const buywithether = await BuyWithEther.deploy(swapRouter);
   await buywithether.deployed();
 
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(stakingv2, rps, buywithether);
+  saveFrontendFiles(stakingv2, buywithether);
 
   // Buy some magic for testing
   // await buywithether.buyMagicTODOTEMP({ value: ethers.utils.parseEther("1") });
@@ -98,7 +98,7 @@ async function main() {
   // }
 }
 
-function saveFrontendFiles(stakingv2: Contract, rps: Contract, buywithether: Contract) {
+function saveFrontendFiles(stakingv2: Contract, buywithether: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -114,7 +114,6 @@ function saveFrontendFiles(stakingv2: Contract, rps: Contract, buywithether: Con
   const newContractAddressStr = JSON.stringify(
     Object.assign(contractAddresses, {
       StakingV2: stakingv2.address,
-      RPS: rps.address,
       BuyWithEther: buywithether.address,
     }),
     undefined,
@@ -128,9 +127,9 @@ function saveFrontendFiles(stakingv2: Contract, rps: Contract, buywithether: Con
   fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
   fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
 
-  const RPSArtifact = artifacts.readArtifactSync("RPS");
-  fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
+  // const RPSArtifact = artifacts.readArtifactSync("RPS");
+  // fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
+  // fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
 
   const BuyWithEtherArtifact = artifacts.readArtifactSync("BuyWithEther");
   fs.writeFileSync(contractsDir + "/buywithether.json", JSON.stringify(BuyWithEtherArtifact, null, 2));

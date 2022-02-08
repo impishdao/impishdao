@@ -132,7 +132,7 @@ export type DappContracts = {
   buywitheth: BuyWithEther;
   crystal: ImpishCrystal;
   stakingv2: StakingV2;
-  rps: RPS;
+  // rps: RPS;
 };
 
 export type SpiralDetail = {

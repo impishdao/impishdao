@@ -239,7 +239,7 @@ setupCrystals(app, provider);
 setupStakingV2(app, provider);
 
 // Setup RPS API
-setupRPS(app, provider);
+// setupRPS(app, provider);
 
 // Serve static files
 app.use("/spirals", express.static(path.join(__dirname, "index.html")));
