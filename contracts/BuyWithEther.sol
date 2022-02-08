@@ -183,28 +183,38 @@ contract BuyWithEther is IERC721Receiver {
     maybeStakeRW(tokenId, stake);
   }
 
+  function multiMintWithMagic(uint8 count, uint96 value) external {
+    magicToEth(uint256(value));
+
+    require(count > 0, "AtLeastOne");
+    require(count <= 10, "AtMost10");
+
+    // This function doesn't check if you've sent enough money. If you didn't it will revert
+    // because the mintSpiralRandom will fail
+    uint8 mintedSoFar;
+    uint256 nextTokenId = ImpishSpiral(IMPISHSPIRAL)._tokenIdCounter();
+
+    for (mintedSoFar = 0; mintedSoFar < count; mintedSoFar++) {
+      uint256 price = ImpishSpiral(IMPISHSPIRAL).getMintPrice();
+      ImpishSpiral(IMPISHSPIRAL).mintSpiralRandom{value: price}();
+
+      ImpishSpiral(IMPISHSPIRAL).safeTransferFrom(address(this), msg.sender, nextTokenId);
+      nextTokenId += 1;
+    }
+
+    // If there is any excess money left, send it back
+    if (address(this).balance > 0) {
+      (bool success, ) = msg.sender.call{value: address(this).balance}("");
+      require(success, "Transfer failed.");
+    }
+  }
+
   function megaMintWithMagic(
     address owner,
     uint32 count,
     uint256 value
   ) external {
-    // Transfer MAGIC in
-    TransferHelper.safeTransferFrom(MAGIC, msg.sender, address(this), value);
-
-    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-      tokenIn: MAGIC,
-      tokenOut: WETH9,
-      fee: POOL_FEE,
-      recipient: address(this),
-      deadline: block.timestamp,
-      amountIn: value,
-      amountOutMinimum: 0,
-      sqrtPriceLimitX96: 0
-    });
-
-    // Executes the swap returning the amountOut that was swapped.
-    uint256 amountOut = swapRouter.exactInputSingle(params);
-    IWETH9(WETH9).withdraw(amountOut);
+    magicToEth(value);
 
     megaMint(owner, count);
   }
@@ -270,6 +280,25 @@ contract BuyWithEther is IERC721Receiver {
   }
 
   /// ------- SWAP Functions
+  function magicToEth(uint256 value) internal {
+    // Transfer MAGIC in
+    TransferHelper.safeTransferFrom(MAGIC, msg.sender, address(this), value);
+
+    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+      tokenIn: MAGIC,
+      tokenOut: WETH9,
+      fee: POOL_FEE,
+      recipient: address(this),
+      deadline: block.timestamp,
+      amountIn: value,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0
+    });
+
+    // Executes the swap returning the amountOut that was swapped.
+    uint256 amountOut = swapRouter.exactInputSingle(params);
+    IWETH9(WETH9).withdraw(amountOut);
+  }
 
   function swapExactInputSpiralBitsFromEthNoRefund(uint256 amountIn) internal returns (uint256 amountOut) {
     // Convert to WETH, since thats what Uniswap uses
