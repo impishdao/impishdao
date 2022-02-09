@@ -327,8 +327,8 @@ export function ImpishSpiral(props: SpiralProps) {
                   <Row className="mt-3">
                     <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
                       <span>
-                        A Mega Set mints a RandomWalkNFT, its companion Spiral and Gen0 Crystal, maxes out the Crystal
-                        growth and stakes all of them to earn SPIRALBITS
+                        A Mega Set mints a RandomWalkNFT, its companion Spiral and maxed out Gen0 Crystal, and stakes 
+                        all of them. The SPIRALBITS and IMPISH tokens generated are also staked. 
                       </span>
                     </Col>
                   </Row>
@@ -606,6 +606,19 @@ export function ImpishSpiral(props: SpiralProps) {
             <br />
             Each RandomWalkNFT can only have 1 companion spiral.
           </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>
+              What is a Mega Set?
+            </span>
+            <br />
+            A "Mega Set" is a set of RandomWalkNFT, its companion Spiral and the Spiral's Gen0 Crystal, all minted together.
+            Minting the mega set also buys enough SPIRALBITS to max out the Crystal to 100 size. The IMPISH tokens generated and
+            any excess SPIRALBITS are staked along with all 3 NFTs to immediately begin geneating SPIRALBITS. 
+            <br /><br/>
+            All of these are done in a single transaction and paid for in ETH. You can mint upto 10 Mega Sets at once.
+          </div>
+
 
           <div className="mb-3">
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How is the ETH in the contract used?</span>
