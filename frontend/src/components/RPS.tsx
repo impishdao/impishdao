@@ -253,7 +253,7 @@ export function RPSScreen(props: RPSProps) {
     }
   }, [props.selectedAddress, props.contracts, refreshCounter]);
 
-  // Get all the staked NFTs, SPIRALBITS, Impish
+  // Get all the staked NFTs
   useEffect(() => {
     // Get staked wallet
     retryTillSucceed(async () => {
@@ -303,6 +303,8 @@ export function RPSScreen(props: RPSProps) {
         } else {
           setGameStage(Stages.Claim);
         }
+
+        console.log(`Round Start: ${roundStart} at ${daysSinceStart}`);
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -477,17 +479,17 @@ export function RPSScreen(props: RPSProps) {
                 <Col md={12} style={{ border: "solid 1px white" }}>
                   <h2
                     style={{
-                      textAlign: "center",
                       backgroundColor: "rgba(0, 0, 0, 0.5)",
                       padding: "10px",
                       color: "#ffd454",
                     }}
                   >
-                    Fully Grown Crystals Available
+                    Phase 1: Commit to a Team
                   </h2>
 
-                  <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                    <div style={{ width: "50%" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ textAlign: "left", marginLeft: '15%' }}>
+                      <div>Step 1: Pick a password</div>
                       <InputGroup style={{ width: "600px" }}>
                         <InputGroup.Text>Commitment Password</InputGroup.Text>
                         <FormControl
@@ -496,38 +498,45 @@ export function RPSScreen(props: RPSProps) {
                           onChange={(e) => setPassword(e.currentTarget.value)}
                         />
                       </InputGroup>
-                      <div className="mb-3" style={{ textAlign: "right" }}>
+                      <div>
                         Type in a password to hide your commitment. You will need this password to reveal the team you
                         joined in 3 days.
                       </div>
                     </div>
 
-                    <div>
-                      <FloatingLabel label="Join Team" style={{ color: "black", width: "200px" }}>
-                        <Form.Select value={team} onChange={(e) => setTeam(parseInt(e.currentTarget.value))}>
-                          <option value={Teams.Rock}>Rock</option>
-                          <option value={Teams.Paper}>Paper</option>
-                          <option value={Teams.Scissors}>Scissors</option>
-                        </Form.Select>
-                      </FloatingLabel>
-                    </div>
-                  </div>
-                  <CrystalListDisplay
-                    title=""
-                    buttonName={`Join team ${Teams[team]}`}
-                    pageSize={6}
-                    nfts={walletNFTs}
-                    onButtonClick={joinTeam}
-                    refreshCounter={refreshCounter}
-                    nothingMessage={
+                    <div className="mt-4" style={{ textAlign: "left", marginLeft: '15%' }}>
+                      <div>Step 2: Pick a team</div>
                       <div>
-                        No Fully Grown Crystals.{" "}
-                        <Link to="/crystals" style={{ color: "#ffd454" }}>
-                          Mint some to play
-                        </Link>
+                        <FloatingLabel label="Join Team" style={{ color: "black", width: "200px" }}>
+                          <Form.Select value={team} onChange={(e) => setTeam(parseInt(e.currentTarget.value))}>
+                            <option value={Teams.Rock}>Rock</option>
+                            <option value={Teams.Paper}>Paper</option>
+                            <option value={Teams.Scissors}>Scissors</option>
+                          </Form.Select>
+                        </FloatingLabel>
                       </div>
-                    }
-                  />
+                    </div>
+
+                    <div className="mt-4" style={{ textAlign: "left", marginLeft: '15%' }}>
+                      <div>Step 3: Select fully grown crystals</div>
+                    </div>
+                    <CrystalListDisplay
+                        title=""
+                        buttonName={`Join team ${Teams[team]}`}
+                        pageSize={6}
+                        nfts={walletNFTs}
+                        onButtonClick={joinTeam}
+                        refreshCounter={refreshCounter}
+                        nothingMessage={
+                          <div>
+                            No Fully Grown Crystals.{" "}
+                            <Link to="/crystals" style={{ color: "#ffd454" }}>
+                              Mint some to play
+                            </Link>
+                          </div>
+                        }
+                      />
+                  </div>
                 </Col>
               </Row>
             )}

@@ -54,10 +54,10 @@ export function Navigation(props: NavigationProps) {
             <Nav.Link>Crystals</Nav.Link>
           </LinkContainer>
 
-          {/* <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
+          <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
           <LinkContainer to="/rps">
             <Nav.Link>RPS</Nav.Link>
-          </LinkContainer> */}
+          </LinkContainer>
 
           <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
           <LinkContainer to="/impishdao">
