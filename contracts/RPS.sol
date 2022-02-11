@@ -152,8 +152,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     for (uint256 j = 0; j < players[player].crystalIDs.length; j++) {
       (, , , , uint192 spiralBitsStored) = crystals.crystals(players[player].crystalIDs[j]);
       playerScore += uint96(spiralBitsStored);
-
-      // TODO: Add a gen bonus for Crystals
     }
 
     // Add the score to the team
@@ -261,8 +259,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   // Claim for owner internal function
   function _claimForOwner(address player) internal nonReentrant atStage(Stages.Claim) {
     uint8 team = players[player].team;
-
-    // TODO
     require(teams[team].numCrystals > 0, "SafetyAssert2");
 
     uint96 myWinnings = (teams[team].winningSpiralBits * uint96(players[player].crystalIDs.length)) /
