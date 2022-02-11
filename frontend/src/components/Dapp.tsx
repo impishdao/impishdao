@@ -18,6 +18,7 @@ import MultiMintArtifact from "../contracts/multimint.json";
 import BuyWithEtherArtifact from "../contracts/buywithether.json";
 import Crystal from "../contracts/crystal.json";
 import StakingV2 from "../contracts/stakingv2.json";
+import RPS from "../contracts/rps.json";
 
 import contractAddresses from "../contracts/contract-addresses.json";
 
@@ -44,6 +45,7 @@ import { Crystals } from "./Crystals";
 import { CrystalWallet } from "./Wallet";
 import { MultiTxItem } from "./walletutils";
 import { MultiTxModal } from "./MultiTxModal";
+import { RPSScreen } from "./RPS";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -155,7 +157,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
     const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.abi, provider.getSigner(0));
 
     // RPS
-    // const rps = new ethers.Contract(contractAddresses.RPS, RPS.abi, provider.getSigner(0));
+    const rps = new ethers.Contract(contractAddresses.RPS, RPS.abi, provider.getSigner(0));
 
     const contracts = {
       provider,
@@ -170,7 +172,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
       buywitheth,
       crystal,
       stakingv2,
-      // rps,
+      rps,
     } as DappContracts; // Forcibly cast so that we can get autocomplete suggestions.
 
     this.setState({ contracts });
@@ -499,7 +501,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
               }
             />
 
-            {/* <Route
+            <Route
               path="/rps"
               element={
                 <RPSScreen
@@ -512,7 +514,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
                   executeMultiTx={this.executeMultiTx}
                 />
               }
-            /> */}
+            />
 
             <Route
               path="/spiralstaking"
