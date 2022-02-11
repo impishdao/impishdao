@@ -202,7 +202,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       uint256 nextTeam = (i + 1) % 3;
       if (teams[i].totalScore > teams[nextTeam].totalScore) {
         // 100 size * 1 symmetry * 1000 SPIRALBITS per size per sym * num of crystals involved
-        uint96 winnings = 100 * 1 * 1000 * uint96(teams[nextTeam].numCrystals);
+        uint96 winnings = 100 * 1 * 1000 ether * uint96(teams[nextTeam].numCrystals);
 
         teams[i].winningSpiralBits = winnings;
         teams[nextTeam].symmetriesLost = 1;

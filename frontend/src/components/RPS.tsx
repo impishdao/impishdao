@@ -634,22 +634,32 @@ export function RPSScreen(props: RPSProps) {
                       <Col key={teamNum} md={4}>
                         <h3>Team {Teams[teamNum]}</h3>
                         <Table style={{ color: "white", fontSize: "0.9rem", textAlign: "right" }}>
-                          <tr>
-                            <td style={{ textAlign: "left" }}>Score</td>
-                            <td>{formatkmb(teamStat.totalScore)}</td>
-                          </tr>
-                          <tr>
-                            <td style={{ textAlign: "left" }}>Number of Crystals</td>
-                            <td>{teamStat.numCrystals}</td>
-                          </tr>
-                          <tr>
-                            <td style={{ textAlign: "left" }}>Win vs Team {Teams[(teamNum + 1) % 3]}</td>
-                            <td>{formatkmb(teamStat.winningSpiralBits)} SPIRALBITS</td>
-                          </tr>
-                          <tr>
-                            <td style={{ textAlign: "left" }}>Lose vs Team {Teams[(teamNum + 2) % 3]}</td>
-                            <td>{teamStat.symmetriesLost} Sym</td>
-                          </tr>
+                          <tbody>
+                            <tr>
+                              <td style={{ textAlign: "left" }}>Score</td>
+                              <td>{formatkmb(teamStat.totalScore)}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ textAlign: "left" }}>Number of Crystals</td>
+                              <td>{teamStat.numCrystals}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 1) % 3]}</td>
+                              <td>
+                                {teamStat.winningSpiralBits.gt(0)
+                                  ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
+                                  : "Lost"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 2) % 3]}</td>
+                              <td>
+                                {teamStat.symmetriesLost > 0
+                                  ? `Lost ${teamStat.symmetriesLost} Symmetry`
+                                  : `No Symmetries Lost`}
+                              </td>
+                            </tr>
+                          </tbody>
                         </Table>
                       </Col>
                     );
@@ -660,54 +670,52 @@ export function RPSScreen(props: RPSProps) {
 
             {gameStage === Stages.Claim && (
               <Row>
-                <Col md={12} style={{ border: "solid 1px white" }}>
-                  {revealedPlayerInfo?.revealed && (
-                    <>
-                      <h2
-                        style={{
-                          backgroundColor: "rgba(0, 0, 0, 0.5)",
-                          padding: "10px",
-                          color: "#ffd454",
-                        }}
-                      >
-                        Phase 3: Claim
-                      </h2>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <div style={{ textAlign: "left", marginLeft: "15%" }}>
-                          {(() => {
-                            const teamNum = revealedPlayerInfo.team;
-                            const spiralBitsWon = teamStats[teamNum].winningSpiralBits
+                {revealedPlayerInfo?.revealed && (
+                  <Col md={12} style={{ border: "solid 1px white" }}>
+                    <h2
+                      style={{
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        padding: "10px",
+                        color: "#ffd454",
+                      }}
+                    >
+                      Phase 3: Claim
+                    </h2>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <div style={{ textAlign: "left", marginLeft: "15%" }}>
+                        {(() => {
+                          const teamNum = revealedPlayerInfo.team;
+                          const spiralBitsWon = teamStats[teamNum].winningSpiralBits
+                            .mul(revealedPlayerInfo.numCrystals)
+                            .div(teamStats[teamNum].numCrystals);
+                          const lostSym = teamStats[teamNum].symmetriesLost;
+
+                          let smallestTeamBonus = BigNumber.from(0);
+                          if (teamStats[teamNum].numCrystals == revealedPlayerInfo.smallestTeamSize) {
+                            smallestTeamBonus = revealedPlayerInfo.smallestTeamBonus
                               .mul(revealedPlayerInfo.numCrystals)
-                              .div(teamStats[teamNum].numCrystals);
-                            const lostSym = teamStats[teamNum].symmetriesLost;
+                              .div(revealedPlayerInfo.totalCrystalsInSmallestTeams);
+                          }
 
-                            let smallestTeamBonus = BigNumber.from(0);
-                            if (teamStats[teamNum].numCrystals == revealedPlayerInfo.smallestTeamSize) {
-                              smallestTeamBonus = revealedPlayerInfo.smallestTeamBonus
-                                .mul(revealedPlayerInfo.numCrystals)
-                                .div(revealedPlayerInfo.totalCrystalsInSmallestTeams);
-                            }
-
-                            return (
-                              <>
-                                <div>Team: Team {Teams[teamNum]}</div>
-                                <div>Number of Crystals: {revealedPlayerInfo.numCrystals}</div>
-                                <div>Won: {formatkmb(spiralBitsWon)} SPIRALBITS</div>
-                                <div>Lost: {lostSym} Symmetries per Crystal</div>
-                                <div>Smallest Team Bonus: {formatkmb(smallestTeamBonus)}</div>
-                              </>
-                            );
-                          })()}
-                        </div>
+                          return (
+                            <>
+                              <div>Team: Team {Teams[teamNum]}</div>
+                              <div>Number of Crystals: {revealedPlayerInfo.numCrystals}</div>
+                              <div>Won: {formatkmb(spiralBitsWon)} SPIRALBITS</div>
+                              <div>Lost: {lostSym} Symmetries per Crystal</div>
+                              <div>Smallest Team Bonus: {formatkmb(smallestTeamBonus)}</div>
+                            </>
+                          );
+                        })()}
                       </div>
-                      <div className="mb-4 mt-2" style={{ textAlign: "left", marginLeft: "15%" }}>
-                        <Button variant="warning" onClick={claim}>
-                          Claim Crystals and Prizes
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </Col>
+                    </div>
+                    <div className="mb-4 mt-2" style={{ textAlign: "left", marginLeft: "15%" }}>
+                      <Button variant="warning" onClick={claim}>
+                        Claim Crystals and Prizes
+                      </Button>
+                    </div>
+                  </Col>
+                )}
               </Row>
             )}
           </>
