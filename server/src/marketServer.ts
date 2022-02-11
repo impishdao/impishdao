@@ -38,46 +38,6 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
     }
   };
 
-  const processMarketEventsAtStartup = () => {
-    // Read previous Logs
-    lineReader.eachLine("data/spiral_market_logs.json", (line) => {
-      const { eventType, tokenId, address, price } = JSON.parse(line);
-      processMarketEvent(eventType, BigNumber.from(tokenId), address, BigNumber.from(price));
-    });
-
-    // Setup an event listener
-    _spiralmarket.on(
-      _spiralmarket.filters.SpiralMarketEvent(),
-      async (eventType: number, tokenId: BigNumber, address: string, price: BigNumber, event: any) => {
-        const timestamp = (await event.getBlock()).timestamp;
-        console.log(
-          // eslint-disable-next-line max-len
-          `New Market Event. Type: ${eventType} tokenId: ${tokenId.toString()} price: ${price.toString()} address: ${address}`
-        );
-        processMarketEvent(eventType, tokenId, address, price);
-
-        if (!fs.existsSync("data")) {
-          fs.mkdirSync("data");
-        }
-
-        fs.appendFile(
-          "data/spiral_market_logs.json",
-          JSON.stringify({ eventType, tokenId, address, price, timestamp }) + "\n",
-          function (err) {
-            if (err) throw err;
-          }
-        );
-      }
-    );
-  };
-
-  const spiralTransferListner = async (from: string, to: string, tokenId: BigNumber, event: any) => {
-    // Remove this tokenID from sale list as it was transfered.
-    spiralsForSale.delete(tokenId.toNumber());
-  };
-
-  // Read everything at startup
-  processMarketEventsAtStartup();
 
   app.get("/marketapi/forsale", async (req, res) => {
     const j = Array.from(spiralsForSale.values());
@@ -159,6 +119,4 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
       ETHper1MSPIRALBITS: quotedAmountEthper1MSpiralbits,
     });
   });
-
-  return [spiralTransferListner];
 }

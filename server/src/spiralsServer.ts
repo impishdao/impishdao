@@ -14,21 +14,10 @@ import contractAddresses from "./contracts/contract-addresses.json";
 export function setupSpirals(
   app: express.Express,
   provider: ethers.providers.JsonRpcProvider,
-  transferListener: (from: string, to: string, tokenId: BigNumber, event: any) => Promise<void>
 ) {
   const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
   const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
   const _v2staking = new ethers.Contract(contractAddresses.StakingV2, StakingV2Artifact.abi, provider);
-
-  _impishspiral.on(_impishspiral.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
-    console.log(`Spiral transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
-
-    // For transfer events, we remove the spiral data cache
-    seedToIdCache.delete(tokenId.toNumber());
-
-    // Also send to marketplace listener
-    transferListener(from, to, tokenId, e);
-  });
 
   app.get("/spiralapi/spiraldata", async (req, res) => {
     try {
@@ -91,21 +80,9 @@ export function setupSpirals(
     }
   });
 
-  type SeedToIDValue = {
-    id: BigNumber;
-    seed: string;
-    owner: string;
-    indirectOwner: string;
-  };
-  const seedToIdCache = new Map<number, SeedToIDValue>();
   app.get("/spiralapi/seedforid/:id", async (req, res) => {
     try {
       const id = BigNumber.from(req.params.id);
-
-      if (seedToIdCache.has(id.toNumber())) {
-        res.send(seedToIdCache.get(id.toNumber()));
-        return;
-      }
 
       const seed = await _impishspiral.spiralSeeds(id);
       if (BigNumber.from(seed).eq(0)) {
@@ -123,8 +100,6 @@ export function setupSpirals(
         // Get the indirect owner
         indirectOwner = (await _v2staking.stakedTokenOwners(id.add(2000000))).owner;
       }
-
-      seedToIdCache.set(id.toNumber(), { id, seed, owner, indirectOwner });
 
       res.send({ id, seed, owner, indirectOwner });
     } catch (err) {

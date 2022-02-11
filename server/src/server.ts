@@ -227,10 +227,10 @@ app.get("/lastethprice", async (req, res) => {
 });
 
 // Setup Market
-const [transferListener] = setupSpiralMarket(app, provider);
+setupSpiralMarket(app, provider);
 
 // Setup Spirals API
-setupSpirals(app, provider, transferListener);
+setupSpirals(app, provider);
 
 // Setup Crystals API
 setupCrystals(app, provider);

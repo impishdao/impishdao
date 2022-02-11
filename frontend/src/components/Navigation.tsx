@@ -38,9 +38,9 @@ export function Navigation(props: NavigationProps) {
               <LinkContainer to="/spirals/top10">
                 <Nav.Link>Leaderboard</Nav.Link>
               </LinkContainer>
-              <LinkContainer to="/spirals/marketplace">
+              {/* <LinkContainer to="/spirals/marketplace">
                 <Nav.Link>Marketplace</Nav.Link>
-              </LinkContainer>
+              </LinkContainer> */}
             </>
           )}
 
