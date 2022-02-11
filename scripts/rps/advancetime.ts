@@ -4,8 +4,9 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import type { ImpishSpiral } from "../../typechain/ImpishSpiral";
+import type { RPS } from "../../typechain/RPS";
 import { artifacts, ethers, network, upgrades } from "hardhat";
-import contractAddresses from "../../proddata/contracts/contract-addresses.json";
+import contractAddresses from "../../server/src/contracts/contract-addresses.json";
 
 async function main() {
   // eslint-disable-next-line no-unused-vars
@@ -27,6 +28,10 @@ async function main() {
   await network.provider.send("evm_mine");
 
   await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
+
+  const RPSArtifact = await ethers.getContractFactory("RPS");
+  const rps = new ethers.Contract(contractAddresses.RPS, RPSArtifact.interface, signer) as RPS;
+  await rps.resolve();
 }
 
 // We recommend this pattern to be able to use async/await everywhere

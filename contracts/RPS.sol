@@ -66,6 +66,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     bytes32 commitment;
     bool revealed;
     uint8 team;
+    uint16 numCrystals;
     uint32 allPlayersIndex;
     uint32[] crystalIDs;
   }
@@ -125,7 +126,14 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     // Stake all the Crystals, to start earning SPIRALBITS
     stakingv2.stakeNFTsForOwner(contractTokenIDs, address(this));
 
-    players[player] = PlayerInfo(commitment, false, 0, uint32(allPlayers.length), crystalIDs);
+    players[player] = PlayerInfo(
+      commitment,
+      false,
+      0,
+      uint16(crystalIDs.length),
+      uint32(allPlayers.length),
+      crystalIDs
+    );
     allPlayers.push(player);
   }
 

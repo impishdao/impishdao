@@ -217,6 +217,15 @@ type TeamInfo = {
   numCrystals: number;
 };
 
+type PlayerInfo = {
+  revealed: boolean;
+  team: number;
+  numCrystals: number;
+  smallestTeamBonus: BigNumber;
+  smallestTeamSize: number;
+  totalCrystalsInSmallestTeams: number;
+};
+
 type RPSProps = DappState & DappFunctions & {};
 export function RPSScreen(props: RPSProps) {
   const [walletCrystals, setWalletCrystals] = useState<Array<CrystalInfo>>();
@@ -227,6 +236,7 @@ export function RPSScreen(props: RPSProps) {
   const [roundStartTime, setRoundStartTime] = useState(0);
   const [gameStage, setGameStage] = useState<Stages>();
   const [team, setTeam] = useState(Teams.Rock);
+  const [revealedPlayerInfo, setRevealedPlayerInfo] = useState<PlayerInfo>();
   const [teamStats, setTeamStats] = useState<Array<TeamInfo>>([]);
 
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -304,6 +314,20 @@ export function RPSScreen(props: RPSProps) {
           setGameStage(Stages.Claim);
         }
 
+        // Check if player has revealed his team, and if so, store everything.
+        const playerInfo = await props.contracts.rps.players(props.selectedAddress);
+        const smallestTeamBonusInfo = await props.contracts.rps.smallestTeamBonus();
+        if (playerInfo.revealed) {
+          setRevealedPlayerInfo({
+            revealed: true,
+            team: playerInfo.team,
+            numCrystals: playerInfo.numCrystals,
+            smallestTeamBonus: smallestTeamBonusInfo.bonusInSpiralBits,
+            smallestTeamSize: smallestTeamBonusInfo.teamSize,
+            totalCrystalsInSmallestTeams: smallestTeamBonusInfo.totalCrystalsInSmallestTeams,
+          });
+        }
+
         console.log(`Round Start: ${roundStart} at ${daysSinceStart}`);
       }
     });
@@ -362,7 +386,7 @@ export function RPSScreen(props: RPSProps) {
       const txns: MultiTxItem[] = [];
 
       txns.push({
-        title: `Claiming Winnings and CrystalsTeam`,
+        title: `Claiming Winnings and Crystals`,
         tx: () => props.contracts?.rps.claim(),
       });
 
@@ -371,7 +395,7 @@ export function RPSScreen(props: RPSProps) {
         props.showModal(
           `Claimed`,
           <div>
-            All your Crystals and SpiralBits have been claimed into your wallet
+            All your Crystals and winnings have been claimed into your wallet
             <br />
             <br />
             Next round will start Monday.
@@ -397,7 +421,7 @@ export function RPSScreen(props: RPSProps) {
         props.showModal(
           `Revealed team ${Teams[revealDetails.team]}`,
           <div>
-            You have Revealed your team to be ${Teams[revealDetails.team]}.
+            You have revealed your team to be Team {Teams[revealDetails.team]}.
             <br />
             <br />
             You can now watch the team scores, and see if you win. Claim your winnings after 3 days.
@@ -488,7 +512,7 @@ export function RPSScreen(props: RPSProps) {
                   </h2>
 
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <div style={{ textAlign: "left", marginLeft: '15%' }}>
+                    <div style={{ textAlign: "left", marginLeft: "15%" }}>
                       <div>Step 1: Pick a password</div>
                       <InputGroup style={{ width: "600px" }}>
                         <InputGroup.Text>Commitment Password</InputGroup.Text>
@@ -504,7 +528,7 @@ export function RPSScreen(props: RPSProps) {
                       </div>
                     </div>
 
-                    <div className="mt-4" style={{ textAlign: "left", marginLeft: '15%' }}>
+                    <div className="mt-4" style={{ textAlign: "left", marginLeft: "15%" }}>
                       <div>Step 2: Pick a team</div>
                       <div>
                         <FloatingLabel label="Join Team" style={{ color: "black", width: "200px" }}>
@@ -517,25 +541,25 @@ export function RPSScreen(props: RPSProps) {
                       </div>
                     </div>
 
-                    <div className="mt-4" style={{ textAlign: "left", marginLeft: '15%' }}>
+                    <div className="mt-4" style={{ textAlign: "left", marginLeft: "15%" }}>
                       <div>Step 3: Select fully grown crystals</div>
                     </div>
                     <CrystalListDisplay
-                        title=""
-                        buttonName={`Join team ${Teams[team]}`}
-                        pageSize={6}
-                        nfts={walletNFTs}
-                        onButtonClick={joinTeam}
-                        refreshCounter={refreshCounter}
-                        nothingMessage={
-                          <div>
-                            No Fully Grown Crystals.{" "}
-                            <Link to="/crystals" style={{ color: "#ffd454" }}>
-                              Mint some to play
-                            </Link>
-                          </div>
-                        }
-                      />
+                      title=""
+                      buttonName={`Join team ${Teams[team]}`}
+                      pageSize={6}
+                      nfts={walletNFTs}
+                      onButtonClick={joinTeam}
+                      refreshCounter={refreshCounter}
+                      nothingMessage={
+                        <div>
+                          No Fully Grown Crystals.{" "}
+                          <Link to="/crystals" style={{ color: "#ffd454" }}>
+                            Mint some to play
+                          </Link>
+                        </div>
+                      }
+                    />
                   </div>
                 </Col>
               </Row>
@@ -546,17 +570,17 @@ export function RPSScreen(props: RPSProps) {
                 <Col md={12} style={{ border: "solid 1px white" }}>
                   <h2
                     style={{
-                      textAlign: "center",
                       backgroundColor: "rgba(0, 0, 0, 0.5)",
                       padding: "10px",
                       color: "#ffd454",
                     }}
                   >
-                    Reveal your Team
+                    Phase 2: Reveal your Team
                   </h2>
 
-                  <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-                    <div style={{ width: "50%" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ textAlign: "left", marginLeft: "15%" }}>
+                      <div>Step 1: Type your password</div>
                       <InputGroup style={{ width: "600px" }}>
                         <InputGroup.Text>Commitment Password</InputGroup.Text>
                         <FormControl
@@ -567,7 +591,8 @@ export function RPSScreen(props: RPSProps) {
                       </InputGroup>
                     </div>
 
-                    <div>
+                    <div className="mt-4" style={{ textAlign: "left", marginLeft: "15%" }}>
+                      <div>Step 2: Reveal your team</div>
                       <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
                         <Form.Select
                           value={revealDetails?.team}
@@ -581,48 +606,107 @@ export function RPSScreen(props: RPSProps) {
                     </div>
                   </div>
 
-                  <div>
-                    <Button onClick={revealTeam}>Reveal</Button>
+                  <div className="mt-4 mb-4" style={{ textAlign: "left", marginLeft: "15%" }}>
+                    <Button variant="warning" onClick={revealTeam}>
+                      Reveal
+                    </Button>
                   </div>
                 </Col>
               </Row>
             )}
+
             {(gameStage === Stages.Reveal || gameStage === Stages.Claim) && (
               <Row>
+                <h2
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    padding: "10px",
+                    color: "#ffd454",
+                  }}
+                >
+                  Current Team Stats
+                </h2>
                 {[0, 1, 2].map((teamNum) => {
                   const teamStat = teamStats[teamNum];
 
-                  return (
-                    <Col key={teamNum} md={4}>
-                      <h3>Team {Teams[teamNum]}</h3>
-                      <Table style={{ color: "white" }}>
-                        <tr>
-                          <td style={{ textAlign: "left" }}>Score</td>
-                          <td>{formatkmb(teamStat.totalScore)}</td>
-                        </tr>
-                        <tr>
-                          <td style={{ textAlign: "left" }}>Number of Crystals in team</td>
-                          <td>{teamStat.numCrystals}</td>
-                        </tr>
-                        <tr>
-                          <td style={{ textAlign: "left" }}>Win against other team?</td>
-                          <td>{formatkmb(teamStat.winningSpiralBits)}</td>
-                        </tr>
-                        <tr>
-                          <td style={{ textAlign: "left" }}>Lose against attacking team?</td>
-                          <td>{teamStat.symmetriesLost}</td>
-                        </tr>
-                      </Table>
-                    </Col>
-                  );
+                  if (teamStat) {
+                    return (
+                      <Col key={teamNum} md={4}>
+                        <h3>Team {Teams[teamNum]}</h3>
+                        <Table style={{ color: "white", fontSize: "0.9rem", textAlign: "right" }}>
+                          <tr>
+                            <td style={{ textAlign: "left" }}>Score</td>
+                            <td>{formatkmb(teamStat.totalScore)}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ textAlign: "left" }}>Number of Crystals</td>
+                            <td>{teamStat.numCrystals}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ textAlign: "left" }}>Win vs Team {Teams[(teamNum + 1) % 3]}</td>
+                            <td>{formatkmb(teamStat.winningSpiralBits)} SPIRALBITS</td>
+                          </tr>
+                          <tr>
+                            <td style={{ textAlign: "left" }}>Lose vs Team {Teams[(teamNum + 2) % 3]}</td>
+                            <td>{teamStat.symmetriesLost} Sym</td>
+                          </tr>
+                        </Table>
+                      </Col>
+                    );
+                  }
                 })}
               </Row>
             )}
 
             {gameStage === Stages.Claim && (
               <Row>
-                <Col md={12}>
-                  <Button onClick={claim}>Claim</Button>
+                <Col md={12} style={{ border: "solid 1px white" }}>
+                  {revealedPlayerInfo?.revealed && (
+                    <>
+                      <h2
+                        style={{
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
+                          padding: "10px",
+                          color: "#ffd454",
+                        }}
+                      >
+                        Phase 3: Claim
+                      </h2>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <div style={{ textAlign: "left", marginLeft: "15%" }}>
+                          {(() => {
+                            const teamNum = revealedPlayerInfo.team;
+                            const spiralBitsWon = teamStats[teamNum].winningSpiralBits
+                              .mul(revealedPlayerInfo.numCrystals)
+                              .div(teamStats[teamNum].numCrystals);
+                            const lostSym = teamStats[teamNum].symmetriesLost;
+
+                            let smallestTeamBonus = BigNumber.from(0);
+                            if (teamStats[teamNum].numCrystals == revealedPlayerInfo.smallestTeamSize) {
+                              smallestTeamBonus = revealedPlayerInfo.smallestTeamBonus
+                                .mul(revealedPlayerInfo.numCrystals)
+                                .div(revealedPlayerInfo.totalCrystalsInSmallestTeams);
+                            }
+
+                            return (
+                              <>
+                                <div>Team: Team {Teams[teamNum]}</div>
+                                <div>Number of Crystals: {revealedPlayerInfo.numCrystals}</div>
+                                <div>Won: {formatkmb(spiralBitsWon)} SPIRALBITS</div>
+                                <div>Lost: {lostSym} Symmetries per Crystal</div>
+                                <div>Smallest Team Bonus: {formatkmb(smallestTeamBonus)}</div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <div className="mb-4 mt-2" style={{ textAlign: "left", marginLeft: "15%" }}>
+                        <Button variant="warning" onClick={claim}>
+                          Claim Crystals and Prizes
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </Col>
               </Row>
             )}
