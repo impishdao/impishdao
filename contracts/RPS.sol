@@ -306,9 +306,12 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   function resetForNextRound(bool shutdown) external onlyOwner atStage(Stages.Claim) {
     // If not finished, then claim on behalf of all remaining people
     for (uint256 i = 0; i < allPlayers.length; i++) {
-      if (!players[allPlayers[i]].claimed) {
+      if (players[allPlayers[i]].revealed && !players[allPlayers[i]].claimed) {
         claimForOwner(allPlayers[i]);
       }
+
+      // Also delete the player info
+      delete players[allPlayers[i]];
     }
 
     delete allPlayers;
