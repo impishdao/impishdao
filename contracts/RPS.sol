@@ -140,7 +140,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
 
   // Reveal the commitment
   // You can reveal commitments from day 3 to 6
-  function revealCommitment(uint128 salt, uint8 team) external nonReentrant timedTransitions atStage(Stages.Reveal) {
+  function revealCommitment(uint256 salt, uint8 team) external nonReentrant timedTransitions atStage(Stages.Reveal) {
     address player = msg.sender;
     require(players[player].numCrystals > 0, "NotPlaying");
     require(!players[player].revealed, "AlreadyRevealed");
@@ -329,10 +329,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       spiralBits.burn(spiralBits.balanceOf(address(this)));
     }
   }
-
-  // function generateCommitment(uint128 salt, uint8 team) public pure returns (bytes32) {
-  //     return keccak256(abi.encodePacked(salt, team));
-  // }
 
   // Function that marks this contract can accept incoming NFT transfers
   function onERC721Received(

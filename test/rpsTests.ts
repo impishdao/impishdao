@@ -88,8 +88,8 @@ describe("RPS", function () {
     await crystal.setApprovalForAll(rps.address, true);
 
     const password = "password";
-    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password))).shr(128);
-    const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
+    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password)));
+    const commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, 1]);
     await rps.commit(commitment, signer.address, [crystalTokenId]);
 
     expect(await crystal.ownerOf(crystalTokenId)).to.be.equals(stakingv2.address);
@@ -126,8 +126,8 @@ describe("RPS", function () {
     await crystal.setApprovalForAll(rps.address, true);
 
     const password = "password";
-    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password))).shr(128);
-    const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
+    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password)));
+    const commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, 1]);
 
     // Need at least one crystal
     await expect(rps.commit(commitment, signer.address, [])).to.be.revertedWith("NeedAtLeastOne");
@@ -191,8 +191,8 @@ describe("RPS", function () {
     await crystal.setApprovalForAll(rps.address, true);
 
     const password = "password";
-    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password))).shr(128);
-    const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, 1]);
+    const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password)));
+    const commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, 1]);
     await rps.commit(commitment, signer.address, [crystalTokenId]);
 
     // Advance 6 days without revealing

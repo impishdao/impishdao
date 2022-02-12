@@ -97,6 +97,8 @@ async function main() {
   const rps = await RPS.deploy(stakingv2.address);
   await rps.deployed();
 
+  stakingv2.setRPS(rps.address);
+
   // Allow RPS to mint
   await spiralbits.addAllowedMinter(rps.address);
 
@@ -104,7 +106,7 @@ async function main() {
   await spiralbits.approve(crystal.address, Eth2B);
   for (let i = 0; i < 6; i++) {
     const tokenId = await impishSpiral._tokenIdCounter();
-    await impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()});
+    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
     const crystalId = await crystal._tokenIdCounter();
     await crystal.mintCrystals([tokenId], 0);
@@ -131,7 +133,7 @@ async function main() {
     MultiMint: multimint.address,
     RPS: rps.address,
   });
-  saveFrontendFiles(newContractAddresses, rps);
+  saveFrontendFiles(newContractAddresses, stakingv2, rps);
 
   // Buy some magic for testing
   // await buywithether.buyMagicTODOTEMP({ value: ethers.utils.parseEther("1") });
@@ -157,7 +159,7 @@ async function main() {
   // }
 }
 
-function saveFrontendFiles(newContractAddresses: any, rps: Contract) {
+function saveFrontendFiles(newContractAddresses: any, stakingv2: Contract, rps: Contract) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -178,6 +180,10 @@ function saveFrontendFiles(newContractAddresses: any, rps: Contract) {
   const RPSArtifact = artifacts.readArtifactSync("RPS");
   fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
   fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
+
+  const StakingV2Artifact = artifacts.readArtifactSync("StakingV2");
+  fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
+  fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

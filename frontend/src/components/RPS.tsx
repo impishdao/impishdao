@@ -14,7 +14,7 @@ import {
   Table,
   Tooltip,
 } from "react-bootstrap";
-import { CrystalInfo, DappFunctions, DappState, NFTCardInfo, SpiralDetail } from "../AppState";
+import { CrystalInfo, DappFunctions, DappState, NFTCardInfo } from "../AppState";
 import { formatkmb, range, retryTillSucceed } from "./utils";
 import { BigNumber, ethers } from "ethers";
 import { useEffect, useState } from "react";
@@ -22,14 +22,9 @@ import { Navigation } from "./Navigation";
 import { cloneDeep } from "lodash";
 import { Link } from "react-router-dom";
 import {
-  Eth1,
-  Eth1k,
-  Eth1M,
-  Eth2B,
   getMetadataForCrystalTokenIds,
   getNFTCardInfo,
   getRPSItemsFromStorage,
-  getSeedsForSpiralTokenIds,
   MultiTxItem,
   RPSStorageItem,
   saveToLocalStorage,
@@ -378,7 +373,7 @@ export function RPSScreen(props: RPSProps) {
 
   const getSalt = (pass: string): BigNumber => {
     const saltedPassword = `${pass}/${roundStartTime}`;
-    return BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltedPassword))).shr(128);
+    return BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltedPassword)));
   };
 
   const claim = async () => {
@@ -449,7 +444,7 @@ export function RPSScreen(props: RPSProps) {
       }
 
       const salt = getSalt(password);
-      const commitment = ethers.utils.solidityKeccak256(["uint128", "uint8"], [salt, team]);
+      const commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, team]);
       {
         const walletCrystalIDs = Array.from(tokenIds)
           .map((n) => (n >= 4000000 ? n - 4000000 : n))
