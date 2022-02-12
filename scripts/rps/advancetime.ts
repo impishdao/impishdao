@@ -19,19 +19,20 @@ async function main() {
     signer
   ) as ImpishSpiral;
 
-  await network.provider.send("evm_increaseTime", [3600 * 24 * 1]);
-  await network.provider.send("evm_mine");
+  // await network.provider.send("evm_increaseTime", [3600 * 24 * 1]);
+  // await network.provider.send("evm_mine");
 
-  await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
+  // await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
 
-  await network.provider.send("evm_increaseTime", [3600 * 24 * 2]);
-  await network.provider.send("evm_mine");
+  // await network.provider.send("evm_increaseTime", [3600 * 24 * 2]);
+  // await network.provider.send("evm_mine");
 
-  await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
+  // await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
 
   const RPSArtifact = await ethers.getContractFactory("RPS");
   const rps = new ethers.Contract(contractAddresses.RPS, RPSArtifact.interface, signer) as RPS;
-  await rps.resolve();
+  // await rps.resolve();
+  await rps.resetForNextRound(false);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

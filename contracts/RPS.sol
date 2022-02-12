@@ -17,7 +17,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     Reveal,
     Resolve,
     Claim,
-    Finished,
     Shutdown
   }
   Stages public stage;
@@ -63,10 +62,11 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   // Players
   //-------------------
   struct PlayerInfo {
-    bytes32 commitment;
     bool revealed;
+    bool claimed;
     uint8 team;
     uint16 numCrystals;
+    bytes32 commitment;
     uint32 allPlayersIndex;
     uint32[] crystalIDs;
   }
@@ -127,10 +127,11 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     stakingv2.stakeNFTsForOwner(contractTokenIDs, address(this));
 
     players[player] = PlayerInfo(
-      commitment,
+      false,
       false,
       0,
       uint16(crystalIDs.length),
+      commitment,
       uint32(allPlayers.length),
       crystalIDs
     );
@@ -258,6 +259,8 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
 
   // Claim for owner internal function
   function _claimForOwner(address player) internal nonReentrant atStage(Stages.Claim) {
+    require(!players[player].claimed, "AlreadyClaimed");
+
     uint8 team = players[player].team;
     require(teams[team].numCrystals > 0, "SafetyAssert2");
 
@@ -281,6 +284,9 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       }
     }
 
+    // Mark as claimed
+    players[player].claimed = true;
+
     // Generate winnings for the user. Note that this includes the smallest team bonus,
     // which was previously burned, so we just mint it again. Saves on approvals.
     if (myWinnings > 0) {
@@ -292,31 +298,18 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
       uint256 tokenId = players[player].crystalIDs[j];
       crystals.safeTransferFrom(address(this), player, tokenId);
     }
-
-    // Delete player from the structure
-    uint256 index = players[player].allPlayersIndex;
-    // Swap with the last element
-    allPlayers[index] = allPlayers[allPlayers.length - 1];
-    allPlayers.pop();
-    delete players[player];
-
-    // If all players have been claimed, then advance the stage
-    if (allPlayers.length == 0) {
-      stage = Stages.Finished;
-    }
   }
 
   // After a round is finished, reset for next round.
-  function resetForNextRound(bool shutdown) external onlyOwner {
+  function resetForNextRound(bool shutdown) external onlyOwner atStage(Stages.Claim) {
     // If not finished, then claim on behalf of all remaining people
-    if (stage == Stages.Claim) {
-      for (uint256 i = allPlayers.length - 1; i >= 0; i--) {
-        claimForOwner(allPlayers[i]);
+    for (uint256 i = 0; i < allPlayers.length; i++) {
+      if (!players[allPlayers[i]].claimed) {
+        claimForOwner(allPlayers[i - 1]);
       }
     }
 
-    require(stage == Stages.Finished, "CouldntClaimForEveryone");
-    require(allPlayers.length == 0, "SafetyAssert");
+    delete allPlayers;
 
     if (shutdown) {
       stage = Stages.Shutdown;

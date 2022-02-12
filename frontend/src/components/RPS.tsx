@@ -219,6 +219,7 @@ type TeamInfo = {
 
 type PlayerInfo = {
   revealed: boolean;
+  claimed: boolean;
   team: number;
   numCrystals: number;
   smallestTeamBonus: BigNumber;
@@ -320,12 +321,15 @@ export function RPSScreen(props: RPSProps) {
         if (playerInfo.revealed) {
           setRevealedPlayerInfo({
             revealed: true,
+            claimed: playerInfo.claimed,
             team: playerInfo.team,
             numCrystals: playerInfo.numCrystals,
             smallestTeamBonus: smallestTeamBonusInfo.bonusInSpiralBits,
             smallestTeamSize: smallestTeamBonusInfo.teamSize,
             totalCrystalsInSmallestTeams: smallestTeamBonusInfo.totalCrystalsInSmallestTeams,
           });
+        } else {
+          setRevealedPlayerInfo(undefined);
         }
 
         console.log(`Round Start: ${roundStart} at ${daysSinceStart}`);
@@ -449,7 +453,7 @@ export function RPSScreen(props: RPSProps) {
         .map((n) => (n >= 4000000 ? n - 4000000 : n))
         .map((n) => BigNumber.from(n));
       txns.push({
-        title: `Secretly Joining ${Teams[team]}`,
+        title: `Secretly Joining Team ${Teams[team]}`,
         tx: () =>
           props.selectedAddress
             ? props.contracts?.rps.commit(commitment, props.selectedAddress, crystalIDs)
@@ -628,6 +632,35 @@ export function RPSScreen(props: RPSProps) {
                 </h2>
                 {[0, 1, 2].map((teamNum) => {
                   const teamStat = teamStats[teamNum];
+                  const nextTeamStat = teamStats[(teamNum + 1) % 3];
+                  const prevTeamStat = teamStats[(teamNum + 2) % 3];
+
+                  const smallestTeamSize = Math.min(
+                    teamStat.numCrystals,
+                    prevTeamStat.numCrystals,
+                    nextTeamStat.numCrystals
+                  );
+
+                  let winningString;
+                  if (gameStage === Stages.Reveal) {
+                    winningString = teamStat.totalScore.gt(nextTeamStat.totalScore)
+                      ? `Currently winning`
+                      : `Currently not winning`;
+                  } else {
+                    winningString = teamStat.winningSpiralBits.gt(0)
+                      ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
+                      : "Lost";
+                  }
+
+                  let losingString;
+                  if (gameStage === Stages.Reveal) {
+                    losingString = prevTeamStat.totalScore.gt(teamStat.totalScore)
+                      ? `Currently losing`
+                      : `Currently not losing`;
+                  } else {
+                    losingString =
+                      teamStat.symmetriesLost > 0 ? `Lost ${teamStat.symmetriesLost} Symmetry` : `No Symmetries Lost`;
+                  }
 
                   if (teamStat) {
                     return (
@@ -645,19 +678,15 @@ export function RPSScreen(props: RPSProps) {
                             </tr>
                             <tr>
                               <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 1) % 3]}</td>
-                              <td>
-                                {teamStat.winningSpiralBits.gt(0)
-                                  ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
-                                  : "Lost"}
-                              </td>
+                              <td>{winningString}</td>
                             </tr>
                             <tr>
                               <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 2) % 3]}</td>
-                              <td>
-                                {teamStat.symmetriesLost > 0
-                                  ? `Lost ${teamStat.symmetriesLost} Symmetry`
-                                  : `No Symmetries Lost`}
-                              </td>
+                              <td>{losingString}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ textAlign: "left" }}>Smallest Team Bonus</td>
+                              <td>{smallestTeamSize === teamStat.numCrystals ? "Yes" : "No"}</td>
                             </tr>
                           </tbody>
                         </Table>
@@ -670,7 +699,7 @@ export function RPSScreen(props: RPSProps) {
 
             {gameStage === Stages.Claim && (
               <Row>
-                {revealedPlayerInfo?.revealed && (
+                {(revealedPlayerInfo && !revealedPlayerInfo.claimed) && (
                   <Col md={12} style={{ border: "solid 1px white" }}>
                     <h2
                       style={{
