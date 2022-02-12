@@ -139,9 +139,11 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   }
 
   // Reveal the commitment
+  // You can reveal commitments from day 3 to 6
   function revealCommitment(uint128 salt, uint8 team) external nonReentrant timedTransitions atStage(Stages.Reveal) {
     address player = msg.sender;
-    // You can reveal commitments from day 3 to 6
+    require(players[player].numCrystals > 0, "NotPlaying");
+    require(!players[player].revealed, "AlreadyRevealed");
     require(players[player].commitment == keccak256(abi.encodePacked(salt, team)), "BadCommitment");
 
     // Record all the info that was revealed
@@ -305,7 +307,7 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     // If not finished, then claim on behalf of all remaining people
     for (uint256 i = 0; i < allPlayers.length; i++) {
       if (!players[allPlayers[i]].claimed) {
-        claimForOwner(allPlayers[i - 1]);
+        claimForOwner(allPlayers[i]);
       }
     }
 

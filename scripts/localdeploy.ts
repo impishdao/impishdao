@@ -11,6 +11,8 @@ import path from "path";
 import contractAddresses from "../proddata/contracts/contract-addresses.json";
 
 async function main() {
+  const Eth2B = ethers.utils.parseEther("2000000000");
+
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
   //
@@ -24,7 +26,7 @@ async function main() {
   const WETH9 = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
 
   // eslint-disable-next-line no-unused-vars
-  const [signer, otherSigner] = await ethers.getSigners();
+  const [signer, signer2, signer3] = await ethers.getSigners();
 
   // We get the contract to deploy
   const ImpishDAO = await ethers.getContractFactory("ImpishDAO");
@@ -97,6 +99,25 @@ async function main() {
 
   // Allow RPS to mint
   await spiralbits.addAllowedMinter(rps.address);
+
+  // Create 6 fully grown crystals
+  await spiralbits.approve(crystal.address, Eth2B);
+  for (let i = 0; i < 6; i++) {
+    const tokenId = await impishSpiral._tokenIdCounter();
+    await impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()});
+
+    const crystalId = await crystal._tokenIdCounter();
+    await crystal.mintCrystals([tokenId], 0);
+
+    // Max out the crystal
+    await crystal.grow(crystalId, 70);
+
+    if (i < 2) {
+      await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, crystalId);
+    } else if (i < 5) {
+      await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer3.address, crystalId);
+    }
+  }
 
   // We also save the contract's artifacts and address in the frontend directory
   const newContractAddresses = Object.assign(contractAddresses, {

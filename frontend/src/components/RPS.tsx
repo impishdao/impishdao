@@ -318,9 +318,9 @@ export function RPSScreen(props: RPSProps) {
         // Check if player has revealed his team, and if so, store everything.
         const playerInfo = await props.contracts.rps.players(props.selectedAddress);
         const smallestTeamBonusInfo = await props.contracts.rps.smallestTeamBonus();
-        if (playerInfo.revealed) {
+        if (playerInfo) {
           setRevealedPlayerInfo({
-            revealed: true,
+            revealed: playerInfo.revealed,
             claimed: playerInfo.claimed,
             team: playerInfo.team,
             numCrystals: playerInfo.numCrystals,
@@ -331,8 +331,6 @@ export function RPSScreen(props: RPSProps) {
         } else {
           setRevealedPlayerInfo(undefined);
         }
-
-        console.log(`Round Start: ${roundStart} at ${daysSinceStart}`);
       }
     });
   }, [props.selectedAddress, props.contracts, refreshCounter]);
@@ -571,6 +569,7 @@ export function RPSScreen(props: RPSProps) {
 
             {gameStage === Stages.Reveal && (
               <Row>
+                {(revealedPlayerInfo && !revealedPlayerInfo.revealed) && (
                 <Col md={12} style={{ border: "solid 1px white" }}>
                   <h2
                     style={{
@@ -615,7 +614,7 @@ export function RPSScreen(props: RPSProps) {
                       Reveal
                     </Button>
                   </div>
-                </Col>
+                </Col>)}
               </Row>
             )}
 

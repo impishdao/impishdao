@@ -27,7 +27,7 @@ async function main() {
   // await network.provider.send("evm_increaseTime", [3600 * 24 * 2]);
   // await network.provider.send("evm_mine");
 
-  // await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
+  await impishspiral.mintSpiralRandom({ value: await impishspiral.getMintPrice() });
 
   const RPSArtifact = await ethers.getContractFactory("RPS");
   const rps = new ethers.Contract(contractAddresses.RPS, RPSArtifact.interface, signer) as RPS;
