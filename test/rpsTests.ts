@@ -22,7 +22,7 @@ type FixtureType = {
 
 const zip = (a: Array<any>, b: Array<any>) => a.map((k, i) => [k, b[i]]);
 
-describe.only("RPS", function () {
+describe("RPS", function () {
   const Zero = BigNumber.from(0);
   const Eth2B = ethers.utils.parseEther("2000000000");
   const Eth1M = ethers.utils.parseEther("1000000");
@@ -216,11 +216,13 @@ describe.only("RPS", function () {
     expect(beforeSym - afterSym).to.be.equals(2);
   });
 
-  it.only("Multi user test", async function () {
+  it("Multi user test", async function () {
     const { impishSpiral, spiralbits, crystal, rps } = await loadContracts();
     const [signer1, signer2, signer3] = await ethers.getSigners();
 
-    await spiralbits.approve(crystal.address, Eth2B);
+    await spiralbits.connect(signer1).approve(crystal.address, Eth2B);
+    await spiralbits.connect(signer2).approve(crystal.address, Eth2B);
+    await spiralbits.connect(signer3).approve(crystal.address, Eth2B);
     await crystal.connect(signer1).setApprovalForAll(rps.address, true);
     await crystal.connect(signer2).setApprovalForAll(rps.address, true);
     await crystal.connect(signer3).setApprovalForAll(rps.address, true);
@@ -242,6 +244,7 @@ describe.only("RPS", function () {
 
         if (address !== signer1.address) {
           await crystal["safeTransferFrom(address,address,uint256)"](signer1.address, address, crystalId);
+          await spiralbits.transfer( address, Eth1M);
         }
       }
 
@@ -314,9 +317,9 @@ describe.only("RPS", function () {
     zip(signer2SymsBefore, signer2SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
 
     // Signer3 has won a small amount of SpiralBits from the first team
-    const signer3beforeSpiralBits = await spiralbits.balanceOf(signer3.address);
+    let signer3beforeSpiralBits = await spiralbits.balanceOf(signer3.address);
     await rps.connect(signer3).claim();
-    const signer3afterSpiralBits = await spiralbits.balanceOf(signer3.address);
+    let signer3afterSpiralBits = await spiralbits.balanceOf(signer3.address);
     expect(signer3afterSpiralBits.sub(signer3beforeSpiralBits)).to.be.equal(Eth1k.mul(100));
 
     signer3Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer3.address));
@@ -332,20 +335,21 @@ describe.only("RPS", function () {
           await crystal.connect(signer).addSym(crystalIds[i], 2);
           await crystal.connect(signer).grow(crystalIds[i], 100 - (await crystal.crystals(crystalIds[i])).size);
         }
+        // console.log((await crystal.crystals(crystalIds[i])).sym, "-", (await crystal.crystals(crystalIds[i])).size );
       }
     };
 
     // -----
     // Round 2: This time, not everyone reveals
-    requireAtLeast5Sym(signer1Crystals, signer1);
+    await requireAtLeast5Sym(signer1Crystals, signer1);
     signer1SymsBefore = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
     await rpsCommit(signer1, "1", 0, signer1.address, signer1Crystals);
 
-    requireAtLeast5Sym(signer2Crystals, signer2);
+    await requireAtLeast5Sym(signer2Crystals, signer2);
     signer2SymsBefore = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
     await rpsCommit(signer2, "2", 1, signer2.address, signer2Crystals);
 
-    requireAtLeast5Sym(signer3Crystals, signer3);
+    await requireAtLeast5Sym(signer3Crystals, signer3);
     signer3SymsBefore = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
     await rpsCommit(signer3, "3", 2, signer3.address, signer3Crystals);
 
@@ -398,5 +402,63 @@ describe.only("RPS", function () {
 
     // After it's done, reset for next round
     await rps.resetForNextRound(false);
+
+    //------
+    // Round3 , reveal but don't claim.
+    await requireAtLeast5Sym(signer1Crystals, signer1);
+    signer1SymsBefore = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer1, "1", 0, signer1.address, signer1Crystals);
+
+    await requireAtLeast5Sym(signer2Crystals, signer2);
+    signer2SymsBefore = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer2, "2", 1, signer2.address, signer2Crystals);
+
+    await requireAtLeast5Sym(signer3Crystals, signer3);
+    signer3SymsBefore = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer3, "3", 2, signer3.address, signer3Crystals);
+
+    // Advance 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+    await network.provider.send("evm_mine");
+
+    // Only signer 1 and 2 reveal, signer3 does not reveal.
+    await rpsReveal(signer1, "1", 0);
+    await rpsReveal(signer2, "2", 1);
+    await rpsReveal(signer3, "3", 2);
+
+    // Advance 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+    await network.provider.send("evm_mine");
+
+    // Signer1 has got the smallest team bonus
+    signer1beforeSpiralBits = await spiralbits.balanceOf(signer1.address);
+    await rps.connect(signer1).claim();
+    signer1afterSpiralBits = await spiralbits.balanceOf(signer1.address);
+    expect(signer1afterSpiralBits.sub(signer1beforeSpiralBits)).to.be.gt(Eth1M);
+
+    signer1Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer1.address));
+    signer1SymsAfter = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    // Only team 1 has lost sym
+    zip(signer1SymsBefore, signer1SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a + 1));
+
+    // Signer2 has not lost anything and not won anything
+    signer2beforeSpiralBits = await spiralbits.balanceOf(signer2.address);
+    await rps.connect(signer2).claim();
+    signer2afterSpiralBits = await spiralbits.balanceOf(signer2.address);
+    expect(signer2afterSpiralBits).to.be.equal(signer2beforeSpiralBits);
+
+    signer2Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer2.address));
+    signer2SymsAfter = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    zip(signer2SymsBefore, signer2SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
+
+    signer3beforeSpiralBits = await spiralbits.balanceOf(signer3.address);
+    // Reset for next round, but since signer3 hasn't claimed, it should implicitly claim
+    await rps.resetForNextRound(false);
+    signer3afterSpiralBits = await spiralbits.balanceOf(signer3.address);
+    expect(signer3afterSpiralBits.sub(signer3beforeSpiralBits)).to.be.equal(Eth1k.mul(100));
+
+    signer3Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer3.address));
+    signer3SymsAfter = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    zip(signer3SymsBefore, signer3SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
   });
 });
