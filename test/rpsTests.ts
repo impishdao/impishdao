@@ -10,6 +10,7 @@ import type { RPS } from "../typechain/RPS";
 import { BigNumber } from "ethers";
 import { ethers, network } from "hardhat";
 import { expect } from "chai";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 type FixtureType = {
   impishSpiral: ImpishSpiral;
@@ -19,9 +20,13 @@ type FixtureType = {
   rps: RPS;
 };
 
+const zip = (a: Array<any>, b: Array<any>) => a.map((k, i) => [k, b[i]]);
+
 describe("RPS", function () {
   const Zero = BigNumber.from(0);
   const Eth2B = ethers.utils.parseEther("2000000000");
+  const Eth1M = ethers.utils.parseEther("1000000");
+  const Eth1k = ethers.utils.parseEther("1000");
   const Eth100 = ethers.utils.parseEther("100");
   const Eth10 = ethers.utils.parseEther("10");
 
@@ -209,5 +214,107 @@ describe("RPS", function () {
     const afterSym = (await crystal.crystals(crystalTokenId)).sym;
     expect(await crystal.ownerOf(crystalTokenId)).to.be.equals(signer.address);
     expect(beforeSym - afterSym).to.be.equals(2);
+  });
+
+  it("Multi user test", async function () {
+    const { impishSpiral, spiralbits, crystal, rps } = await loadContracts();
+    const [signer1, signer2, signer3] = await ethers.getSigners();
+    
+    await spiralbits.approve(crystal.address, Eth2B);
+    await crystal.connect(signer1).setApprovalForAll(rps.address, true);
+    await crystal.connect(signer2).setApprovalForAll(rps.address, true);
+    await crystal.connect(signer3).setApprovalForAll(rps.address, true);
+
+    // First user stakes 1 Crystal
+    const mintCrystals = async (count: number, address: string): Promise<BigNumber[]> => {
+      const mintedCrystals = [];
+
+      for (let i = 0; i < count; i++) {
+        const spiralId = await impishSpiral._tokenIdCounter();
+        await impishSpiral.mintSpiralRandom({value: await impishSpiral.getMintPrice()});
+
+        const crystalId = await crystal._tokenIdCounter();
+        await crystal.mintCrystals([spiralId], 0);
+        mintedCrystals.push(BigNumber.from(crystalId));
+
+        // Max out the crystal
+        await crystal.grow(crystalId, 70);
+
+        if (address !== signer1.address) {
+          await crystal["safeTransferFrom(address,address,uint256)"](signer1.address, address, crystalId);
+        }
+      }
+
+      return mintedCrystals;
+    };
+
+    const rpsCommit = async (signer: SignerWithAddress, password: string, team: number, address: string, crystals: BigNumber[]) => {
+      const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password)));
+      const commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, team]);
+      await rps.connect(signer).commit(commitment, address, crystals);
+    };
+
+    const rpsReveal = async (signer: SignerWithAddress, password: string, team: number) => {
+      const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password)));
+      await rps.connect(signer).revealCommitment(salt, team);
+    };
+
+    const signer1Crystals = await mintCrystals(1, signer1.address);
+    const signer1SymsBefore = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer1, "1", 0,  signer1.address, signer1Crystals);
+
+    const signer2Crystals = await mintCrystals(2, signer2.address);
+    const signer2SymsBefore = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer2, "2", 1, signer2.address, signer2Crystals);
+
+    const signer3Crystals = await mintCrystals(3, signer3.address);
+    const signer3SymsBefore = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer3, "3", 2, signer3.address, signer3Crystals);
+
+    // Advance 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+    await network.provider.send("evm_mine");
+
+    // Reveal all 3 commitments
+    await rpsReveal(signer1, "1", 0);
+    await rpsReveal(signer2, "2", 1);
+    await rpsReveal(signer3, "3", 2);
+
+    // Advance 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+    await network.provider.send("evm_mine");
+
+    await rps.resolve();
+
+    // Signer1 has got the smallest team bonus
+    const signer1beforeSpiralBits = await spiralbits.balanceOf(signer1.address);
+    await rps.connect(signer1).claim();
+    const signer1afterSpiralBits = await spiralbits.balanceOf(signer1.address);
+    expect(signer1afterSpiralBits.sub(signer1beforeSpiralBits)).to.be.gt(Eth1M);
+
+    signer1Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer1.address));
+    const signer1SymsAfter = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    // Only team 1 has lost sym
+    zip(signer1SymsBefore, signer1SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a+1));
+
+    // Signer2 has not lost anything and not won anything
+    const signer2beforeSpiralBits = await spiralbits.balanceOf(signer2.address);
+    await rps.connect(signer2).claim();
+    const signer2afterSpiralBits = await spiralbits.balanceOf(signer2.address);
+    expect(signer2afterSpiralBits).to.be.equal(signer2beforeSpiralBits);
+
+    signer2Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer2.address));
+    const signer2SymsAfter = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    zip(signer2SymsBefore, signer2SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
+
+    // Signer3 has won a small amount of SpiralBits from the first team
+    const signer3beforeSpiralBits = await spiralbits.balanceOf(signer3.address);
+    await rps.connect(signer3).claim();
+    const signer3afterSpiralBits = await spiralbits.balanceOf(signer3.address);
+    expect(signer3afterSpiralBits.sub(signer3beforeSpiralBits)).to.be.equal(Eth1k.mul(100));
+
+    signer3Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer3.address));
+    const signer3SymsAfter = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    zip(signer3SymsBefore, signer3SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
   });
 });
