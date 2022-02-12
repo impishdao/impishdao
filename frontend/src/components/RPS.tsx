@@ -722,6 +722,8 @@ export function RPSScreen(props: RPSProps) {
                         </Table>
                       </Col>
                     );
+                  } else {
+                    return (<></>);
                   }
                 })}
               </Row>
@@ -750,7 +752,7 @@ export function RPSScreen(props: RPSProps) {
                           const lostSym = teamStats[teamNum].symmetriesLost;
 
                           let smallestTeamBonus = BigNumber.from(0);
-                          if (teamStats[teamNum].numCrystals == revealedPlayerInfo.smallestTeamSize) {
+                          if (teamStats[teamNum].numCrystals === revealedPlayerInfo.smallestTeamSize) {
                             smallestTeamBonus = revealedPlayerInfo.smallestTeamBonus
                               .mul(revealedPlayerInfo.numCrystals)
                               .div(revealedPlayerInfo.totalCrystalsInSmallestTeams);
