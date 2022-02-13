@@ -723,7 +723,7 @@ export function RPSScreen(props: RPSProps) {
                       </Col>
                     );
                   } else {
-                    return (<></>);
+                    return <></>;
                   }
                 })}
               </Row>
