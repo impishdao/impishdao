@@ -746,13 +746,21 @@ export function RPSScreen(props: RPSProps) {
                       <div style={{ textAlign: "left", marginLeft: "15%" }}>
                         {(() => {
                           const teamNum = revealedPlayerInfo.team;
-                          const spiralBitsWon = teamStats[teamNum].winningSpiralBits
-                            .mul(revealedPlayerInfo.numCrystals)
-                            .div(teamStats[teamNum].numCrystals);
+
+                          let spiralBitsWon = BigNumber.from(0);
+
+                          if (teamStats[teamNum].numCrystals > 0) {
+                            spiralBitsWon = teamStats[teamNum].winningSpiralBits
+                              .mul(revealedPlayerInfo.numCrystals)
+                              .div(teamStats[teamNum].numCrystals);
+                          }
                           const lostSym = teamStats[teamNum].symmetriesLost;
 
                           let smallestTeamBonus = BigNumber.from(0);
-                          if (teamStats[teamNum].numCrystals === revealedPlayerInfo.smallestTeamSize) {
+                          if (
+                            revealedPlayerInfo.totalCrystalsInSmallestTeams > 0 &&
+                            teamStats[teamNum].numCrystals === revealedPlayerInfo.smallestTeamSize
+                          ) {
                             smallestTeamBonus = revealedPlayerInfo.smallestTeamBonus
                               .mul(revealedPlayerInfo.numCrystals)
                               .div(revealedPlayerInfo.totalCrystalsInSmallestTeams);

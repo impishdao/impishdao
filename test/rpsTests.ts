@@ -144,7 +144,7 @@ describe("RPS", function () {
     await rps.commit(commitment, signer.address, [crystalTokenId]);
 
     // Can't commit again
-    await expect(rps.commit(commitment, signer.address, [crystalTokenId])).to.be.revertedWith("AlreadyPlaying");
+    await expect(rps.commit(commitment, signer.address, [crystalTokenId])).to.be.revertedWith("NotYourCrystal");
 
     // Can't reveal yet
     await expect(rps.revealCommitment(salt, 1)).to.be.revertedWith("WrongStage");
@@ -217,7 +217,7 @@ describe("RPS", function () {
   });
 
   it("Multi user test", async function () {
-    const { impishSpiral, spiralbits, crystal, rps } = await loadContracts();
+    const { impishSpiral, spiralbits, crystal, rps, stakingv2 } = await loadContracts();
     const [signer1, signer2, signer3] = await ethers.getSigners();
 
     await spiralbits.connect(signer1).approve(crystal.address, Eth2B);
@@ -266,6 +266,16 @@ describe("RPS", function () {
     const rpsReveal = async (signer: SignerWithAddress, password: string, team: number) => {
       const salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password)));
       await rps.connect(signer).revealCommitment(salt, team);
+    };
+
+    const requireAtLeast5Sym = async (crystalIds: BigNumber[], signer: SignerWithAddress) => {
+      for (let i = 0; i < crystalIds.length; i++) {
+        if ((await crystal.crystals(crystalIds[i])).sym < 5) {
+          await crystal.connect(signer).addSym(crystalIds[i], 2);
+          await crystal.connect(signer).grow(crystalIds[i], 100 - (await crystal.crystals(crystalIds[i])).size);
+        }
+        // console.log((await crystal.crystals(crystalIds[i])).sym, "-", (await crystal.crystals(crystalIds[i])).size );
+      }
     };
 
     let signer1Crystals = await mintCrystals(1, signer1.address);
@@ -328,16 +338,6 @@ describe("RPS", function () {
 
     // After it's done, reset for next round
     await rps.resetForNextRound(false);
-
-    const requireAtLeast5Sym = async (crystalIds: BigNumber[], signer: SignerWithAddress) => {
-      for (let i = 0; i < crystalIds.length; i++) {
-        if ((await crystal.crystals(crystalIds[i])).sym < 5) {
-          await crystal.connect(signer).addSym(crystalIds[i], 2);
-          await crystal.connect(signer).grow(crystalIds[i], 100 - (await crystal.crystals(crystalIds[i])).size);
-        }
-        // console.log((await crystal.crystals(crystalIds[i])).sym, "-", (await crystal.crystals(crystalIds[i])).size );
-      }
-    };
 
     // -----
     // Round 2: This time, not everyone reveals
@@ -519,6 +519,77 @@ describe("RPS", function () {
     zip(signer3SymsBefore, signer3SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
 
     // After it's done, shutdown
-    await rps.resetForNextRound(true);
+    await rps.resetForNextRound(false);
+
+    // Round 5: Mix of wallet and staked crystals
+    await stakingv2.setRPS(rps.address);
+
+    await requireAtLeast5Sym(signer1Crystals, signer1);
+    signer1SymsBefore = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    await rpsCommit(signer1, "1", 0, signer1.address, signer1Crystals);
+
+    await requireAtLeast5Sym(signer2Crystals, signer2);
+    signer2SymsBefore = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    // Stake the first crystal
+    await crystal.connect(signer2).setApprovalForAll(stakingv2.address, true);
+    await stakingv2.connect(signer2).stakeNFTsForOwner([signer2Crystals[0].add(4000000)], signer2.address);
+    await rpsCommit(signer2, "2", 1, signer2.address, signer2Crystals.slice(1));
+    let salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("2")));
+    let commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, 1]);
+    await stakingv2.connect(signer2).rpsCommit(commitment, [signer2Crystals[0]]);
+
+    await requireAtLeast5Sym(signer3Crystals, signer3);
+    signer3SymsBefore = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    // Stake the first crystal
+    await crystal.connect(signer3).setApprovalForAll(stakingv2.address, true);
+    await stakingv2.connect(signer3).stakeNFTsForOwner([signer3Crystals[0].add(4000000)], signer3.address);
+    await rpsCommit(signer3, "3", 2, signer3.address, signer3Crystals.slice(1));
+    salt = BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("3")));
+    commitment = ethers.utils.solidityKeccak256(["uint256", "uint8"], [salt, 2]);
+    await stakingv2.connect(signer3).rpsCommit(commitment, [signer3Crystals[0]]);
+
+    // Advance 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+    await network.provider.send("evm_mine");
+
+    // Everyone reveals.
+    await rpsReveal(signer1, "1", 0);
+    await rpsReveal(signer2, "2", 1);
+    await rpsReveal(signer3, "3", 2);
+
+    // Advance 3 days
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+    await network.provider.send("evm_mine");
+
+    // Signer1 has got the smallest team bonus
+    signer1beforeSpiralBits = await spiralbits.balanceOf(signer1.address);
+    await rps.connect(signer1).claim();
+    signer1afterSpiralBits = await spiralbits.balanceOf(signer1.address);
+    expect(signer1afterSpiralBits.sub(signer1beforeSpiralBits)).to.be.gt(Eth1M);
+
+    signer1Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer1.address));
+    signer1SymsAfter = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    // Only team 1 has lost sym
+    zip(signer1SymsBefore, signer1SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a + 1));
+
+    // Signer2 has not lost anything and not won anything
+    signer2beforeSpiralBits = await spiralbits.balanceOf(signer2.address);
+    await rps.connect(signer2).claim();
+    signer2afterSpiralBits = await spiralbits.balanceOf(signer2.address);
+    expect(signer2afterSpiralBits).to.be.equal(signer2beforeSpiralBits);
+
+    signer2Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer2.address));
+    signer2SymsAfter = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    zip(signer2SymsBefore, signer2SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
+
+    signer3beforeSpiralBits = await spiralbits.balanceOf(signer3.address);
+    // Reset for next round, but since signer3 hasn't claimed, it should implicitly claim
+    await rps.resetForNextRound(false);
+    signer3afterSpiralBits = await spiralbits.balanceOf(signer3.address);
+    expect(signer3afterSpiralBits.sub(signer3beforeSpiralBits)).to.be.equal(Eth1k.mul(100));
+
+    signer3Crystals.forEach(async (cid) => expect(await crystal.ownerOf(cid)).to.be.equals(signer3.address));
+    signer3SymsAfter = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
+    zip(signer3SymsBefore, signer3SymsAfter).forEach(([b, a]) => expect(b).to.be.equal(a));
   });
 });

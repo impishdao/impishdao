@@ -107,7 +107,31 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
     uint32[] calldata crystalIDs
   ) external nonReentrant timedTransitions atStage(Stages.Commit) {
     require(crystalIDs.length > 0, "NeedAtLeastOne");
-    require(players[player].crystalIDs.length == 0, "AlreadyPlaying");
+
+    bool alreadyPlaying = players[player].crystalIDs.length > 0;
+    if (!alreadyPlaying) {
+      // Create a new player
+      players[player] = PlayerInfo(
+        false,
+        false,
+        0,
+        uint16(crystalIDs.length),
+        commitment,
+        uint32(allPlayers.length),
+        crystalIDs
+      );
+      allPlayers.push(player);
+    } else {
+      // Update the existing player
+      PlayerInfo storage playerInfo = players[player];
+
+      // If you are adding, you need to use the same commitment (i.e, same password/team)
+      require(playerInfo.commitment == commitment, "UseSameCommitment");
+      playerInfo.numCrystals += uint16(crystalIDs.length);
+      for (uint256 i = 0; i < crystalIDs.length; i++) {
+        playerInfo.crystalIDs.push(crystalIDs[i]);
+      }
+    }
 
     // Make sure the user owns or has staked the Crystal
     uint32[] memory contractTokenIDs = new uint32[](crystalIDs.length);
@@ -125,17 +149,6 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
 
     // Stake all the Crystals, to start earning SPIRALBITS
     stakingv2.stakeNFTsForOwner(contractTokenIDs, address(this));
-
-    players[player] = PlayerInfo(
-      false,
-      false,
-      0,
-      uint16(crystalIDs.length),
-      commitment,
-      uint32(allPlayers.length),
-      crystalIDs
-    );
-    allPlayers.push(player);
   }
 
   // Reveal the commitment

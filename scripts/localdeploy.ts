@@ -101,6 +101,7 @@ async function main() {
 
   // Allow RPS to mint
   await spiralbits.addAllowedMinter(rps.address);
+  await crystal.setApprovalForAll(stakingv2.address, true);
 
   // Create 6 fully grown crystals
   await spiralbits.approve(crystal.address, Eth2B);
@@ -115,9 +116,17 @@ async function main() {
     await crystal.grow(crystalId, 70);
 
     if (i < 2) {
-      await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, crystalId);
+      if (i % 2 === 0) {
+        await stakingv2.stakeNFTsForOwner([crystalId + 4000000], signer2.address);
+      } else {
+        await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, crystalId);
+      }
     } else if (i < 5) {
-      await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer3.address, crystalId);
+      if (i % 2 === 0) {
+        await stakingv2.stakeNFTsForOwner([crystalId + 4000000], signer3.address);
+      } else {
+        await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer3.address, crystalId);
+      }
     }
   }
 
