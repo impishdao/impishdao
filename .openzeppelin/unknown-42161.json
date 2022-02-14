@@ -39,6 +39,11 @@
       "address": "0x2069cB988d5B17Bab70d73076d6F1a9757A4f963",
       "txHash": "0x89defbab65ae702904265139a377f4697b97dc55e6e956e0e31ce3c308593c55",
       "kind": "transparent"
+    },
+    {
+      "address": "0x7dB7f946eD638B055FE16aA53d3C25DC4B16bbBc",
+      "txHash": "0xc8a4a957b23708366f86335d975742de5fe2f8dc336d46b576e82738890c1cdb",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -584,6 +589,235 @@
           },
           "t_bool": {
             "label": "bool"
+          }
+        }
+      }
+    },
+    "289718cb69033b2471d889519618cc080b298bfabb5952ce71dccea75cbef73b": {
+      "address": "0xF44420ad4200032284dc9f63B0516a8956FA8816",
+      "txHash": "0x2b427dbdb7df3d15ec30d1188d00f28c4625a746bfa3a795f1a7b6622cd9126a",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "_status",
+            "type": "t_uint256",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "contract": "RPS",
+            "label": "stage",
+            "type": "t_enum(Stages)7620",
+            "src": "contracts/RPS.sol:22"
+          },
+          {
+            "contract": "RPS",
+            "label": "roundStartTime",
+            "type": "t_uint32",
+            "src": "contracts/RPS.sol:23"
+          },
+          {
+            "contract": "RPS",
+            "label": "crystals",
+            "type": "t_contract(ImpishCrystal)5985",
+            "src": "contracts/RPS.sol:47"
+          },
+          {
+            "contract": "RPS",
+            "label": "stakingv2",
+            "type": "t_contract(StakingV2)13431",
+            "src": "contracts/RPS.sol:48"
+          },
+          {
+            "contract": "RPS",
+            "label": "teams",
+            "type": "t_array(t_struct(TeamInfo)7705_storage)3_storage",
+            "src": "contracts/RPS.sol:59"
+          },
+          {
+            "contract": "RPS",
+            "label": "players",
+            "type": "t_mapping(t_address,t_struct(PlayerInfo)7726_storage)",
+            "src": "contracts/RPS.sol:75"
+          },
+          {
+            "contract": "RPS",
+            "label": "allPlayers",
+            "type": "t_array(t_address)dyn_storage",
+            "src": "contracts/RPS.sol:77"
+          },
+          {
+            "contract": "RPS",
+            "label": "smallestTeamBonus",
+            "type": "t_struct(SmallestTeamBonusInfo)7741_storage",
+            "src": "contracts/RPS.sol:84"
+          }
+        ],
+        "types": {
+          "t_enum(Stages)7620": {
+            "label": "enum RPS.Stages",
+            "members": [
+              "Commit",
+              "Reveal",
+              "Resolve",
+              "Claim",
+              "Shutdown"
+            ]
+          },
+          "t_uint32": {
+            "label": "uint32"
+          },
+          "t_contract(ImpishCrystal)5985": {
+            "label": "contract ImpishCrystal"
+          },
+          "t_contract(StakingV2)13431": {
+            "label": "contract StakingV2"
+          },
+          "t_array(t_struct(TeamInfo)7705_storage)3_storage": {
+            "label": "struct RPS.TeamInfo[3]"
+          },
+          "t_struct(TeamInfo)7705_storage": {
+            "label": "struct RPS.TeamInfo",
+            "members": [
+              {
+                "label": "totalScore",
+                "type": "t_uint96"
+              },
+              {
+                "label": "winningSpiralBits",
+                "type": "t_uint96"
+              },
+              {
+                "label": "symmetriesLost",
+                "type": "t_uint8"
+              },
+              {
+                "label": "numCrystals",
+                "type": "t_uint32"
+              }
+            ]
+          },
+          "t_uint96": {
+            "label": "uint96"
+          },
+          "t_uint8": {
+            "label": "uint8"
+          },
+          "t_mapping(t_address,t_struct(PlayerInfo)7726_storage)": {
+            "label": "mapping(address => struct RPS.PlayerInfo)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_struct(PlayerInfo)7726_storage": {
+            "label": "struct RPS.PlayerInfo",
+            "members": [
+              {
+                "label": "revealed",
+                "type": "t_bool"
+              },
+              {
+                "label": "claimed",
+                "type": "t_bool"
+              },
+              {
+                "label": "team",
+                "type": "t_uint8"
+              },
+              {
+                "label": "numCrystals",
+                "type": "t_uint16"
+              },
+              {
+                "label": "commitment",
+                "type": "t_bytes32"
+              },
+              {
+                "label": "allPlayersIndex",
+                "type": "t_uint32"
+              },
+              {
+                "label": "crystalIDs",
+                "type": "t_array(t_uint32)dyn_storage"
+              }
+            ]
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_uint16": {
+            "label": "uint16"
+          },
+          "t_bytes32": {
+            "label": "bytes32"
+          },
+          "t_array(t_uint32)dyn_storage": {
+            "label": "uint32[]"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]"
+          },
+          "t_struct(SmallestTeamBonusInfo)7741_storage": {
+            "label": "struct RPS.SmallestTeamBonusInfo",
+            "members": [
+              {
+                "label": "bonusInSpiralBits",
+                "type": "t_uint96"
+              },
+              {
+                "label": "teamSize",
+                "type": "t_uint32"
+              },
+              {
+                "label": "totalCrystalsInSmallestTeams",
+                "type": "t_uint32"
+              }
+            ]
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
           }
         }
       }

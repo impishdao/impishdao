@@ -32,7 +32,7 @@ async function main() {
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(rps);
 
-  console.log("RPS deployed to:", stakingv2.address);
+  console.log("RPS deployed to:", rps.address);
 }
 
 function saveFrontendFiles(rps: Contract) {
