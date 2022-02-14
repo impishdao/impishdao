@@ -805,6 +805,7 @@ export function RPSScreen(props: RPSProps) {
         )}
       </div>
 
+      <a id="faq"></a>
       <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
         <h1>FAQ</h1>
       </Row>
