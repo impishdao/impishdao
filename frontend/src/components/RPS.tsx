@@ -664,9 +664,9 @@ export function RPSScreen(props: RPSProps) {
                   const prevTeamStat = teamStats[(teamNum + 2) % 3];
 
                   const smallestTeamSize = Math.min(
-                    teamStat.numCrystals,
-                    prevTeamStat.numCrystals,
-                    nextTeamStat.numCrystals
+                    teamStat?.numCrystals,
+                    prevTeamStat?.numCrystals,
+                    nextTeamStat?.numCrystals
                   );
 
                   let winningString;

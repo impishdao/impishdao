@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./ImpishCrystal.sol";
 import "./StakingV2.sol";
@@ -11,7 +11,7 @@ import "./SpiralBits.sol";
 
 import "hardhat/console.sol";
 
-contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
+contract RPS is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
   enum Stages {
     Commit,
     Reveal,
@@ -86,7 +86,11 @@ contract RPS is IERC721Receiver, ReentrancyGuard, Ownable {
   //------------------
   // Functions
   //-------------------
-  constructor(address payable _stakingv2) {
+  function initialize(address payable _stakingv2) public initializer {
+    // Call super initializers
+    __Ownable_init();
+    __ReentrancyGuard_init();
+    
     stakingv2 = StakingV2(_stakingv2);
     crystals = ImpishCrystal(stakingv2.crystals());
 

@@ -8,7 +8,7 @@ import type { StakingV2 } from "../typechain/StakingV2";
 import type { RPS } from "../typechain/RPS";
 
 import { BigNumber } from "ethers";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -67,14 +67,14 @@ describe("RPS", function () {
     // Start the mints
     await impishSpiral.startMints();
 
-    const RPS = await ethers.getContractFactory("RPS");
-    const rps = await RPS.deploy(stakingv2.address);
+    const RPSF = await ethers.getContractFactory("RPS");
+    const rps = await upgrades.deployProxy(RPSF, [stakingv2.address]);
     await rps.deployed();
 
     // Allow RPS to mint
     await spiralbits.addAllowedMinter(rps.address);
 
-    return { impishSpiral, spiralbits, crystal, stakingv2, rps };
+    return { impishSpiral, spiralbits, crystal, stakingv2, rps: rps as RPS };
   }
 
   it("Commits And Verify Simple", async function () {
@@ -278,15 +278,15 @@ describe("RPS", function () {
       }
     };
 
-    let signer1Crystals = await mintCrystals(1, signer1.address);
+    const signer1Crystals = await mintCrystals(1, signer1.address);
     let signer1SymsBefore = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
     await rpsCommit(signer1, "1", 0, signer1.address, signer1Crystals);
 
-    let signer2Crystals = await mintCrystals(2, signer2.address);
+    const signer2Crystals = await mintCrystals(2, signer2.address);
     let signer2SymsBefore = await Promise.all(signer2Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
     await rpsCommit(signer2, "2", 1, signer2.address, signer2Crystals);
 
-    let signer3Crystals = await mintCrystals(3, signer3.address);
+    const signer3Crystals = await mintCrystals(3, signer3.address);
     let signer3SymsBefore = await Promise.all(signer3Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));
     await rpsCommit(signer3, "3", 2, signer3.address, signer3Crystals);
 
@@ -403,7 +403,7 @@ describe("RPS", function () {
     // After it's done, reset for next round
     await rps.resetForNextRound(false);
 
-    //------
+    // ------
     // Round3 , reveal but don't claim.
     await requireAtLeast5Sym(signer1Crystals, signer1);
     signer1SymsBefore = await Promise.all(signer1Crystals.map(async (cid) => (await crystal.crystals(cid)).sym));

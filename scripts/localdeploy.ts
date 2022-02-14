@@ -94,7 +94,7 @@ async function main() {
   await impishSpiral.startMints();
 
   const RPS = await ethers.getContractFactory("RPS");
-  const rps = await RPS.deploy(stakingv2.address);
+  const rps = await upgrades.deployProxy(RPS, [stakingv2.address]);
   await rps.deployed();
 
   stakingv2.setRPS(rps.address);
