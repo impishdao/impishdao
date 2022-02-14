@@ -515,8 +515,6 @@ export function RPSScreen(props: RPSProps) {
       >
         <h1 className="mb-5">Chapter 4: Rock, Paper, Scissors</h1>
 
-        <h5>Current Stage {gameStage} </h5>
-
         {props.selectedAddress && (
           <>
             {gameStage === Stages.Commit && (
@@ -553,7 +551,7 @@ export function RPSScreen(props: RPSProps) {
                             onChange={(e) => setPassword(e.currentTarget.value)}
                           />
                         </InputGroup>
-                        <div>
+                        <div style={{fontSize: "0.9rem"}}>
                           Type in a password to hide your commitment. You will need this password to reveal the team you
                           joined in 3 days.
                         </div>
@@ -573,7 +571,7 @@ export function RPSScreen(props: RPSProps) {
                       </div>
 
                       <div className="mt-4" style={{ textAlign: "left", marginLeft: "15%" }}>
-                        <div>Step 3: Select fully grown crystals</div>
+                        <div>Step 3: Select fully grown crystals to play with</div>
                       </div>
                       <CrystalListDisplay
                         title=""
@@ -806,6 +804,91 @@ export function RPSScreen(props: RPSProps) {
           </div>
         )}
       </div>
+
+      <Row className="mb-5" style={{ textAlign: "center", backgroundColor: "#222", padding: "20px" }}>
+        <h1>FAQ</h1>
+      </Row>
+      <Row className="justify-content-md-center">
+        <Col md={8}>
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What is Rock, Paper, Scissors?</span>
+            <br />
+            Rock, Paper, Scissors is a mini-game from ImpishDAO that is played with Impish Crystal NFTs. The game is played in 3 phases: 
+            <ul>
+              <li>Join Team - 3 days - Secretly join a team</li>
+              <li>Reveal - 3 days - Reveal which team you joined</li>
+              <li>Claim - Claim your winnings and Crystals</li>
+            </ul>
+            The way each phase works is: 
+            <ul>
+              <li>You secretly join a team - Team Rock, Team Paper or Team Scissors with your Impish Crystals, but don't disclose to everyone what team you've joined yet</li>
+              <li>After the joining period ends, everyone reveals which team they joined</li>
+              <li>Each time is awarded points based on the Number of Crystals joined. Higher symmetry crystals earn more points for their team</li>
+              <li>Team Paper wins against Team Scissors if Team Paper has more points than Team Scissors</li>
+              <li>If team Scissors looses, all the Crystals in Team Scissors lose one symmetry each, and all the Crystals in Team Paper win the SpiralBits lost by the losing team.</li>
+              <li>Similarly for Team Scissors vs Team Rock and Team Rock vs Team Paper</li>
+              <li>Additionally, the team with the smallest number of crystals wins an extra 1M SPIRALBITS in bonus, which are awarded equally to all Crystals in the smallest team</li>
+            </ul>
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How do I join a team?</span>
+            <br />
+            When the game starts, you have 3 days to join any team you like. To play the game, you need at least 1 Impish Crystal that is fully grown and has at least 5 symmetries. You can play with any number of crystals. 
+            <br/><br/>
+            To join a team, you need to pick a commitment password. This commitment password is used to hide which team you are joining. You will need to remember this password 3 days later, when you reveal what team you joined. 
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How do I reveal my team?</span>
+            <br />
+            After the joining period ends (which lasts 3 days), you have 3 days to reveal which team you joined. You will need the commitment password you used to join the team. As people reveal which team they joined, the teams accrue points based on the number of crystals and symmetries the crystals have. 
+            <br/><br/>
+            If you fail to reveal which team you joined within the 3-day period, your crystal will lose 2 Symmetries and will be returned to you. 
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How do I claim my winnings?</span>
+            <br />
+            After the reveal period is done, the game "resolves" and winners and losers are declared. The winnning Crystals get SPIRALBITS, the losing Crystals lose 1 Symmetry each, and the smallest team is awarded the 1M SPIRALBITS bonus. 
+            <br/><br/>
+            You will be able to claim your winnings and Crystals after the end of the 3-day reveal period. The prizes will automatically be sent to your account at the end of the round if you haven't already claimed them.
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>How many rounds will there be?</span>
+            <br />
+            Each round of the game lasts 7 days. 3 days to join a team, 3 days to reveal which team and 1 additional day to claim your prizes. A new round of the game begins every Monday, and we'll play at least 4 rounds of the game over 4 weeks. 
+            <br/><br/>
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What if I change my mind about which team to join?</span>
+            <br />
+            Unfortunately, you can't change your mind after you join a team. You are committed to the team for the duration of the round, and your crystals are locked to the team. 
+            <br/><br/>
+            Of course, when the round ends and you get your Crystals back, you can join a different team for the next round :)
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>Can I add additional crystals after joining a team?</span>
+            <br />
+            No, you can't add or remove Crystals after you've joined a team. You are locked into the team with your Crystals for the duration of the round. 
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>Can I join multiple teams?</span>
+            <br />
+            No, each address can join only 1 team. You can, however, send your Crystals to multiple addresses and play as different teams across different addresses.
+          </div>
+
+          <div className="mb-3">
+            <span style={{ fontWeight: "bold", color: "#ffd454" }}>What if I forget my commitment password?</span>
+            <br />
+            The browser will attempt to remember your password in the local cache and autofill it when it comes time to reveal your team. However, if for some reason that doesn't work and you forget your password, your Crystals will lose 2 Symmetries each and will be returned back to you at the end of the reveal phase.
+          </div>
+        </Col>
+      </Row>
     </>
   );
 }
