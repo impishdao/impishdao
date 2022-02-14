@@ -583,8 +583,8 @@ export function RPSScreen(props: RPSProps) {
                         nothingMessage={
                           <div>
                             No Fully Grown Crystals.{" "}
-                            <Link to="/crystals" style={{ color: "#ffd454" }}>
-                              Mint some to play
+                            <Link to="/spirals" style={{ color: "#ffd454" }}>
+                              Mint a Mega Set to get a fully grown Crystal and start playing
                             </Link>
                           </div>
                         }
