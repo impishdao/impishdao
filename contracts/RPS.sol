@@ -90,7 +90,7 @@ contract RPS is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, OwnableU
     // Call super initializers
     __Ownable_init();
     __ReentrancyGuard_init();
-    
+
     stakingv2 = StakingV2(_stakingv2);
     crystals = ImpishCrystal(stakingv2.crystals());
 
