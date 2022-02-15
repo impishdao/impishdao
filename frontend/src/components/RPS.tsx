@@ -597,7 +597,7 @@ export function RPSScreen(props: RPSProps) {
                         refreshCounter={refreshCounter}
                         nothingMessage={
                           <div>
-                            No Fully Grown Crystals.{" "}
+                            No Fully Grown Crystals.<br/>
                             <Link to="/spirals" style={{ color: "#ffd454" }}>
                               Mint a Mega Set to get a fully grown Crystal and start playing
                             </Link>
