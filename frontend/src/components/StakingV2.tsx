@@ -295,7 +295,9 @@ export function SpiralStaking(props: SpiralStakingProps) {
     // Get staked wallet
     retryTillSucceed(async () => {
       if (props.contracts && props.selectedAddress) {
-        const nftWallet = (await props.contracts.stakingv2.walletOfOwner(props.selectedAddress)) as Array<BigNumber>;
+        const r = await fetch(`/stakingv2api/wallet/${props.selectedAddress}`);
+        const data = await r.json();
+        const nftWallet = data.map((d: any) => BigNumber.from(d)) as Array<BigNumber>;
 
         // Split up into RWs, spirals and crystals
         const rwNFTIDs: Array<BigNumber> = [];
@@ -365,7 +367,11 @@ export function SpiralStaking(props: SpiralStakingProps) {
         setSpiralBitsLeftAfterGrowing(pendingRewards);
         setGrowingCrystalNFTCards(growingCrystals);
         setStakedNFTCards(stakedNFTCards);
+      }
+    });
 
+    retryTillSucceed(async () => {
+      if (props.contracts && props.selectedAddress) {
         // Get staked Spiralbits and Impish
         const stakedTokens = await props.contracts.stakingv2.stakedNFTsAndTokens(props.selectedAddress);
         setStakedSpiralBits(BigNumber.from(stakedTokens["spiralBitsStaked"]));
