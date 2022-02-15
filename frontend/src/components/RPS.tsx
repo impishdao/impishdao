@@ -542,16 +542,14 @@ export function RPSScreen(props: RPSProps) {
                     }}
                   >
                     <h2 style={{ color: "#ffd454" }}>Phase 1: Commit to a Team</h2>
-                    {timeRemaining > 0 && (
-                      <div>{secondsToDhms(timeRemaining, false)} to join this round.</div>
-                    )}
+                    {timeRemaining > 0 && <div>{secondsToDhms(timeRemaining, false)} to join this round</div>}
                   </div>
 
                   {revealedPlayerInfo && revealedPlayerInfo.numCrystals > 0 && (
                     <div className="mb-4" style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ textAlign: "center" }}>
-                        You have already joined team {Teams[revealDetails?.team || 0]}. Please wait for 3 days before
-                        you can reveal your team and see how you did.
+                        You have already joined team {Teams[revealDetails?.team || 0]}. Please wait for{" "}
+                        {secondsToDhms(timeRemaining, false)} before you can reveal your team and see how you did
                       </div>
                     </div>
                   )}
@@ -570,7 +568,7 @@ export function RPSScreen(props: RPSProps) {
                         </InputGroup>
                         <div style={{ fontSize: "0.9rem" }}>
                           Type in a password to hide your commitment. You will need this password to reveal the team you
-                          joined in 3 days.
+                          joined
                         </div>
                       </div>
 
