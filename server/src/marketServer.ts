@@ -2,12 +2,9 @@
 import contractAddresses from "./contracts/contract-addresses.json";
 import SpiralMarketArtifact from "./contracts/spiralmarket.json";
 import { abi as QuoterABI } from "@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json";
+import { BigNumber, ethers } from "ethers";
 
 import express from "express";
-import fs from "fs";
-
-import { BigNumber, ethers } from "ethers";
-import lineReader from "line-reader";
 
 type SpiralForSale = {
   tokenId: BigNumber;
@@ -19,24 +16,6 @@ const spiralsForSale = new Map<number, SpiralForSale>();
 
 export function setupSpiralMarket(app: express.Express, provider: ethers.providers.JsonRpcProvider) {
   const _spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarketArtifact.abi, provider);
-
-  const processMarketEvent = (eventType: number, tokenId: BigNumber, address: string, price: BigNumber) => {
-    switch (eventType) {
-      case 1: {
-        spiralsForSale.set(tokenId.toNumber(), { tokenId, owner: address, price });
-        break;
-      }
-      case 2: {
-        spiralsForSale.delete(tokenId.toNumber());
-        break;
-      }
-      case 3: {
-        // Was sold, remove it from the forSale list
-        spiralsForSale.delete(tokenId.toNumber());
-        break;
-      }
-    }
-  };
 
   app.get("/marketapi/forsale", async (req, res) => {
     const j = Array.from(spiralsForSale.values());
@@ -82,6 +61,7 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
     const WETH9 = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
     const IMPISH = "0x36F6d831210109719D15abAEe45B327E9b43D6C6";
     const SPIRALBITS = "0x650A9960673688Ba924615a2D28c39A8E015fB19";
+    const MAGIC = "0x539bdE0d7Dbd336b79148AA742883198BBF60342";
     const POOL_FEE = 10000;
 
     const quoterContract = new ethers.Contract(quoterAddress, QuoterABI, provider);
@@ -112,10 +92,19 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
       ethers.utils.parseEther("100")
     );
 
+    const quotedAmountEthper10kMAGIC = await quoterContract.callStatic.quoteExactInputSingle(
+      MAGIC,
+      WETH9,
+      POOL_FEE,
+      ethers.utils.parseEther("10000"),
+      0
+    );
+
     res.send({
       ETHper100Impish: quotedAmountEthper100Impish,
       SPIRALBITSper100Impish: quotedAmountSpiralBits,
       ETHper1MSPIRALBITS: quotedAmountEthper1MSpiralbits,
+      ETHper10kMagic: quotedAmountEthper10kMAGIC,
     });
   });
 }
