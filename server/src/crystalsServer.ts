@@ -7,6 +7,7 @@ import SpiralStakingArtifact from "./contracts/spiralstaking.json";
 import ImpishSpiralArtifact from "./contracts/impishspiral.json";
 import StakingV2Artifact from "./contracts/stakingv2.json";
 import contractAddresses from "./contracts/contract-addresses.json";
+// eslint-disable-next-line node/no-missing-import
 import { crystal_image } from "./serverCrystalRenderer";
 
 export function setupCrystals(app: express.Express, provider: ethers.providers.JsonRpcProvider) {
@@ -102,39 +103,33 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
     owner: string;
     indirectOwner: string;
   };
-  const crystalMetadataCache = new Map<number, CrystalInfo>();
+
   app.get("/crystalapi/crystal/metadata/:id", async (req, res) => {
     try {
       const id = BigNumber.from(req.params.id);
 
-      let attributes;
-      if (crystalMetadataCache.has(id.toNumber())) {
-        attributes = crystalMetadataCache.get(id.toNumber());
-      } else {
-        const crystalInfo: CrystalInfo = await _crystal.crystals(id);
-        const owner = await _crystal.ownerOf(id);
+      const crystalInfo: CrystalInfo = await _crystal.crystals(id);
+      const owner = await _crystal.ownerOf(id);
 
-        let indirectOwner;
-        if (owner === contractAddresses.StakingV2) {
-          // Get the indirect owner
-          indirectOwner = (await _v2staking.stakedTokenOwners(id.add(3000000))).owner as string;
-          console.log(`indirect owner ${indirectOwner} of type ${typeof indirectOwner}`);
-          if (BigNumber.from(indirectOwner).eq(0)) {
-            indirectOwner = (await _v2staking.stakedTokenOwners(id.add(4000000))).owner as string;
-          }
+      let indirectOwner;
+      if (owner === contractAddresses.StakingV2) {
+        // Get the indirect owner
+        indirectOwner = (await _v2staking.stakedTokenOwners(id.add(3000000))).owner as string;
+        if (BigNumber.from(indirectOwner).eq(0)) {
+          indirectOwner = (await _v2staking.stakedTokenOwners(id.add(4000000))).owner as string;
         }
-
-        attributes = {
-          size: crystalInfo.size,
-          generation: crystalInfo.generation,
-          sym: crystalInfo.sym,
-          seed: BigNumber.from(crystalInfo.seed),
-          spiralBitsStored: crystalInfo.spiralBitsStored,
-          owner,
-          indirectOwner,
-        };
-        crystalMetadataCache.set(id.toNumber(), attributes);
       }
+
+      const attributes = {
+        size: crystalInfo.size,
+        generation: crystalInfo.generation,
+        sym: crystalInfo.sym,
+        seed: BigNumber.from(crystalInfo.seed),
+        spiralBitsStored: crystalInfo.spiralBitsStored,
+        owner,
+        indirectOwner,
+      };
+
       const r = {
         image: `https://impishdao.com/crystalapi/crystal/image/${id.toString()}.png`,
         description: "ImpishDAO Crystals",
@@ -167,19 +162,5 @@ export function setupCrystals(app: express.Express, provider: ethers.providers.J
       console.log(err);
       res.status(500).send("Something went wrong generating metadata");
     }
-  });
-
-  // Event listner
-  _crystal.on(
-    _crystal.filters.CrystalChangeEvent(),
-    async (tokenId: number, eventType: number, size: number, event: any) => {
-      console.log(`New Crystal Event ${tokenId} type: ${eventType} size: ${size}`);
-      crystalMetadataCache.delete(tokenId);
-    }
-  );
-
-  _crystal.on(_crystal.filters.Transfer(), async (from: string, to: string, tokenId: BigNumber, e: any) => {
-    console.log(`Crystal transfered: ${from} -> ${to} for # ${tokenId.toString()}`);
-    crystalMetadataCache.delete(tokenId.toNumber());
   });
 }

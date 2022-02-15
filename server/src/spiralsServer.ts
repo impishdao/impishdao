@@ -11,10 +11,7 @@ import StakingV2Artifact from "./contracts/stakingv2.json";
 
 import contractAddresses from "./contracts/contract-addresses.json";
 
-export function setupSpirals(
-  app: express.Express,
-  provider: ethers.providers.JsonRpcProvider,
-) {
+export function setupSpirals(app: express.Express, provider: ethers.providers.JsonRpcProvider) {
   const _impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiralArtifact.abi, provider);
   const _spiralstaking = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStakingArtifact.abi, provider);
   const _v2staking = new ethers.Contract(contractAddresses.StakingV2, StakingV2Artifact.abi, provider);

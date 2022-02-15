@@ -38,7 +38,6 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
     }
   };
 
-
   app.get("/marketapi/forsale", async (req, res) => {
     const j = Array.from(spiralsForSale.values());
 
