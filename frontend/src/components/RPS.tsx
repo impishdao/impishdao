@@ -550,7 +550,7 @@ export function RPSScreen(props: RPSProps) {
                   {revealedPlayerInfo && revealedPlayerInfo.numCrystals > 0 && (
                     <div className="mb-4" style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ textAlign: "center" }}>
-                        You have already joined team {Teams[revealDetails?.team || 0]}.<br/> Please wait for{" "}
+                        You have already joined team {Teams[revealDetails?.team || 0]}.<br /> Please wait for{" "}
                         {secondsToDhms(timeRemaining, false)} before you can reveal your team and see how you did
                       </div>
                     </div>
