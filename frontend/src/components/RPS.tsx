@@ -26,7 +26,6 @@ import {
   getNFTCardInfo,
   getRPSItemsFromStorage,
   MultiTxItem,
-  RPSStorageItem,
   saveToLocalStorage,
 } from "./walletutils";
 
@@ -229,6 +228,10 @@ export function RPSScreen(props: RPSProps) {
 
   const [crystalApprovalNeeded, setCrystalApprovalNeeded] = useState(false);
   const [password, setPassword] = useState("");
+
+  const [revealPassword, setRevealPassword] = useState('');
+  const [revealJoinedTeam, setRevealJoinedTeam] = useState(0);
+
   const [roundStartTime, setRoundStartTime] = useState(0);
   const [gameStage, setGameStage] = useState<Stages>();
   const [team, setTeam] = useState(Teams.Rock);
@@ -384,9 +387,13 @@ export function RPSScreen(props: RPSProps) {
   // Load any passwords from localstorage
   useEffect(() => {
     if (props.selectedAddress) {
-      const items = getRPSItemsFromStorage(props.selectedAddress);
+      const items = getRPSItemsFromStorage(props.selectedAddress).find((i) => i.startTime === roundStartTime);
+      if (items) {
+        setRevealPassword(items?.password);
+        setRevealJoinedTeam(items?.team);
+      }
     }
-  }, [props.selectedAddress, refreshCounter]);
+  }, [props.selectedAddress, refreshCounter, roundStartTime]);
 
   const getSalt = (pass: string): BigNumber => {
     const saltedPassword = `${pass}/${roundStartTime}`;
@@ -419,21 +426,20 @@ export function RPSScreen(props: RPSProps) {
   };
 
   const revealTeam = async () => {
-    if (props.contracts && props.selectedAddress && revealDetails) {
+    if (props.contracts && props.selectedAddress) {
       const txns: MultiTxItem[] = [];
 
       txns.push({
-        title: `Reveal Team ${Teams[revealDetails?.team]}`,
-        tx: () =>
-          revealDetails ? props.contracts?.rps.revealCommitment(revealDetails.salt, revealDetails.team) : undefined,
+        title: `Reveal Team ${Teams[revealJoinedTeam]}`,
+        tx: () => props.contracts?.rps.revealCommitment(getSalt(revealPassword), revealJoinedTeam),
       });
 
       const success = await props.executeMultiTx(txns);
       if (success) {
         props.showModal(
-          `Revealed team ${Teams[revealDetails.team]}`,
+          `Revealed team ${Teams[revealJoinedTeam]}`,
           <div>
-            You have revealed your team to be Team {Teams[revealDetails.team]}.
+            You have revealed your team to be Team {Teams[revealJoinedTeam]}.
             <br />
             <br />
             You can now watch the team scores, and see if you win. Claim your winnings after 3 days.
@@ -517,11 +523,6 @@ export function RPSScreen(props: RPSProps) {
 
   const allCrystals = getNFTCardInfo([], [], [], walletCrystals).concat(stakedNFTCards || []);
 
-  let revealDetails: RPSStorageItem | undefined;
-  if (props.selectedAddress) {
-    revealDetails = getRPSItemsFromStorage(props.selectedAddress).find((i) => i.startTime === roundStartTime);
-  }
-
   return (
     <>
       <Navigation {...props} />
@@ -550,7 +551,7 @@ export function RPSScreen(props: RPSProps) {
                   {revealedPlayerInfo && revealedPlayerInfo.numCrystals > 0 && (
                     <div className="mb-4" style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ textAlign: "center" }}>
-                        You have already joined team {Teams[revealDetails?.team || 0]}.<br /> Please wait for{" "}
+                        You have already joined team {Teams[revealJoinedTeam]}.<br /> Please wait for{" "}
                         {secondsToDhms(timeRemaining, false)} before you can reveal your team and see how you did
                       </div>
                     </div>
@@ -634,8 +635,8 @@ export function RPSScreen(props: RPSProps) {
                           <InputGroup.Text>Commitment Password</InputGroup.Text>
                           <FormControl
                             type="text"
-                            value={revealDetails?.password}
-                            onChange={(e) => setPassword(e.currentTarget.value)}
+                            value={revealPassword}
+                            onChange={(e) => setRevealPassword(e.currentTarget.value)}
                           />
                         </InputGroup>
                       </div>
@@ -644,8 +645,8 @@ export function RPSScreen(props: RPSProps) {
                         <div>Step 2: Reveal your team</div>
                         <FloatingLabel label="Joined Team" style={{ color: "black", width: "200px" }}>
                           <Form.Select
-                            value={revealDetails?.team}
-                            onChange={(e) => setTeam(parseInt(e.currentTarget.value))}
+                            value={revealJoinedTeam}
+                            onChange={(e) => setRevealJoinedTeam(parseInt(e.currentTarget.value))}
                           >
                             <option value={Teams.Rock}>Rock</option>
                             <option value={Teams.Paper}>Paper</option>
