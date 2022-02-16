@@ -685,8 +685,8 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
       require(stakedTokenOwners[contractTokenId].owner == msg.sender, "DontOwnNFT");
 
       _removeTokenFromOwnerEnumeration(msg.sender, contractTokenId);
+      stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked -= 1;
     }
-    stakedNFTsAndTokens[msg.sender].numFullCrystalsStaked -= uint16(crystalIDs.length);
 
     // Commit it for the player
     IRPS(rps).commit(commitment, msg.sender, crystalIDs);
