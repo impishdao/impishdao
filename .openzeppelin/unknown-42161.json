@@ -821,6 +821,282 @@
           }
         }
       }
+    },
+    "002777039f4e08b2e09a9f92ae13f254abb6cadad16c5cfb45442e73df631f9d": {
+      "address": "0x74b4827DBA3094A0561276d203247e89c157aAf4",
+      "txHash": "0x9a17aa8869469be3a12c88de358d64af9103899eef54e4d5b65e15844b4f72c6",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "_status",
+            "type": "t_uint256",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "SPIRALBITS_STAKING_EMISSION_PER_SEC",
+            "type": "t_uint256",
+            "src": "contracts/StakingV2.sol:43"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "IMPISH_STAKING_EMISSION_PER_SEC",
+            "type": "t_uint256",
+            "src": "contracts/StakingV2.sol:46"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "SPIRALBITS_PER_SECOND_PER_SPIRAL",
+            "type": "t_uint256",
+            "src": "contracts/StakingV2.sol:50"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "SPIRALBITS_PER_SECOND_PER_RW",
+            "type": "t_uint256",
+            "src": "contracts/StakingV2.sol:54"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "SPIRALBITS_PER_SECOND_PER_CRYSTAL",
+            "type": "t_uint256",
+            "src": "contracts/StakingV2.sol:58"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "randomWalkNFT",
+            "type": "t_contract(IERC721)2421",
+            "src": "contracts/StakingV2.sol:61"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "impishspiral",
+            "type": "t_contract(ImpishSpiral)7439",
+            "src": "contracts/StakingV2.sol:62"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "crystals",
+            "type": "t_contract(ImpishCrystal)5985",
+            "src": "contracts/StakingV2.sol:63"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "spiralbits",
+            "type": "t_contract(SpiralBits)10249",
+            "src": "contracts/StakingV2.sol:66"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "impish",
+            "type": "t_contract(IERC20)1370",
+            "src": "contracts/StakingV2.sol:69"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "epochs",
+            "type": "t_array(t_struct(RewardEpoch)11415_storage)dyn_storage",
+            "src": "contracts/StakingV2.sol:76"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "lastEpochTime",
+            "type": "t_uint32",
+            "src": "contracts/StakingV2.sol:77"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "stakedTokenOwners",
+            "type": "t_mapping(t_uint256,t_struct(TokenIdInfo)11447_storage)",
+            "src": "contracts/StakingV2.sol:97"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "stakedNFTsAndTokens",
+            "type": "t_mapping(t_address,t_struct(StakedNFTAndTokens)11442_storage)",
+            "src": "contracts/StakingV2.sol:100"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "crystalTargetSyms",
+            "type": "t_mapping(t_uint32,t_uint8)",
+            "src": "contracts/StakingV2.sol:102"
+          },
+          {
+            "contract": "StakingV2",
+            "label": "rps",
+            "type": "t_address",
+            "src": "contracts/StakingV2.sol:106"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_contract(IERC721)2421": {
+            "label": "contract IERC721"
+          },
+          "t_contract(ImpishSpiral)7439": {
+            "label": "contract ImpishSpiral"
+          },
+          "t_contract(ImpishCrystal)5985": {
+            "label": "contract ImpishCrystal"
+          },
+          "t_contract(SpiralBits)10249": {
+            "label": "contract SpiralBits"
+          },
+          "t_contract(IERC20)1370": {
+            "label": "contract IERC20"
+          },
+          "t_array(t_struct(RewardEpoch)11415_storage)dyn_storage": {
+            "label": "struct StakingV2.RewardEpoch[]"
+          },
+          "t_struct(RewardEpoch)11415_storage": {
+            "label": "struct StakingV2.RewardEpoch",
+            "members": [
+              {
+                "label": "epochDurationSec",
+                "type": "t_uint32"
+              },
+              {
+                "label": "totalSpiralBitsStaked",
+                "type": "t_uint96"
+              },
+              {
+                "label": "totalImpishStaked",
+                "type": "t_uint96"
+              }
+            ]
+          },
+          "t_uint32": {
+            "label": "uint32"
+          },
+          "t_uint96": {
+            "label": "uint96"
+          },
+          "t_mapping(t_uint256,t_struct(TokenIdInfo)11447_storage)": {
+            "label": "mapping(uint256 => struct StakingV2.TokenIdInfo)"
+          },
+          "t_struct(TokenIdInfo)11447_storage": {
+            "label": "struct StakingV2.TokenIdInfo",
+            "members": [
+              {
+                "label": "ownedTokensIndex",
+                "type": "t_uint256"
+              },
+              {
+                "label": "owner",
+                "type": "t_address"
+              }
+            ]
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_mapping(t_address,t_struct(StakedNFTAndTokens)11442_storage)": {
+            "label": "mapping(address => struct StakingV2.StakedNFTAndTokens)"
+          },
+          "t_struct(StakedNFTAndTokens)11442_storage": {
+            "label": "struct StakingV2.StakedNFTAndTokens",
+            "members": [
+              {
+                "label": "numRWStaked",
+                "type": "t_uint16"
+              },
+              {
+                "label": "numSpiralsStaked",
+                "type": "t_uint16"
+              },
+              {
+                "label": "numGrowingCrystalsStaked",
+                "type": "t_uint16"
+              },
+              {
+                "label": "numFullCrystalsStaked",
+                "type": "t_uint16"
+              },
+              {
+                "label": "lastClaimEpoch",
+                "type": "t_uint32"
+              },
+              {
+                "label": "spiralBitsStaked",
+                "type": "t_uint96"
+              },
+              {
+                "label": "impishStaked",
+                "type": "t_uint96"
+              },
+              {
+                "label": "claimedSpiralBits",
+                "type": "t_uint96"
+              },
+              {
+                "label": "ownedTokens",
+                "type": "t_mapping(t_uint256,t_uint256)"
+              }
+            ]
+          },
+          "t_uint16": {
+            "label": "uint16"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)"
+          },
+          "t_mapping(t_uint32,t_uint8)": {
+            "label": "mapping(uint32 => uint8)"
+          },
+          "t_uint8": {
+            "label": "uint8"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
     }
   }
 }
