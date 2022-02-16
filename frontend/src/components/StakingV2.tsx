@@ -299,30 +299,37 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const data = await r.json();
         const nftWallet = data.map((d: any) => BigNumber.from(d)) as Array<BigNumber>;
 
+        console.log(nftWallet.map((b) => b.toString()));
+
+        console.log(1);
         // Split up into RWs, spirals and crystals
         const rwNFTIDs: Array<BigNumber> = [];
         const spiralsNFTIDs: Array<BigNumber> = [];
         const crystalNFTIDs: Array<BigNumber> = [];
 
         nftWallet.forEach((contractTokenId) => {
-          const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
-          switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
-            case "RandomWalkNFT": {
-              rwNFTIDs.push(tokenId);
-              break;
-            }
-            case "Spiral": {
-              spiralsNFTIDs.push(tokenId);
-              break;
-            }
-            case "GrowingCrystal":
-            case "Crystal": {
-              crystalNFTIDs.push(tokenId);
-              break;
+          console.log("Doing for ", contractTokenId.toString());
+          if (contractTokenId.gt(0)) {
+            const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
+            switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
+              case "RandomWalkNFT": {
+                rwNFTIDs.push(tokenId);
+                break;
+              }
+              case "Spiral": {
+                spiralsNFTIDs.push(tokenId);
+                break;
+              }
+              case "GrowingCrystal":
+              case "Crystal": {
+                crystalNFTIDs.push(tokenId);
+                break;
+              }
             }
           }
         });
 
+        console.log(2);
         // Get all the metadata for the spirals
         let stakedNFTCards = getNFTCardInfo(
           nftWallet,
@@ -331,6 +338,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
           await getMetadataForCrystalTokenIds(crystalNFTIDs)
         );
 
+        console.log(3);
         // Get pending rewards
         let pendingRewards = await props.contracts.stakingv2.pendingRewards(props.selectedAddress);
         console.log(`Pending Rewards ${ethers.utils.formatEther(pendingRewards)}`);
@@ -340,6 +348,7 @@ export function SpiralStaking(props: SpiralStakingProps) {
         let growingCrystals = stakedNFTCards.filter((c) => c.getNFTtype() === "GrowingCrystal");
         stakedNFTCards = stakedNFTCards.filter((c) => c.getNFTtype() !== "GrowingCrystal");
 
+        console.log(4);
         // allocate the pending rewards to the growing crystals to make them grow.
         growingCrystals = growingCrystals.map((gc) => {
           const crystalInfo = gc.metadata as CrystalInfo;

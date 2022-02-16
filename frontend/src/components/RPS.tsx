@@ -285,20 +285,22 @@ export function RPSScreen(props: RPSProps) {
         const crystalNFTIDs: Array<BigNumber> = [];
 
         nftWallet.forEach((contractTokenId) => {
-          const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
-          switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
-            case "RandomWalkNFT": {
-              rwNFTIDs.push(tokenId);
-              break;
-            }
-            case "Spiral": {
-              spiralsNFTIDs.push(tokenId);
-              break;
-            }
-            case "GrowingCrystal":
-            case "Crystal": {
-              crystalNFTIDs.push(tokenId);
-              break;
+          if (contractTokenId.gt(0)) {
+            const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
+            switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
+              case "RandomWalkNFT": {
+                rwNFTIDs.push(tokenId);
+                break;
+              }
+              case "Spiral": {
+                spiralsNFTIDs.push(tokenId);
+                break;
+              }
+              case "GrowingCrystal":
+              case "Crystal": {
+                crystalNFTIDs.push(tokenId);
+                break;
+              }
             }
           }
         });
@@ -548,7 +550,7 @@ export function RPSScreen(props: RPSProps) {
                   {revealedPlayerInfo && revealedPlayerInfo.numCrystals > 0 && (
                     <div className="mb-4" style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ textAlign: "center" }}>
-                        You have already joined team {Teams[revealDetails?.team || 0]}. Please wait for{" "}
+                        You have already joined team {Teams[revealDetails?.team || 0]}.<br/> Please wait for{" "}
                         {secondsToDhms(timeRemaining, false)} before you can reveal your team and see how you did
                       </div>
                     </div>
