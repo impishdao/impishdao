@@ -41,70 +41,76 @@ async function main() {
   const ImpishCrystal = await ethers.getContractFactory("ImpishCrystal");
   const StakingV2 = await ethers.getContractFactory("StakingV2");
   const BuyWithEther = await ethers.getContractFactory("BuyWithEther");
+  const RPS = await ethers.getContractFactory("RPS");
 
-  // const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
-  // const impish = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAO.interface, signer);
-  // const spiralbits = new ethers.Contract(contractAddresses.SpiralBits, SpiralBits.interface, signer);
-  // const impishspiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiral.interface, signer);
-  // const spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarket.interface, signer);
-  // const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
-  // const rwnftstaking = new ethers.Contract(contractAddresses.RWNFTStaking, RWNFTStaking.interface, signer);
-  // const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
-  // const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, signer);
+  const rwnft = new ethers.Contract(contractAddresses.RandomWalkNFT, RandomWalkNFT.interface, signer);
+  const impish = new ethers.Contract(contractAddresses.ImpishDAO, ImpishDAO.interface, signer);
+  const spiralbits = new ethers.Contract(contractAddresses.SpiralBits, SpiralBits.interface, signer);
+  const impishSpiral = new ethers.Contract(contractAddresses.ImpishSpiral, ImpishSpiral.interface, signer);
+  const spiralmarket = new ethers.Contract(contractAddresses.SpiralMarket, SpiralMarket.interface, signer);
+  const spiralstakign = new ethers.Contract(contractAddresses.SpiralStaking, SpiralStaking.interface, signer);
+  const rwnftstaking = new ethers.Contract(contractAddresses.RWNFTStaking, RWNFTStaking.interface, signer);
+  const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
+  const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, signer);
+  const rps = new ethers.Contract(contractAddresses.RPS, RPS.interface, signer);
 
-  // await network.provider.request({
-  //   method: "hardhat_impersonateAccount",
-  //   params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
-  // });
-  // const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
+  });
+  const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
+
+  await spiralbits.connect(prodSigner).addAllowedMinter(signer.address);
+  await spiralbits.mintSpiralBits(signer.address, ethers.utils.parseEther("100000000"));
 
   // const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
   // const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
   // await stakingv2.deployed();
 
-  const rwnft = await RandomWalkNFT.deploy();
-  await rwnft.deployed();
+  // const rwnft = await RandomWalkNFT.deploy();
+  // await rwnft.deployed();
 
-  const impdao = await ImpishDAO.deploy(rwnft.address);
-  await impdao.deployed();
+  // const impdao = await ImpishDAO.deploy(rwnft.address);
+  // await impdao.deployed();
 
-  const impishSpiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
-  await impishSpiral.deployed();
+  // const impishSpiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
+  // await impishSpiral.deployed();
 
-  const spiralbits = await SpiralBits.deploy();
-  await spiralbits.deployed();
+  // const spiralbits = await SpiralBits.deploy();
+  // await spiralbits.deployed();
 
-  const spiralstaking = await SpiralStaking.deploy(impishSpiral.address, spiralbits.address, rwnft.address);
-  await spiralstaking.deployed();
+  // const spiralstaking = await SpiralStaking.deploy(impishSpiral.address, spiralbits.address, rwnft.address);
+  // await spiralstaking.deployed();
 
-  const crystal = await ImpishCrystal.deploy(impishSpiral.address, spiralstaking.address, spiralbits.address);
-  await crystal.deployed();
+  // const crystal = await ImpishCrystal.deploy(impishSpiral.address, spiralstaking.address, spiralbits.address);
+  // await crystal.deployed();
 
-  const stakingv2 = await StakingV2.deploy();
-  await stakingv2.deployed();
-  await stakingv2.initialize(crystal.address);
+  // const stakingv2 = await StakingV2.deploy();
+  // await stakingv2.deployed();
+  // await stakingv2.initialize(crystal.address);
 
-  const multimint = await MultiMint.deploy(impishSpiral.address);
-  await multimint.deployed();
+  // const multimint = await MultiMint.deploy(impishSpiral.address);
+  // await multimint.deployed();
 
-  // Allow spiral staking to mint spiralbits
-  await spiralbits.addAllowedMinter(stakingv2.address);
+  // // Allow spiral staking to mint spiralbits
+  // await spiralbits.addAllowedMinter(stakingv2.address);
 
-  // Start the mints
-  await impishSpiral.startMints();
+  // // Start the mints
+  // await impishSpiral.startMints();
 
-  const RPS = await ethers.getContractFactory("RPS");
-  const rps = await upgrades.deployProxy(RPS, [stakingv2.address]);
-  await rps.deployed();
+  // const RPS = await ethers.getContractFactory("RPS");
+  // const rps = await upgrades.deployProxy(RPS, [stakingv2.address]);
+  // await rps.deployed();
 
-  stakingv2.setRPS(rps.address);
+  // stakingv2.setRPS(rps.address);
 
-  // Allow RPS to mint
-  await spiralbits.addAllowedMinter(rps.address);
+  // // Allow RPS to mint
+  // await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
+
+  // // Create 6 fully grown crystals
+  await spiralbits.approve(crystal.address, Eth2B);
   await crystal.setApprovalForAll(stakingv2.address, true);
 
-  // Create 6 fully grown crystals
-  await spiralbits.approve(crystal.address, Eth2B);
   for (let i = 0; i < 6; i++) {
     const tokenId = await impishSpiral._tokenIdCounter();
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
@@ -130,19 +136,20 @@ async function main() {
     }
   }
 
-  // We also save the contract's artifacts and address in the frontend directory
-  const newContractAddresses = Object.assign(contractAddresses, {
-    RandomWalkNFT: rwnft.address,
-    ImpishDAO: impdao.address,
-    ImpishSpiral: impishSpiral.address,
-    SpiralBits: spiralbits.address,
-    Crystal: crystal.address,
-    StakingV2: stakingv2.address,
-    SpiralStaking: spiralstaking.address,
-    MultiMint: multimint.address,
-    RPS: rps.address,
-  });
-  saveFrontendFiles(newContractAddresses, stakingv2, rps);
+  // // We also save the contract's artifacts and address in the frontend directory
+  // const newContractAddresses = Object.assign(contractAddresses, {
+  //   RandomWalkNFT: rwnft.address,
+  //   ImpishDAO: impdao.address,
+  //   ImpishSpiral: impishSpiral.address,
+  //   SpiralBits: spiralbits.address,
+  //   Crystal: crystal.address,
+  //   StakingV2: stakingv2.address,
+  //   SpiralStaking: spiralstaking.address,
+  //   MultiMint: multimint.address,
+  //   RPS: rps.address,
+  // });
+  // saveFrontendFiles(newContractAddresses, stakingv2, rps);
+  saveFrontendFiles(contractAddresses);
 
   // Buy some magic for testing
   // await buywithether.buyMagicTODOTEMP({ value: ethers.utils.parseEther("1") });
@@ -168,7 +175,7 @@ async function main() {
   // }
 }
 
-function saveFrontendFiles(newContractAddresses: any, stakingv2: Contract, rps: Contract) {
+function saveFrontendFiles(newContractAddresses: any) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
   const serverDir = path.join(__dirname, "/../server/src/contracts");
@@ -185,14 +192,6 @@ function saveFrontendFiles(newContractAddresses: any, stakingv2: Contract, rps: 
 
   fs.writeFileSync(contractsDir + "/contract-addresses.json", newContractAddressStr);
   fs.writeFileSync(serverDir + "/contract-addresses.json", newContractAddressStr);
-
-  const RPSArtifact = artifacts.readArtifactSync("RPS");
-  fs.writeFileSync(contractsDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
-  fs.writeFileSync(serverDir + "/rps.json", JSON.stringify(RPSArtifact, null, 2));
-
-  const StakingV2Artifact = artifacts.readArtifactSync("StakingV2");
-  fs.writeFileSync(contractsDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
-  fs.writeFileSync(serverDir + "/stakingv2.json", JSON.stringify(StakingV2Artifact, null, 2));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

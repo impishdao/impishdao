@@ -8,11 +8,15 @@ import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
 import { ethers } from "ethers";
-import { Eth1k, Eth1M, MultiTxItem } from "./walletutils";
+import { Eth1, Eth1k, Eth1M, Eth2B, MultiTxItem } from "./walletutils";
 
 type SpiralProps = DappState & DappFunctions & {};
 
 type SpiralType = "original" | "companion" | "mega";
+enum Currency {
+  "ETH",
+  "MAGIC",
+}
 
 export function ImpishSpiral(props: SpiralProps) {
   // const canvasPreviewRef = useRef<HTMLCanvasElement>(null);
@@ -29,6 +33,8 @@ export function ImpishSpiral(props: SpiralProps) {
   const [rwMintPrice, setRwMintPrice] = useState<BigNumber>(BigNumber.from(0));
 
   const [ethPer1MSpiralBits, setEthPer1MSpiralBits] = useState(BigNumber.from(0));
+  const [ethPer10kMagic, setEthPer10kMagic] = useState(BigNumber.from(0));
+  const [buyCurrency, setBuyCurrency] = useState(Currency.ETH);
 
   const [numSpirals, setNumSpirals] = useState(1);
   const [previewURL, setPreviewURL] = useState("");
@@ -59,8 +65,9 @@ export function ImpishSpiral(props: SpiralProps) {
     fetch("/marketapi/uniswapv3prices")
       .then((r) => r.json())
       .then((data) => {
-        const { ETHper1MSPIRALBITS } = data;
+        const { ETHper1MSPIRALBITS, ETHper10kMagic } = data;
         setEthPer1MSpiralBits(BigNumber.from(ETHper1MSPIRALBITS));
+        setEthPer10kMagic(BigNumber.from(ETHper10kMagic));
       });
   }, []);
 
@@ -165,6 +172,14 @@ export function ImpishSpiral(props: SpiralProps) {
   const multiMintPriceETH = calcMultiSpiralPrice(numSpirals);
   const megaMintPriceETH = calcMegaMintPrice(numSpirals);
 
+  const priceInMagic = (priceInEth: BigNumber): BigNumber => {
+    if (ethPer10kMagic.eq(0)) {
+      return BigNumber.from(0);
+    }
+
+    return priceInEth.mul(10000).mul(Eth1).div(ethPer10kMagic);
+  };
+
   const megaMint = async () => {
     if (!props.contracts || spiralType !== "mega") {
       return;
@@ -212,35 +227,67 @@ export function ImpishSpiral(props: SpiralProps) {
   };
 
   const mintSpiral = async () => {
-    if (!props.contracts) {
+    if (!props.contracts || !props.selectedAddress) {
       return;
     }
 
     try {
       if (spiralType === "original") {
-        // See if we need a multi mint
-        if (numSpirals === 1) {
-          const id = await props.contracts.impspiral._tokenIdCounter();
-          let tx = await props.contracts.impspiral.mintSpiralRandom({
-            value: await props.contracts.impspiral.getMintPrice(),
-          });
-          await tx.wait();
+        if (buyCurrency === Currency.ETH) {
+          // See if we need a multi mint
+          if (numSpirals === 1) {
+            const id = await props.contracts.impspiral._tokenIdCounter();
+            let tx = await props.contracts.impspiral.mintSpiralRandom({
+              value: await props.contracts.impspiral.getMintPrice(),
+            });
+            await tx.wait();
 
-          props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
-            nav(`/spirals/detail/${id}`);
-          });
-        } else {
-          const price = calcMultiSpiralPrice(numSpirals);
-          let tx = await props.contracts.multimint.multiMint(numSpirals, { value: price });
-          await tx.wait();
+            props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
+              nav(`/spirals/detail/${id}`);
+            });
+          } else {
+            const price = calcMultiSpiralPrice(numSpirals);
+            let tx = await props.contracts.multimint.multiMint(numSpirals, { value: price });
+            await tx.wait();
 
-          props.showModal(
-            "Yay!",
-            <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>,
-            () => {
-              nav(`/wallet/${props.selectedAddress}/spirals`);
-            }
-          );
+            props.showModal(
+              "Yay!",
+              <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>,
+              () => {
+                nav(`/wallet/${props.selectedAddress}/spirals`);
+              }
+            );
+          }
+        } else if (buyCurrency === Currency.MAGIC) {
+          const magicAmount = priceInMagic(multiMintPriceETH);
+          const txns: MultiTxItem[] = [];
+
+          if (
+            (await props.contracts.magic.allowance(props.selectedAddress, props.contracts.buywitheth.address)).lt(
+              magicAmount
+            )
+          ) {
+            txns.push({
+              title: "Approve MAGIC",
+              tx: () => props.contracts?.magic.approve(props.contracts.buywitheth.address, Eth2B),
+            });
+          }
+
+          txns.push({
+            title: "Buy Spirals",
+            tx: () => props.contracts?.buywitheth.multiMintWithMagic(numSpirals, magicAmount),
+          });
+
+          const success = await props.executeMultiTx(txns);
+          if (success) {
+            props.showModal(
+              "Yay!",
+              <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>,
+              () => {
+                nav(`/wallet/${props.selectedAddress}/spirals`);
+              }
+            );
+          }
         }
       } else {
         if (selectedUserRW) {
@@ -378,10 +425,26 @@ export function ImpishSpiral(props: SpiralProps) {
                         <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
                       </h5>
                       <div>
-                        Mint Price: ETH {format4Decimals(multiMintPriceETH)}{" "}
+                        Mint Price:
+                        {buyCurrency === Currency.ETH
+                          ? ` ETH ${format4Decimals(multiMintPriceETH)}`
+                          : ` MAGIC ${format4Decimals(priceInMagic(multiMintPriceETH))}`}{" "}
                         {formatUSD(multiMintPriceETH, props.lastETHPrice)}
                       </div>
                       <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
+                        <FloatingLabel label="Currency" style={{ color: "black", width: "100px" }}>
+                          <Form.Select
+                            value={buyCurrency}
+                            onChange={(e) => setBuyCurrency(parseInt(e.currentTarget.value))}
+                          >
+                            <option key={Currency.MAGIC} value={Currency.MAGIC}>
+                              {Currency[Currency.MAGIC]}
+                            </option>
+                            <option key={Currency.ETH} value={Currency.ETH}>
+                              {Currency[Currency.ETH]}
+                            </option>
+                          </Form.Select>
+                        </FloatingLabel>
                         <FloatingLabel label="Number of Spirals" style={{ color: "black", width: "200px" }}>
                           <Form.Select
                             value={numSpirals.toString()}

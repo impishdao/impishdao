@@ -34,6 +34,9 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    hardhat: {
+      gasPrice: 100,
+    },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -46,7 +49,7 @@ const config: HardhatUserConfig = {
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
-  }
+  },
 };
 
 export default config;

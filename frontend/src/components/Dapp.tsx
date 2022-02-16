@@ -19,6 +19,7 @@ import BuyWithEtherArtifact from "../contracts/buywithether.json";
 import Crystal from "../contracts/crystal.json";
 import StakingV2 from "../contracts/stakingv2.json";
 import RPS from "../contracts/rps.json";
+import ERC20abi from "../contracts/erc20.json";
 
 import contractAddresses from "../contracts/contract-addresses.json";
 
@@ -159,6 +160,9 @@ export class Dapp extends React.Component<DappProps, DappState> {
     // RPS
     const rps = new ethers.Contract(contractAddresses.RPS, RPS.abi, provider.getSigner(0));
 
+    // Magic
+    const magic = new ethers.Contract(contractAddresses.MAGIC, ERC20abi, provider.getSigner(0));
+
     const contracts = {
       provider,
       rwnft,
@@ -173,6 +177,7 @@ export class Dapp extends React.Component<DappProps, DappState> {
       crystal,
       stakingv2,
       rps,
+      magic,
     } as DappContracts; // Forcibly cast so that we can get autocomplete suggestions.
 
     this.setState({ contracts });

@@ -14,6 +14,7 @@ import type { RWNFTStaking } from "../../typechain/RWNFTStaking";
 import type { BuyWithEther } from "../../typechain/BuyWithEther";
 import type { MultiMint } from "../../typechain/MultiMint";
 import type { RPS } from "../../typechain/RPS";
+import type { ERC20 } from "../../typechain/ERC20";
 
 export const ARBITRUM_NETWORK_ID = "42161";
 
@@ -133,6 +134,7 @@ export type DappContracts = {
   crystal: ImpishCrystal;
   stakingv2: StakingV2;
   rps: RPS;
+  magic: ERC20;
 };
 
 export type SpiralDetail = {
