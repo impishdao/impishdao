@@ -7,7 +7,6 @@ import { setup_image } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
-import { ethers } from "ethers";
 import { Eth1k, Eth1M, MultiTxItem } from "./walletutils";
 
 type SpiralProps = DappState & DappFunctions & {};
