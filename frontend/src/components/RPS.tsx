@@ -320,6 +320,7 @@ export function RPSScreen(props: RPSProps) {
 
         const now = (await props.contracts.provider.getBlock("latest")).timestamp;
         const daysSinceStart = Math.floor((now - roundStart) / (3600 * 24));
+        console.log(daysSinceStart, `${now} - ${roundStart}`);
         if (daysSinceStart < 3) {
           setGameStage(Stages.Commit);
           setTimeRemaining(roundStart + THREE_DAYS - Date.now() / 1000);
@@ -688,28 +689,28 @@ export function RPSScreen(props: RPSProps) {
                     nextTeamStat?.numCrystals
                   );
 
-                  let winningString;
-                  if (gameStage === Stages.Reveal) {
-                    winningString = teamStat.totalScore.gt(nextTeamStat.totalScore)
-                      ? `Currently winning`
-                      : `Currently not winning`;
-                  } else {
-                    winningString = teamStat.winningSpiralBits.gt(0)
-                      ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
-                      : "Lost";
-                  }
+                  if (teamStat && teamStat.totalScore) {
+                    let winningString;
+                    if (gameStage === Stages.Reveal) {
+                      winningString = teamStat.totalScore.gt(nextTeamStat.totalScore)
+                        ? `Currently winning`
+                        : `Currently not winning`;
+                    } else {
+                      winningString = teamStat.winningSpiralBits.gt(0)
+                        ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
+                        : "Lost";
+                    }
 
-                  let losingString;
-                  if (gameStage === Stages.Reveal) {
-                    losingString = prevTeamStat.totalScore.gt(teamStat.totalScore)
-                      ? `Currently losing`
-                      : `Currently not losing`;
-                  } else {
-                    losingString =
-                      teamStat.symmetriesLost > 0 ? `Lost ${teamStat.symmetriesLost} Symmetry` : `No Symmetries Lost`;
-                  }
+                    let losingString;
+                    if (gameStage === Stages.Reveal) {
+                      losingString = prevTeamStat.totalScore.gt(teamStat.totalScore)
+                        ? `Currently losing`
+                        : `Currently not losing`;
+                    } else {
+                      losingString =
+                        teamStat.symmetriesLost > 0 ? `Lost ${teamStat.symmetriesLost} Symmetry` : `No Symmetries Lost`;
+                    }
 
-                  if (teamStat) {
                     return (
                       <Col key={teamNum} md={4}>
                         <h3>Team {Teams[teamNum]}</h3>
@@ -740,7 +741,11 @@ export function RPSScreen(props: RPSProps) {
                       </Col>
                     );
                   } else {
-                    return <></>;
+                    return (
+                      <Col key={teamNum} md={4}>
+                        <h4>Loading...</h4>
+                      </Col>
+                    );
                   }
                 })}
               </Row>
