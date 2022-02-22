@@ -300,6 +300,29 @@ contract BuyWithEther is IERC721Receiver {
     IWETH9(WETH9).withdraw(amountOut);
   }
 
+  // function buyMagic_TODO_TEMP() external payable {
+  //   // Convert to WETH, since thats what Uniswap uses
+  //   uint256 amountIn = address(this).balance;
+  //   IWETH9(WETH9).deposit{value: amountIn}();
+
+
+  //   ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+  //     tokenIn: WETH9,
+  //     tokenOut: MAGIC,
+  //     fee: POOL_FEE,
+  //     recipient: address(this),
+  //     deadline: block.timestamp,
+  //     amountIn: amountIn,
+  //     amountOutMinimum: 0,
+  //     sqrtPriceLimitX96: 0
+  //   });
+
+  //   // Executes the swap returning the amountIn needed to spend to receive the desired amountOut.
+  //   uint256 amountOut = swapRouter.exactInputSingle(params);
+  //   console.log("Swapped to MAGIC", amountOut);
+  //   TransferHelper.safeTransfer(MAGIC, msg.sender, amountOut);
+  // }
+
   function swapExactInputSpiralBitsFromEthNoRefund(uint256 amountIn) internal returns (uint256 amountOut) {
     // Convert to WETH, since thats what Uniswap uses
     IWETH9(WETH9).deposit{value: address(this).balance}();

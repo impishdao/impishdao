@@ -181,20 +181,54 @@ export function ImpishSpiral(props: SpiralProps) {
   };
 
   const megaMint = async () => {
-    if (!props.contracts || spiralType !== "mega") {
+    if (!props.contracts || spiralType !== "mega" || !props.selectedAddress) {
+      return;
+    }
+
+    const magicAmount = priceInMagic(megaMintPriceETH);
+    console.log(`${props.magicBalance} - ${magicAmount}`);
+    if (props.magicBalance.lt(magicAmount)) {
+      props.showModal(
+        "Not enough MAGIC",
+        <div>
+          Not enough MAGIC tokens. You have {format4Decimals(props.magicBalance)}, need {format4Decimals(magicAmount)}
+        </div>
+      );
       return;
     }
 
     try {
       const txns: MultiTxItem[] = [];
 
-      txns.push({
-        title: `Minting ${numSpirals} Mega Sets`,
-        tx: () =>
-          props.selectedAddress
-            ? props.contracts?.buywitheth.megaMint(props.selectedAddress, numSpirals, { value: megaMintPriceETH })
-            : undefined,
-      });
+      if (buyCurrency === Currency.ETH) {
+        txns.push({
+          title: `Minting ${numSpirals} Mega Sets`,
+          tx: () =>
+            props.selectedAddress
+              ? props.contracts?.buywitheth.megaMint(props.selectedAddress, numSpirals, { value: megaMintPriceETH })
+              : undefined,
+        });
+      } else if (buyCurrency === Currency.MAGIC) {
+        // Check if approval is needed.
+        if (
+          (await props.contracts.magic.allowance(props.selectedAddress, props.contracts.buywitheth.address)).lt(
+            magicAmount
+          )
+        ) {
+          txns.push({
+            title: "Approving MAGIC",
+            tx: () => props.contracts?.magic.approve(props.contracts.buywitheth.address, Eth2B),
+          });
+        }
+
+        txns.push({
+          title: `Minting ${numSpirals} Mega Sets (MAGIC)`,
+          tx: () =>
+            props.selectedAddress
+              ? props.contracts?.buywitheth.megaMintWithMagic(props.selectedAddress, numSpirals, magicAmount)
+              : undefined,
+        });
+      }
 
       const success = await props.executeMultiTx(txns);
       if (success) {
@@ -210,19 +244,7 @@ export function ImpishSpiral(props: SpiralProps) {
         );
       }
     } catch (e: any) {
-      console.log(e);
-
-      let msg: string | undefined;
-      if (e?.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        // User cancelled, so do nothing
-        msg = undefined;
-      } else {
-        msg = `Error: ${e?.data?.message}`;
-      }
-
-      if (msg) {
-        props.showModal("Error Minting!", <div>{msg}</div>);
-      }
+      console.log(JSON.stringify(e));
     }
   };
 
@@ -385,10 +407,29 @@ export function ImpishSpiral(props: SpiralProps) {
                         <span style={{ color: "#ffc106" }}>Step 2:</span> Mint Mega Set!
                       </h5>
                       <div>
-                        Total Price: ETH {format4Decimals(megaMintPriceETH)}{" "}
-                        {formatUSD(megaMintPriceETH, props.lastETHPrice)}
+                        Total Price:{" "}
+                        {buyCurrency === Currency.ETH && (
+                          <>
+                            ETH {format4Decimals(megaMintPriceETH)} {formatUSD(megaMintPriceETH, props.lastETHPrice)}
+                          </>
+                        )}
+                        {buyCurrency === Currency.MAGIC && (
+                          <>
+                            MAGIC {format4Decimals(priceInMagic(megaMintPriceETH))}{" "}
+                            {formatUSD(megaMintPriceETH, props.lastETHPrice)}
+                          </>
+                        )}
                       </div>
                       <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
+                        <FloatingLabel label="Currency" style={{ color: "black", width: "100px" }}>
+                          <Form.Select
+                            value={buyCurrency}
+                            onChange={(e) => setBuyCurrency(parseInt(e.currentTarget.value))}
+                          >
+                            <option value={Currency.ETH}>{Currency[Currency.ETH]}</option>
+                            <option value={Currency.MAGIC}>{Currency[Currency.MAGIC]}</option>
+                          </Form.Select>
+                        </FloatingLabel>
                         <FloatingLabel label="Number of Mega Sets" style={{ color: "black", width: "200px" }}>
                           <Form.Select
                             value={numSpirals.toString()}

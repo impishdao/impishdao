@@ -56,6 +56,7 @@ export class DappState {
   impishTokenBalance: BigNumber;
   spiralBitsBalance: BigNumber;
   ethBalance: BigNumber;
+  magicBalance: BigNumber;
   selectedAddress?: string;
 
   modalTitle?: string;
@@ -91,6 +92,7 @@ export class DappState {
     this.impishTokenBalance = BigNumber.from(0);
     this.spiralBitsBalance = BigNumber.from(0);
     this.ethBalance = BigNumber.from(0);
+    this.magicBalance = BigNumber.from(0);
     this.modalShowing = false;
 
     this.areWeWinning = false;

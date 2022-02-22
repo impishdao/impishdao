@@ -229,7 +229,7 @@ export function RPSScreen(props: RPSProps) {
   const [crystalApprovalNeeded, setCrystalApprovalNeeded] = useState(false);
   const [password, setPassword] = useState("");
 
-  const [revealPassword, setRevealPassword] = useState('');
+  const [revealPassword, setRevealPassword] = useState("");
   const [revealJoinedTeam, setRevealJoinedTeam] = useState(0);
 
   const [roundStartTime, setRoundStartTime] = useState(0);

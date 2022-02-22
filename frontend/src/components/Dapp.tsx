@@ -340,11 +340,12 @@ export class Dapp extends React.Component<DappProps, DappState> {
     if (this.state.selectedAddress) {
       const impishTokenBalance = await this.state.contracts?.impdao.balanceOf(this.state.selectedAddress);
       const spiralBitsBalance = await this.state.contracts?.spiralbits.balanceOf(this.state.selectedAddress);
+      const magicBalance = await this.state.contracts?.magic.balanceOf(this.state.selectedAddress);
       const ethBalance =
         (await this.state.contracts?.provider.getBalance(this.state.selectedAddress)) || BigNumber.from(0);
 
-      if (impishTokenBalance && spiralBitsBalance && ethBalance) {
-        this.setState({ impishTokenBalance, spiralBitsBalance, ethBalance });
+      if (impishTokenBalance && spiralBitsBalance && ethBalance && magicBalance) {
+        this.setState({ impishTokenBalance, spiralBitsBalance, magicBalance, ethBalance });
       }
     }
   };

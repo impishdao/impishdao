@@ -63,44 +63,9 @@ async function main() {
   await spiralbits.connect(prodSigner).addAllowedMinter(signer.address);
   await spiralbits.mintSpiralBits(signer.address, ethers.utils.parseEther("100000000"));
 
-  // const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
-  // const stakingv2 = await upgrades.upgradeProxy(contractAddresses.StakingV2, StakingV2);
-  // await stakingv2.deployed();
-
-  // const rwnft = await RandomWalkNFT.deploy();
-  // await rwnft.deployed();
-
-  // const impdao = await ImpishDAO.deploy(rwnft.address);
-  // await impdao.deployed();
-
-  // const impishSpiral = await ImpishSpiral.deploy(rwnft.address, impdao.address);
-  // await impishSpiral.deployed();
-
-  // const spiralbits = await SpiralBits.deploy();
-  // await spiralbits.deployed();
-
-  // const spiralstaking = await SpiralStaking.deploy(impishSpiral.address, spiralbits.address, rwnft.address);
-  // await spiralstaking.deployed();
-
-  // const crystal = await ImpishCrystal.deploy(impishSpiral.address, spiralstaking.address, spiralbits.address);
-  // await crystal.deployed();
-
-  // const stakingv2 = await StakingV2.deploy();
-  // await stakingv2.deployed();
-  // await stakingv2.initialize(crystal.address);
-
-  // const multimint = await MultiMint.deploy(impishSpiral.address);
-  // await multimint.deployed();
-
-  // // Allow spiral staking to mint spiralbits
-  // await spiralbits.addAllowedMinter(stakingv2.address);
-
-  // // Start the mints
-  // await impishSpiral.startMints();
-
-  // const RPS = await ethers.getContractFactory("RPS");
-  // const rps = await upgrades.deployProxy(RPS, [stakingv2.address]);
-  // await rps.deployed();
+  const buywitheth = await BuyWithEther.deploy(swapRouter);
+  await buywitheth.deployed();
+  await buywitheth.buyMagic_TODO_TEMP({ value: ethers.utils.parseEther("1") });
 
   // stakingv2.setRPS(rps.address);
 
@@ -108,71 +73,35 @@ async function main() {
   // await spiralbits.connect(prodSigner).addAllowedMinter(rps.address);
 
   // // Create 6 fully grown crystals
-  await spiralbits.approve(crystal.address, Eth2B);
-  await crystal.setApprovalForAll(stakingv2.address, true);
+  // await spiralbits.approve(crystal.address, Eth2B);
+  // await crystal.setApprovalForAll(stakingv2.address, true);
 
-  for (let i = 0; i < 6; i++) {
-    const tokenId = await impishSpiral._tokenIdCounter();
-    await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
+  // for (let i = 0; i < 6; i++) {
+  //   const tokenId = await impishSpiral._tokenIdCounter();
+  //   await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
-    const crystalId = await crystal._tokenIdCounter();
-    await crystal.mintCrystals([tokenId], 0);
+  //   const crystalId = await crystal._tokenIdCounter();
+  //   await crystal.mintCrystals([tokenId], 0);
 
-    // Max out the crystal
-    await crystal.grow(crystalId, 70);
+  //   // Max out the crystal
+  //   await crystal.grow(crystalId, 70);
 
-    if (i < 2) {
-      if (i % 2 === 0) {
-        await stakingv2.stakeNFTsForOwner([crystalId + 4000000], signer2.address);
-      } else {
-        await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, crystalId);
-      }
-    } else if (i < 5) {
-      if (i % 2 === 0) {
-        await stakingv2.stakeNFTsForOwner([crystalId + 4000000], signer3.address);
-      } else {
-        await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer3.address, crystalId);
-      }
-    }
-  }
-
-  // // We also save the contract's artifacts and address in the frontend directory
-  // const newContractAddresses = Object.assign(contractAddresses, {
-  //   RandomWalkNFT: rwnft.address,
-  //   ImpishDAO: impdao.address,
-  //   ImpishSpiral: impishSpiral.address,
-  //   SpiralBits: spiralbits.address,
-  //   Crystal: crystal.address,
-  //   StakingV2: stakingv2.address,
-  //   SpiralStaking: spiralstaking.address,
-  //   MultiMint: multimint.address,
-  //   RPS: rps.address,
-  // });
-  // saveFrontendFiles(newContractAddresses, stakingv2, rps);
-  saveFrontendFiles(contractAddresses);
-
-  // Buy some magic for testing
-  // await buywithether.buyMagicTODOTEMP({ value: ethers.utils.parseEther("1") });
-  // const MAGIC = await ethers.getContractFactory("ERC20");
-  // const magic = new ethers.Contract("0x539bdE0d7Dbd336b79148AA742883198BBF60342", MAGIC.interface, signer);
-  // await magic.approve(buywithether.address, ethers.utils.parseEther("2000000"));
-
-  // await buywithether.megaMintWithMagic(signer.address, 1, ethers.utils.parseEther("150"));
-
-  // await spiralbits.connect(prodSigner).addAllowedMinter(prodSigner.address);
-  // await spiralbits.connect(prodSigner).mintSpiralBits(prodSigner.address, ethers.utils.parseEther("100000000"));
-  // await spiralbits.connect(prodSigner).transfer(signer.address, ethers.utils.parseEther("100000000"));
-
-  // for (let i = 0; i < 5; i++) {
-  //   const rtokenId = await rwnft.nextTokenId();
-  //   await rwnft.mint({ value: await rwnft.getMintPrice() });
-
-  //   const stokenId = await impishspiral._tokenIdCounter();
-  //   await impishspiral.mintSpiralWithRWNFT(rtokenId, { value: await impishspiral.getMintPrice() });
-
-  //   await rwnftstaking.stakeNFTsForOwner([rtokenId], signer.address);
-  //   await spiralstakign.stakeNFTsForOwner([stokenId], signer.address);
+  //   if (i < 2) {
+  //     if (i % 2 === 0) {
+  //       await stakingv2.stakeNFTsForOwner([crystalId + 4000000], signer2.address);
+  //     } else {
+  //       await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer2.address, crystalId);
+  //     }
+  //   } else if (i < 5) {
+  //     if (i % 2 === 0) {
+  //       await stakingv2.stakeNFTsForOwner([crystalId + 4000000], signer3.address);
+  //     } else {
+  //       await crystal["safeTransferFrom(address,address,uint256)"](signer.address, signer3.address, crystalId);
+  //     }
+  //   }
   // }
+
+  // saveFrontendFiles(contractAddresses);
 }
 
 function saveFrontendFiles(newContractAddresses: any) {
@@ -200,3 +129,4 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+

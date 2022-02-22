@@ -308,7 +308,6 @@ export function SpiralStaking(props: SpiralStakingProps) {
         const crystalNFTIDs: Array<BigNumber> = [];
 
         nftWallet.forEach((contractTokenId) => {
-          console.log("Doing for ", contractTokenId.toString());
           if (contractTokenId.gt(0)) {
             const [tokenId, contractMultiplier] = NFTCardInfo.SplitFromContractTokenId(contractTokenId);
             switch (NFTCardInfo.NFTTypeForContractMultiplier(contractMultiplier.toNumber())) {
