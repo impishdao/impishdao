@@ -305,7 +305,6 @@ contract BuyWithEther is IERC721Receiver {
   //   uint256 amountIn = address(this).balance;
   //   IWETH9(WETH9).deposit{value: amountIn}();
 
-
   //   ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
   //     tokenIn: WETH9,
   //     tokenOut: MAGIC,

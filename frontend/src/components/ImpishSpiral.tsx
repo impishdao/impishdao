@@ -1,5 +1,5 @@
 import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
-import { DappFunctions, DappState, ERROR_CODE_TX_REJECTED_BY_USER } from "../AppState";
+import { DappFunctions, DappState } from "../AppState";
 import { format4Decimals, formatUSD, range, secondsToDhms, THREE_DAYS } from "./utils";
 import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -7,7 +7,6 @@ import { setup_image } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
-import { ethers } from "ethers";
 import { Eth1, Eth1k, Eth1M, Eth2B, MultiTxItem } from "./walletutils";
 
 type SpiralProps = DappState & DappFunctions & {};
@@ -222,7 +221,7 @@ export function ImpishSpiral(props: SpiralProps) {
         }
 
         txns.push({
-          title: `Minting ${numSpirals} Mega Sets (MAGIC)`,
+          title: `Minting ${numSpirals} Mega Sets with MAGIC`,
           tx: () =>
             props.selectedAddress
               ? props.contracts?.buywitheth.megaMintWithMagic(props.selectedAddress, numSpirals, magicAmount)
@@ -253,25 +252,19 @@ export function ImpishSpiral(props: SpiralProps) {
       return;
     }
 
+    const txns: MultiTxItem[] = [];
+
     try {
       if (spiralType === "original") {
         if (buyCurrency === Currency.ETH) {
-          // See if we need a multi mint
-          if (numSpirals === 1) {
-            const id = await props.contracts.impspiral._tokenIdCounter();
-            let tx = await props.contracts.impspiral.mintSpiralRandom({
-              value: await props.contracts.impspiral.getMintPrice(),
-            });
-            await tx.wait();
+          const price = calcMultiSpiralPrice(numSpirals);
+          txns.push({
+            title: "Minting Spirals",
+            tx: () => props.contracts?.multimint.multiMint(numSpirals, { value: price }),
+          });
 
-            props.showModal("Yay!", <div>You successfully minted an Original Spiral. You can now view it.</div>, () => {
-              nav(`/spirals/detail/${id}`);
-            });
-          } else {
-            const price = calcMultiSpiralPrice(numSpirals);
-            let tx = await props.contracts.multimint.multiMint(numSpirals, { value: price });
-            await tx.wait();
-
+          const success = await props.executeMultiTx(txns);
+          if (success) {
             props.showModal(
               "Yay!",
               <div>You successfully minted {numSpirals} Original Spirals. You can now view them in your wallet.</div>,
@@ -282,7 +275,6 @@ export function ImpishSpiral(props: SpiralProps) {
           }
         } else if (buyCurrency === Currency.MAGIC) {
           const magicAmount = priceInMagic(multiMintPriceETH);
-          const txns: MultiTxItem[] = [];
 
           if (
             (await props.contracts.magic.allowance(props.selectedAddress, props.contracts.buywitheth.address)).lt(
@@ -296,7 +288,7 @@ export function ImpishSpiral(props: SpiralProps) {
           }
 
           txns.push({
-            title: "Buy Spirals",
+            title: "Mint Spirals with MAGIC",
             tx: () => props.contracts?.buywitheth.multiMintWithMagic(numSpirals, magicAmount),
           });
 
@@ -331,18 +323,6 @@ export function ImpishSpiral(props: SpiralProps) {
       }
     } catch (e: any) {
       console.log(e);
-
-      let msg: string | undefined;
-      if (e?.code === ERROR_CODE_TX_REJECTED_BY_USER) {
-        // User cancelled, so do nothing
-        msg = undefined;
-      } else {
-        msg = `Error: ${e?.data?.message}`;
-      }
-
-      if (msg) {
-        props.showModal("Error Minting Impish Spiral!", <div>{msg}</div>);
-      }
     }
   };
 
@@ -478,12 +458,8 @@ export function ImpishSpiral(props: SpiralProps) {
                             value={buyCurrency}
                             onChange={(e) => setBuyCurrency(parseInt(e.currentTarget.value))}
                           >
-                            <option key={Currency.MAGIC} value={Currency.MAGIC}>
-                              {Currency[Currency.MAGIC]}
-                            </option>
-                            <option key={Currency.ETH} value={Currency.ETH}>
-                              {Currency[Currency.ETH]}
-                            </option>
+                            <option value={Currency.ETH}>{Currency[Currency.ETH]}</option>
+                            <option value={Currency.MAGIC}>{Currency[Currency.MAGIC]}</option>
                           </Form.Select>
                         </FloatingLabel>
                         <FloatingLabel label="Number of Spirals" style={{ color: "black", width: "200px" }}>
