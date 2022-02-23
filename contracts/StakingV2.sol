@@ -105,7 +105,7 @@ contract StakingV2 is IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable, Ow
   // They have to be at the end, because we don't want to overwrite the storage
   address public rps;
 
-  // Upgradable contracts use initialize instead of contructors
+  // Upgradable contracts use initialize instead of constructors
   function initialize(address _crystals) public initializer {
     // Call super initializers
     __Ownable_init();

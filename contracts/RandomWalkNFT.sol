@@ -95,7 +95,7 @@ contract RandomWalkNFT is ERC721Enumerable, Ownable {
     // Someone will need to mint again to become the last minter.
     lastMinter = address(0);
 
-    // Token that trigerred the withdrawal
+    // Token that triggered the withdrawal
     uint256 tokenId = nextTokenId - 1;
     uint256 amount = withdrawalAmount();
 

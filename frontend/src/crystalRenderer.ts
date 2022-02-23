@@ -244,7 +244,7 @@ class Child {
 
     this.depth = depth;
 
-    // Gen the chilren, depending on the depth
+    // Gen the children, depending on the depth
     this.children = [];
     let numChildren = 0;
 

@@ -273,7 +273,7 @@ describe("SpiralStaking V2", function () {
     await expectEpochSpiralbitsToBe([Zero, Eth100, Eth10, Eth10, Zero, Eth10.mul(-1)]);
 
     // Unstaking the Spirals, but since the last call didn't have any spiralbits changes the epoch
-    // spiralbits shouldn't change. We should recieve the rewards, however
+    // spiralbits shouldn't change. We should receive the rewards, however
     await stakingv2.unstakeNFTs([tokenId1.add(2000000), tokenId2.add(2000000)], true);
     await expectEpochSpiralbitsToBe([Zero, Eth100, Eth10, Eth10, Zero, Eth10.mul(-1), Zero]);
     expect(await impishSpiral.ownerOf(tokenId1)).to.be.equals(signer.address);
@@ -285,7 +285,7 @@ describe("SpiralStaking V2", function () {
     const { impishSpiral, stakingv2, spiralbits } = await loadContracts();
     const [signer, signer2] = await ethers.getSigners();
 
-    // Can't initialzize again
+    // Can't initialize again
     await expect(stakingv2.connect(signer2).initialize(spiralbits.address)).to.be.revertedWith(
       "Initializable: contract is already initialized"
     );
@@ -317,7 +317,7 @@ describe("SpiralStaking V2", function () {
     const tokenId1 = await impishSpiral._tokenIdCounter();
     await impishSpiral.mintSpiralRandom({ value: await impishSpiral.getMintPrice() });
 
-    // Can't stake non-existant token
+    // Can't stake non-existent token
     await expect(stakingv2.stakeNFTsForOwner([tokenId1.add(1).add(2000000)], signer.address)).to.be.revertedWith(
       "ERC721: owner query for nonexistent token"
     );

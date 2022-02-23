@@ -349,7 +349,7 @@ describe("SpiralStaking", function () {
     await expect(spiralstaking.stakeNFTs([otherTokenId])).to.be.revertedWith("DontOwnToken");
     await expect(spiralstaking.stakeNFTs([tokenId, otherTokenId])).to.be.revertedWith("DontOwnToken");
 
-    // Non existant token
+    // Non existent token
     await expect(spiralstaking.stakeNFTs([otherTokenId.add(1)])).to.be.revertedWith(
       "ERC721: owner query for nonexistent token"
     );
@@ -363,7 +363,7 @@ describe("SpiralStaking", function () {
     // Try to unstake wrong token
     await expect(spiralstaking.unstakeNFTs([otherTokenId], false)).to.be.revertedWith("NotStaked");
 
-    // Non existant token
+    // Non existent token
     await expect(spiralstaking.unstakeNFTs([otherTokenId.add(1)], false)).to.be.revertedWith(
       "ERC721: owner query for nonexistent token"
     );
