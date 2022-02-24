@@ -20,4 +20,16 @@ export function setupRPS(app: express.Express, provider: ethers.providers.JsonRp
 
     res.send(teamStats);
   });
+
+  app.get("/rpsapi/gamestage", async (req, res) => {
+    try {
+      const now = (await provider.getBlock("latest")).timestamp;
+      const roundStart = await _rps.roundStartTime();
+
+      res.send({ now, roundStart });
+    } catch (e) {
+      console.log(e);
+      res.send({});
+    }
+  });
 }

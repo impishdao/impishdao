@@ -318,19 +318,6 @@ export function RPSScreen(props: RPSProps) {
         const roundStart = await props.contracts.rps.roundStartTime();
         setRoundStartTime(roundStart);
 
-        const now = (await props.contracts.provider.getBlock("latest")).timestamp;
-        const daysSinceStart = Math.floor((now - roundStart) / (3600 * 24));
-        console.log(daysSinceStart, `${now} - ${roundStart}`);
-        if (daysSinceStart < 3) {
-          setGameStage(Stages.Commit);
-          setTimeRemaining(roundStart + THREE_DAYS - Date.now() / 1000);
-        } else if (daysSinceStart < 6) {
-          setGameStage(Stages.Reveal);
-          setTimeRemaining(roundStart + THREE_DAYS * 2 - Date.now() / 1000);
-        } else {
-          setGameStage(Stages.Claim);
-        }
-
         // Check if player has revealed his team, and if so, store everything.
         const playerInfo = await props.contracts.rps.players(props.selectedAddress);
         const smallestTeamBonusInfo = await props.contracts.rps.smallestTeamBonus();
@@ -352,6 +339,23 @@ export function RPSScreen(props: RPSProps) {
   }, [props.selectedAddress, props.contracts, refreshCounter]);
 
   useEffect(() => {
+    fetch("/rpsapi/gamestage")
+      .then((d) => d.json())
+      .then((j) => {
+        const { now, roundStart } = j;
+        const daysSinceStart = Math.floor((now - roundStart) / (3600 * 24));
+        console.log(daysSinceStart, `${now} - ${roundStart}`);
+        if (daysSinceStart < 3) {
+          setGameStage(Stages.Commit);
+          setTimeRemaining(roundStart + THREE_DAYS - Date.now() / 1000);
+        } else if (daysSinceStart < 6) {
+          setGameStage(Stages.Reveal);
+          setTimeRemaining(roundStart + THREE_DAYS * 2 - Date.now() / 1000);
+        } else {
+          setGameStage(Stages.Claim);
+        }
+      });
+
     // Read the team stats
     fetch("/rpsapi/teamstats")
       .then((d) => d.json())
@@ -524,6 +528,8 @@ export function RPSScreen(props: RPSProps) {
 
   const allCrystals = getNFTCardInfo([], [], [], walletCrystals).concat(stakedNFTCards || []);
 
+  console.log(`Gamestage = ${gameStage}`);
+
   return (
     <>
       <Navigation {...props} />
@@ -667,90 +673,6 @@ export function RPSScreen(props: RPSProps) {
               </Row>
             )}
 
-            {(gameStage === Stages.Reveal || gameStage === Stages.Claim) && (
-              <Row>
-                <h2
-                  style={{
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    padding: "10px",
-                    color: "#ffd454",
-                  }}
-                >
-                  Current Team Stats
-                </h2>
-                {[0, 1, 2].map((teamNum) => {
-                  const teamStat = teamStats[teamNum];
-                  const nextTeamStat = teamStats[(teamNum + 1) % 3];
-                  const prevTeamStat = teamStats[(teamNum + 2) % 3];
-
-                  const smallestTeamSize = Math.min(
-                    teamStat?.numCrystals,
-                    prevTeamStat?.numCrystals,
-                    nextTeamStat?.numCrystals
-                  );
-
-                  if (teamStat && teamStat.totalScore) {
-                    let winningString;
-                    if (gameStage === Stages.Reveal) {
-                      winningString = teamStat.totalScore.gt(nextTeamStat.totalScore)
-                        ? `Currently winning`
-                        : `Currently not winning`;
-                    } else {
-                      winningString = teamStat.winningSpiralBits.gt(0)
-                        ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
-                        : "Lost";
-                    }
-
-                    let losingString;
-                    if (gameStage === Stages.Reveal) {
-                      losingString = prevTeamStat.totalScore.gt(teamStat.totalScore)
-                        ? `Currently losing`
-                        : `Currently not losing`;
-                    } else {
-                      losingString =
-                        teamStat.symmetriesLost > 0 ? `Lost ${teamStat.symmetriesLost} Symmetry` : `No Symmetries Lost`;
-                    }
-
-                    return (
-                      <Col key={teamNum} md={4}>
-                        <h3>Team {Teams[teamNum]}</h3>
-                        <Table style={{ color: "white", fontSize: "0.9rem", textAlign: "right" }}>
-                          <tbody>
-                            <tr>
-                              <td style={{ textAlign: "left" }}>Score</td>
-                              <td>{formatkmb(teamStat.totalScore)}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ textAlign: "left" }}>Number of Crystals</td>
-                              <td>{teamStat.numCrystals}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 1) % 3]}</td>
-                              <td>{winningString}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 2) % 3]}</td>
-                              <td>{losingString}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ textAlign: "left" }}>Smallest Team Bonus</td>
-                              <td>{smallestTeamSize === teamStat.numCrystals ? "Yes" : "No"}</td>
-                            </tr>
-                          </tbody>
-                        </Table>
-                      </Col>
-                    );
-                  } else {
-                    return (
-                      <Col key={teamNum} md={4}>
-                        <h4>Loading...</h4>
-                      </Col>
-                    );
-                  }
-                })}
-              </Row>
-            )}
-
             {gameStage === Stages.Claim && (
               <Row>
                 {revealedPlayerInfo && !revealedPlayerInfo.claimed && (
@@ -825,6 +747,7 @@ export function RPSScreen(props: RPSProps) {
             )}
           </>
         )}
+
         {!props.selectedAddress && (
           <div style={{ marginTop: "50px", marginBottom: "100px" }}>
             <div>
@@ -840,6 +763,90 @@ export function RPSScreen(props: RPSProps) {
               Connect Wallet
             </Button>
           </div>
+        )}
+
+        {(gameStage === Stages.Reveal || gameStage === Stages.Claim) && (
+          <Row>
+            <h2
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                padding: "10px",
+                color: "#ffd454",
+              }}
+            >
+              Current Team Stats
+            </h2>
+            {[0, 1, 2].map((teamNum) => {
+              const teamStat = teamStats[teamNum];
+              const nextTeamStat = teamStats[(teamNum + 1) % 3];
+              const prevTeamStat = teamStats[(teamNum + 2) % 3];
+
+              const smallestTeamSize = Math.min(
+                teamStat?.numCrystals,
+                prevTeamStat?.numCrystals,
+                nextTeamStat?.numCrystals
+              );
+
+              if (teamStat && teamStat.totalScore) {
+                let winningString;
+                if (gameStage === Stages.Reveal) {
+                  winningString = teamStat.totalScore.gt(nextTeamStat.totalScore)
+                    ? `Currently winning`
+                    : `Currently not winning`;
+                } else {
+                  winningString = teamStat.winningSpiralBits.gt(0)
+                    ? `Won ${formatkmb(teamStat.winningSpiralBits)} SPIRALBITS`
+                    : "Lost";
+                }
+
+                let losingString;
+                if (gameStage === Stages.Reveal) {
+                  losingString = prevTeamStat.totalScore.gt(teamStat.totalScore)
+                    ? `Currently losing`
+                    : `Currently not losing`;
+                } else {
+                  losingString =
+                    teamStat.symmetriesLost > 0 ? `Lost ${teamStat.symmetriesLost} Symmetry` : `No Symmetries Lost`;
+                }
+
+                return (
+                  <Col key={teamNum} md={4}>
+                    <h3>Team {Teams[teamNum]}</h3>
+                    <Table style={{ color: "white", fontSize: "0.9rem", textAlign: "right" }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ textAlign: "left" }}>Score</td>
+                          <td>{formatkmb(teamStat.totalScore)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ textAlign: "left" }}>Number of Crystals</td>
+                          <td>{teamStat.numCrystals}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 1) % 3]}</td>
+                          <td>{winningString}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ textAlign: "left" }}>vs Team {Teams[(teamNum + 2) % 3]}</td>
+                          <td>{losingString}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ textAlign: "left" }}>Smallest Team Bonus</td>
+                          <td>{smallestTeamSize === teamStat.numCrystals ? "Yes" : "No"}</td>
+                        </tr>
+                      </tbody>
+                    </Table>
+                  </Col>
+                );
+              } else {
+                return (
+                  <Col key={teamNum} md={4}>
+                    <h4>Loading...</h4>
+                  </Col>
+                );
+              }
+            })}
+          </Row>
         )}
       </div>
 
