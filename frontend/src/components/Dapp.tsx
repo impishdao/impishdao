@@ -47,6 +47,7 @@ import { CrystalWallet } from "./Wallet";
 import { MultiTxItem } from "./walletutils";
 import { MultiTxModal } from "./MultiTxModal";
 import { RPSScreen } from "./RPS";
+import { Maze } from "./Maze";
 
 // Needed to make the typescript compiler happy about the use of window.ethereum
 declare const window: any;
@@ -543,8 +544,18 @@ export class Dapp extends React.Component<DappProps, DappState> {
             />
 
             <Route
-              path="/spirals/marketplace"
-              element={<Marketplace {...this.state} connectWallet={this._connectWallet} />}
+              path="/maze"
+              element={
+                <Maze
+                  {...this.state}
+                  connectWallet={this._connectWallet}
+                  readDappState={this.readDappState}
+                  readUserData={this.readUserData}
+                  showModal={this.showModal}
+                  waitForTxConfirmation={this.waitForTxConfirmation}
+                  executeMultiTx={this.executeMultiTx}
+                />
+              }
             />
 
             <Route

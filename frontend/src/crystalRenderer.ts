@@ -1,69 +1,8 @@
 /* eslint-disable no-undef */
 /* eslint-disable camelcase */
-import { sha3_256 } from "js-sha3";
+
 import { cloneDeep } from "lodash";
-
-const fromHexString = (hexString: string): Uint8Array => {
-  let m = hexString.match(/.{1,2}/g);
-  if (!m) {
-    return new Uint8Array();
-  }
-
-  return new Uint8Array(m.map((byte) => parseInt(byte, 16)));
-};
-export const toHexString = (bytes: Uint8Array) =>
-  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "");
-
-const rgbToHex = (color: RGB) => {
-  const { r, g, b } = color;
-
-  return (
-    "#" +
-    [r, g, b]
-      .map((x) => {
-        const hex = x.toString(16);
-        return hex.length === 1 ? "0" + hex : hex;
-      })
-      .join("")
-  );
-};
-
-function* random_generator(init_seed: string) {
-  if (init_seed.startsWith("0x")) {
-    init_seed = init_seed.substring(2);
-  }
-
-  const init_seed_u8 = fromHexString(init_seed);
-  let seed = init_seed_u8;
-
-  while (true) {
-    const m = sha3_256.create();
-    m.update(init_seed_u8);
-    m.update(seed);
-
-    seed = fromHexString(m.hex());
-    for (let j = 0; j < seed.length; j++) {
-      for (let i = 0; i < 8; i++) {
-        const b = seed[j];
-        const nextNum = (b >> i) & 1;
-        yield nextNum;
-      }
-    }
-  }
-}
-
-function random_bool(gen: Generator<number>): boolean {
-  return gen.next().value === 0;
-}
-
-function random_255(gen: Generator<number>): number {
-  let n = 0;
-  for (let i = 0; i < 8; i++) {
-    n = (n << 1) | gen.next().value;
-  }
-
-  return n;
-}
+import { random_255, random_bool, random_generator, RGB, rgbToHex } from "./renderUtils";
 
 function rb(gen: Generator<number>, startInc: number, endInc: number): number {
   if (endInc - startInc + 1 > 255) {
@@ -80,12 +19,6 @@ function random_color_bright(gen: Generator<number>, generation: number): RGB {
     b: Math.floor(rb(gen, 100 - 10 * generation, 255 - 5 * generation)),
   };
 }
-
-type RGB = {
-  r: number;
-  g: number;
-  b: number;
-};
 
 type MinMax = {
   min: number;

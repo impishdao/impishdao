@@ -246,6 +246,8 @@ app.use("/spirals", express.static(path.join(__dirname, "index.html")));
 app.use("/spirals/*", express.static(path.join(__dirname, "index.html")));
 app.use("/spiralstaking", express.static(path.join(__dirname, "index.html")));
 
+app.use("/maze", express.static(path.join(__dirname, "index.html")));
+
 app.use("/crystals", express.static(path.join(__dirname, "index.html")));
 app.use("/crystals/*", express.static(path.join(__dirname, "index.html")));
 

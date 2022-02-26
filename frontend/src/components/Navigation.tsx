@@ -55,8 +55,8 @@ export function Navigation(props: NavigationProps) {
           </LinkContainer>
 
           <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
-          <LinkContainer to="/rps">
-            <Nav.Link>Rock Paper Scissors</Nav.Link>
+          <LinkContainer to="/maze">
+            <Nav.Link>Maze</Nav.Link>
           </LinkContainer>
 
           <div className="vr" style={{ marginLeft: "10px", marginRight: "10px" }}></div>
