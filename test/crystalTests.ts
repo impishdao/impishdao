@@ -119,7 +119,7 @@ describe("ImpishSpiral", function () {
       expect(crystalInfo.generation).to.be.equals(i + 1);
     }
 
-    // Can mint a spiral that has been transfered
+    // Can mint a spiral that has been transferred
     await impishSpiral
       .connect(otherSigner)
       ["safeTransferFrom(address,address,uint256)"](otherSigner.address, signer.address, otherSpiralId);
@@ -233,7 +233,7 @@ describe("ImpishSpiral", function () {
     // Only we can shatter
     await expect(crystal.shatter(crystalTokenId)).to.be.revertedWith("NotYoursToShatter");
 
-    // Shattreing recovers 50% of the spiralbits
+    // Shattering recovers 50% of the spiralbits
     const spiralbitsexpected = (await crystal.crystals(crystalTokenId)).spiralBitsStored;
     await expect(() => crystal.connect(otherSigner).shatter(crystalTokenId)).to.changeTokenBalance(
       spiralbits,

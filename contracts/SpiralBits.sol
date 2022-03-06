@@ -22,7 +22,7 @@ contract SpiralBits is ERC20, ERC20Burnable, Ownable {
     allowedMinters[_minter] = true;
   }
 
-  // Maintainance function, don't expect to be used unless something goes wrong
+  // Maintenance function, don't expect to be used unless something goes wrong
   function deleteAllowedMinter(address _minter) external onlyOwner {
     delete allowedMinters[_minter];
   }

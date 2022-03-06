@@ -26,10 +26,10 @@ export const TransferAddressModal = ({ show, tokenId, nft, selectedAddress, clos
     if (nft && selectedAddress) {
       try {
         const validAddress = ethers.utils.getAddress(address);
-        console.log(`Transfering to ${validAddress}`);
+        console.log(`Transferring to ${validAddress}`);
 
         const tx = await nft["safeTransferFrom(address,address,uint256)"](selectedAddress, validAddress, tokenId);
-        setInfo("Transfering....");
+        setInfo("Transferring....");
         await tx.wait();
 
         close();

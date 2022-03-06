@@ -157,7 +157,7 @@ export function setupSpirals(app: express.Express, provider: ethers.providers.Js
       child.send({ seed, size });
 
       child.once("message", (r) => {
-        // console.log("Message recieved from child");
+        // console.log("Message received from child");
         // console.log(r);
 
         const pngBuf = Buffer.from(r as Buffer);

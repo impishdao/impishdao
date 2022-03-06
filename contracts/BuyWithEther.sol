@@ -301,7 +301,7 @@ contract BuyWithEther is IERC721Receiver {
   }
 
   // function buyMagic_TODO_TEMP() external payable {
-  //   // Convert to WETH, since thats what Uniswap uses
+  //   // Convert to WETH, since that's what Uniswap uses
   //   uint256 amountIn = address(this).balance;
   //   IWETH9(WETH9).deposit{value: amountIn}();
 
@@ -323,7 +323,7 @@ contract BuyWithEther is IERC721Receiver {
   // }
 
   function swapExactInputSpiralBitsFromEthNoRefund(uint256 amountIn) internal returns (uint256 amountOut) {
-    // Convert to WETH, since thats what Uniswap uses
+    // Convert to WETH, since that's what Uniswap uses
     IWETH9(WETH9).deposit{value: address(this).balance}();
 
     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -376,7 +376,7 @@ contract BuyWithEther is IERC721Receiver {
     internal
     returns (uint256 amountIn)
   {
-    // Convert to WETH, since thats what Uniswap uses
+    // Convert to WETH, since that's what Uniswap uses
     IWETH9(WETH9).deposit{value: address(this).balance}();
 
     ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({

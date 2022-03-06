@@ -39,18 +39,18 @@ const BeenOutbid = ({
     }
   }
   const [value, setValue] = useState(ethers.utils.formatEther(neededInEth));
-  const [tokensRecieved, setTokensRecieved] = useState(ethers.utils.formatEther(neededInEth.mul(1000)));
+  const [tokensReceived, setTokensReceived] = useState(ethers.utils.formatEther(neededInEth.mul(1000)));
 
   const inputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
     const text = event?.target?.value || "";
     setValue(text);
 
     if (text.trim().length === 0) {
-      setTokensRecieved("0");
+      setTokensReceived("0");
     } else {
       const p = ethers.utils.parseEther(text);
       console.log(p);
-      setTokensRecieved(ethers.utils.formatEther(p.mul(1000)));
+      setTokensReceived(ethers.utils.formatEther(p.mul(1000)));
     }
   };
 
@@ -110,7 +110,7 @@ const BeenOutbid = ({
                   Contribute
                 </Button>
               </Stack>
-              <div className="mb-3">You will receive {tokensRecieved} IMPISH Tokens</div>
+              <div className="mb-3">You will receive {tokensReceived} IMPISH Tokens</div>
             </Row>
           </div>
         )}
@@ -137,7 +137,7 @@ const WeAreWinning = ({
   }
 
   const [value, setValue] = useState("0.1");
-  const [tokensRecieved, setTokensRecieved] = useState("100");
+  const [tokensReceived, setTokensReceived] = useState("100");
   const [timeRemaining, setTimeRemaining] = useState(timeRemainingInitial);
 
   const inputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,11 +145,11 @@ const WeAreWinning = ({
     setValue(text);
 
     if (text.trim().length === 0) {
-      setTokensRecieved("0");
+      setTokensReceived("0");
     } else {
       const p = ethers.utils.parseEther(text);
       console.log(p);
-      setTokensRecieved(ethers.utils.formatEther(p.mul(1000)));
+      setTokensReceived(ethers.utils.formatEther(p.mul(1000)));
     }
   };
 
@@ -218,7 +218,7 @@ const WeAreWinning = ({
                   Contribute
                 </Button>
               </Stack>
-              <div className="mb-3">You will receive {tokensRecieved} IMPISH Tokens</div>
+              <div className="mb-3">You will receive {tokensReceived} IMPISH Tokens</div>
             </Row>
           </div>
         )}
@@ -421,7 +421,7 @@ export function ImpishDAO(props: ImpishDAOProps) {
         if (props.areWeWinning) {
           renderScreen = 3; // We are winning, but not yet won!
         } else {
-          renderScreen = 4; // We are loosing, but not yet lost!
+          renderScreen = 4; // We are losing, but not yet lost!
         }
       }
     }
