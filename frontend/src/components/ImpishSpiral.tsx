@@ -184,18 +184,6 @@ export function ImpishSpiral(props: SpiralProps) {
       return;
     }
 
-    const magicAmount = priceInMagic(megaMintPriceETH);
-    console.log(`${props.magicBalance} - ${magicAmount}`);
-    if (props.magicBalance.lt(magicAmount)) {
-      props.showModal(
-        "Not enough MAGIC",
-        <div>
-          Not enough MAGIC tokens. You have {format4Decimals(props.magicBalance)}, need {format4Decimals(magicAmount)}
-        </div>
-      );
-      return;
-    }
-
     try {
       const txns: MultiTxItem[] = [];
 
@@ -208,6 +196,19 @@ export function ImpishSpiral(props: SpiralProps) {
               : undefined,
         });
       } else if (buyCurrency === Currency.MAGIC) {
+        const magicAmount = priceInMagic(megaMintPriceETH);
+        console.log(`${props.magicBalance} - ${magicAmount}`);
+        if (props.magicBalance.lt(magicAmount)) {
+          props.showModal(
+            "Not enough MAGIC",
+            <div>
+              Not enough MAGIC tokens. You have {format4Decimals(props.magicBalance)}, need{" "}
+              {format4Decimals(magicAmount)}
+            </div>
+          );
+          return;
+        }
+
         // Check if approval is needed.
         if (
           (await props.contracts.magic.allowance(props.selectedAddress, props.contracts.buywitheth.address)).lt(
