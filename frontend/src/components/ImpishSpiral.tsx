@@ -137,7 +137,7 @@ export function ImpishSpiral(props: SpiralProps) {
     let basePrice = spiralMintPrice;
     for (let i = 0; i < numSpirals; i++) {
       amountNeeded = amountNeeded.add(basePrice);
-      // Mint price increases 0.5% everytime
+      // Mint price increases 0.5% every time
       basePrice = basePrice.mul(1005).div(1000);
     }
 
@@ -150,7 +150,7 @@ export function ImpishSpiral(props: SpiralProps) {
     let basePrice = rwMintPrice;
     for (let i = 0; i < numSpirals; i++) {
       amountNeeded = amountNeeded.add(basePrice);
-      // Mint price increases 0.5% everytime
+      // Mint price increases 0.5% every time
       basePrice = basePrice.mul(10011).div(10000);
     }
 
@@ -651,7 +651,7 @@ export function ImpishSpiral(props: SpiralProps) {
             <br />
             If you own a RandomWalkNFT, you can choose to base your spiral on your RandomWalkNFT. Your spiral will share
             the generative seed with your RandomWalkNFT, which means your spiral will look similar to your
-            RandomWalkNFT. It will share the same random walk and the color pallette.
+            RandomWalkNFT. It will share the same random walk and the color palette.
             <br />
             <Row>
               <Col xs={5}>
@@ -693,7 +693,7 @@ export function ImpishSpiral(props: SpiralProps) {
             <br />
             A "Mega Set" is a set of RandomWalkNFT, its companion Spiral and the Spiral's Gen0 Crystal, all minted
             together. Minting the mega set also buys enough SPIRALBITS to max out the Crystal to 100 size. The IMPISH
-            tokens generated and any excess SPIRALBITS are staked along with all 3 NFTs to immediately begin geneating
+            tokens generated and any excess SPIRALBITS are staked along with all 3 NFTs to immediately begin generating
             SPIRALBITS.
             <br />
             <br />
@@ -721,7 +721,7 @@ export function ImpishSpiral(props: SpiralProps) {
             <span style={{ fontWeight: "bold", color: "#ffd454" }}>How are spirals generated?</span>
             <br />
             The spirals are programmatically generated from a random seed (or your companion RandomWalkNFT's seed). They
-            are a "Random Walk", but plotted with polar co-ordinates with a slight spiral bias.
+            are a "Random Walk", but plotted with polar coordinates with a slight spiral bias.
             <br />
             You can click on a Spiral to see it animate! Go ahead and try it :)
           </div>

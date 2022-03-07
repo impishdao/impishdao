@@ -56,7 +56,7 @@ describe("ImpishDAO Mint Tests", function () {
     // Depositing any more should error try to deposit too much
     await expect(impdao.deposit({ value: 1 })).to.be.revertedWith("Too much ETH");
 
-    // But simply transfering money to the contract should be OK.
+    // But simply transferring money to the contract should be OK.
     const ONE_ETH = ethers.utils.parseEther("1");
     await expect(
       await signer.sendTransaction({
@@ -237,7 +237,7 @@ describe("ImpishDAO Mint Tests", function () {
     await network.provider.send("evm_mine");
 
     const winAmount = await rwnft.withdrawalAmount();
-    const daoBalanace = await provider.getBalance(impdao.address);
+    const daoBalance = await provider.getBalance(impdao.address);
 
     // Now finish the contract by calling deposit(), but this should not mint tokens
     // and make the DAO win
@@ -247,7 +247,7 @@ describe("ImpishDAO Mint Tests", function () {
     expect(await impdao.contractState()).equals(2);
 
     // We're expecting to get this ether back at redeem() across all addresses
-    const totalETHToBeReturned = daoBalanace.add(winAmount);
+    const totalETHToBeReturned = daoBalance.add(winAmount);
 
     // Calculate how much each address should get back in ETH. This will not be exactly
     // what the address gets because of rounding errors, since the contract calculates
@@ -332,7 +332,7 @@ describe("ImpishDAO Mint Tests", function () {
     await network.provider.send("evm_mine");
 
     const winAmount = await rwnft.withdrawalAmount();
-    const daoBalanace = await provider.getBalance(impdao.address);
+    const daoBalance = await provider.getBalance(impdao.address);
 
     // Now finish the contract by calling deposit(), but this should not mint tokens
     // and make the DAO win
@@ -342,7 +342,7 @@ describe("ImpishDAO Mint Tests", function () {
     expect(await impdao.contractState()).equals(2);
 
     // We're expecting each address to get this ether back at redeem()
-    const totalETHToBeReturned = daoBalanace.add(winAmount);
+    const totalETHToBeReturned = daoBalance.add(winAmount);
 
     await expect(await impdao.redeem(), "Didn't get all ETH back!").to.changeEtherBalance(
       wallets[0],

@@ -50,7 +50,7 @@ describe("MultiMint", function () {
     let mintPrice = await impishSpiral.getMintPrice();
     for (let i = 0; i < 10; i++) {
       amountNeeded = amountNeeded.add(mintPrice);
-      // Mint price increases 0.5% everytime
+      // Mint price increases 0.5% every time
       mintPrice = mintPrice.mul(1005).div(1000);
     }
 
@@ -83,7 +83,7 @@ describe("MultiMint", function () {
     let mintPrice = await impishSpiral.getMintPrice();
     for (let i = 0; i < 10; i++) {
       amountNeeded = amountNeeded.add(mintPrice);
-      // Mint price increases 0.5% everytime
+      // Mint price increases 0.5% every time
       mintPrice = mintPrice.mul(1005).div(1000);
     }
 
