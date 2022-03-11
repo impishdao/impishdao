@@ -18,14 +18,14 @@ async function main() {
   const RPSF = await ethers.getContractFactory("RPS");
   const rps = new ethers.Contract(contractAddresses.RPS, RPSF.interface, signer) as RPS;
 
-  const SpiralBitsF = await ethers.getContractFactory("SpiralBits");
-  const spiralbits = new ethers.Contract(contractAddresses.SpiralBits, SpiralBitsF.interface, signer) as SpiralBits;
+  // const SpiralBitsF = await ethers.getContractFactory("SpiralBits");
+  // const spiralbits = new ethers.Contract(contractAddresses.SpiralBits, SpiralBitsF.interface, signer) as SpiralBits;
 
   // Add as allowed minter
   // await spiralbits.addAllowedMinter(rps.address);
 
   // Resolve
-  await rps.resolve();
+  // await rps.resolve();
 
   // Reset for next round, which pays out the bounties
   await rps.resetForNextRound(false);
