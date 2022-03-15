@@ -99,7 +99,6 @@ export function setupSpirals(app: express.Express, provider: ethers.providers.Js
         indirectOwner = (await _v2staking.stakedTokenOwners(id.add(2000000))).owner;
       }
 
-      res.set("Cache-control", `public, max-age=14400`);
       res.send({ id, seed, owner, indirectOwner });
     } catch (err) {
       console.log(err);
