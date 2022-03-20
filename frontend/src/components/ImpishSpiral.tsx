@@ -5,7 +5,7 @@ import { BigNumber } from "ethers";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setup_image } from "../spiralRenderer";
 import { SelectableNFT } from "./NFTcard";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
 import { Eth1, Eth1k, Eth1M, Eth2B, MultiTxItem } from "./walletutils";
 
@@ -334,244 +334,18 @@ export function ImpishSpiral(props: SpiralProps) {
       <div className="withSpiralBackground" style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Chapter 1: The Spirals</h1>
         <Row className="mt-1">
-          <div>
-            Minting is open for <span style={{ color: "#ffd454" }}>{secondsToDhms(timeRemaining)}</span>
-          </div>
+          <div></div>
         </Row>
         <Row className="mt-3">
           {props.selectedAddress && (
             <>
-              <Row style={{ marginTop: "50px" }}>
-                <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
-                  <h5>
-                    <span style={{ color: "#ffc106" }}>Step 1:</span> What kind of Spiral?
-                  </h5>
-                  <Form style={{ fontSize: "1.1rem" }}>
-                    <Form.Check
-                      checked={spiralType === "mega"}
-                      label="Mega Set"
-                      type="radio"
-                      onChange={() => setSpiralType("mega")}
-                      id="minttype"
-                    />
-                    <Form.Check
-                      checked={spiralType === "original"}
-                      label="Original Spiral"
-                      type="radio"
-                      onChange={() => setSpiralType("original")}
-                      id="minttype"
-                    />
-                    <Form.Check
-                      checked={spiralType === "companion"}
-                      label="RandomWalkNFT Companion Spiral"
-                      type="radio"
-                      onChange={() => setSpiralType("companion")}
-                      id="minttype"
-                    />
-                  </Form>
-                </Col>
-              </Row>
-
-              {spiralType === "mega" && (
-                <>
-                  <Row className="mt-3">
-                    <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
-                      <span>
-                        A Mega Set mints a RandomWalkNFT, its companion Spiral and maxed out Gen0 Crystal, and stakes
-                        all of them. The SPIRALBITS and IMPISH tokens generated are also staked.
-                      </span>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
-                      <h5 style={{ marginTop: "30px" }}>
-                        <span style={{ color: "#ffc106" }}>Step 2:</span> Mint Mega Set!
-                      </h5>
-                      <div>
-                        Total Price:{" "}
-                        {buyCurrency === Currency.ETH && (
-                          <>
-                            ETH {format4Decimals(megaMintPriceETH)} {formatUSD(megaMintPriceETH, props.lastETHPrice)}
-                          </>
-                        )}
-                        {buyCurrency === Currency.MAGIC && (
-                          <>
-                            MAGIC {format4Decimals(priceInMagic(megaMintPriceETH))}{" "}
-                            {formatUSD(megaMintPriceETH, props.lastETHPrice)}
-                          </>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
-                        <FloatingLabel label="Currency" style={{ color: "black", width: "100px" }}>
-                          <Form.Select
-                            value={buyCurrency}
-                            onChange={(e) => setBuyCurrency(parseInt(e.currentTarget.value))}
-                          >
-                            <option value={Currency.ETH}>{Currency[Currency.ETH]}</option>
-                            <option value={Currency.MAGIC}>{Currency[Currency.MAGIC]}</option>
-                          </Form.Select>
-                        </FloatingLabel>
-                        <FloatingLabel label="Number of Mega Sets" style={{ color: "black", width: "200px" }}>
-                          <Form.Select
-                            value={numSpirals.toString()}
-                            onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}
-                          >
-                            {range(10, 1).map((n) => {
-                              return (
-                                <option key={n} value={n}>
-                                  {n}
-                                </option>
-                              );
-                            })}
-                          </Form.Select>
-                        </FloatingLabel>
-                        <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={megaMint}>
-                          Mint Mega Set
-                        </Button>
-                      </div>
-                    </Col>
-                  </Row>
-                </>
-              )}
-
-              {spiralType === "original" && (
-                <>
-                  <Row className="mt-3">
-                    <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
-                      <span>A brand new Spiral with an Original, one-of-a-kind seed</span>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
-                      <h5 style={{ marginTop: "30px" }}>
-                        <span style={{ color: "#ffc106" }}>Step 2:</span> Mint!
-                      </h5>
-                      <div>
-                        Mint Price:
-                        {buyCurrency === Currency.ETH
-                          ? ` ETH ${format4Decimals(multiMintPriceETH)}`
-                          : ` MAGIC ${format4Decimals(priceInMagic(multiMintPriceETH))}`}{" "}
-                        {formatUSD(multiMintPriceETH, props.lastETHPrice)}
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: "10px" }}>
-                        <FloatingLabel label="Currency" style={{ color: "black", width: "100px" }}>
-                          <Form.Select
-                            value={buyCurrency}
-                            onChange={(e) => setBuyCurrency(parseInt(e.currentTarget.value))}
-                          >
-                            <option value={Currency.ETH}>{Currency[Currency.ETH]}</option>
-                            <option value={Currency.MAGIC}>{Currency[Currency.MAGIC]}</option>
-                          </Form.Select>
-                        </FloatingLabel>
-                        <FloatingLabel label="Number of Spirals" style={{ color: "black", width: "200px" }}>
-                          <Form.Select
-                            value={numSpirals.toString()}
-                            onChange={(e) => setNumSpirals(parseInt(e.currentTarget.value))}
-                          >
-                            {range(10, 1).map((n) => {
-                              return (
-                                <option key={n} value={n}>
-                                  {n}
-                                </option>
-                              );
-                            })}
-                          </Form.Select>
-                        </FloatingLabel>
-                        <Button style={{ marginTop: "10px", height: "58px" }} variant="warning" onClick={mintSpiral}>
-                          Mint
-                        </Button>
-                      </div>
-                    </Col>
-                  </Row>
-                </>
-              )}
-
-              {spiralType === "companion" && (
-                <>
-                  <Row className="mt-3">
-                    <Col xs={{ offset: 3, span: 6 }} style={{ textAlign: "left", background: "rgba(0,0,0,0.5)" }}>
-                      <span>
-                        A companion Spiral shares its seed with the RandomWalkNFT, which makes the Spiral look similar
-                        to the RandomWalkNFT
-                      </span>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
-                      <h5 style={{ marginTop: "30px" }}>
-                        <span style={{ color: "#ffc106" }}>Step 2:</span> Select a RandomWalkNFT to mint its companion
-                      </h5>
-                    </Col>
-                  </Row>
-                  {userRWNFTs.length > 0 && (
-                    <Row>
-                      <Col xs={{ offset: 3, span: 6 }}>
-                        {/* <div>Your RandomWalkNFTs</div> */}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            gap: "10px",
-                            rowGap: "20px",
-                            margin: "20px",
-                            flexWrap: "wrap",
-                            marginLeft: "-100px",
-                          }}
-                        >
-                          {userRWNFTs.map((tokenId) => (
-                            <SelectableNFT
-                              key={tokenId.toString()}
-                              tokenId={tokenId}
-                              selected={tokenId.eq(selectedUserRW || -1)}
-                              onClick={() => {
-                                setSelectedUserRW(tokenId);
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <div style={{ textAlign: "left" }}>
-                          <h5 style={{ marginTop: "30px" }}>
-                            <span style={{ color: "#ffc106" }}>Step 3:</span> Mint!
-                          </h5>
-                          <div>
-                            Mint Price: ETH {format4Decimals(spiralMintPrice)}{" "}
-                            {formatUSD(spiralMintPrice, props.lastETHPrice)}
-                          </div>
-                          <Button style={{ marginTop: "10px" }} variant="warning" onClick={mintSpiral}>
-                            Mint
-                          </Button>
-                        </div>
-                      </Col>
-                      <Col xs={3} style={{ marginTop: "-50px" }}>
-                        <div>Preview</div>
-                        <div
-                          style={{ border: "solid 1px", borderRadius: "10px", padding: "10px", marginRight: "-20px" }}
-                        >
-                          <img src={previewURL} alt="spiral" />
-                        </div>
-                      </Col>
-                    </Row>
-                  )}
-
-                  {userRWNFTs.length === 0 && (
-                    <Row>
-                      <Col xs={{ offset: 3 }}>
-                        <div style={{ textAlign: "left" }}>
-                          You don't have any available RandomWalkNFTs in your wallet
-                          <br />
-                          Please select "Original Spiral" to mint.
-                        </div>
-                      </Col>
-                    </Row>
-                  )}
-                </>
-              )}
-
               <Row className="mt-3">
-                <Col xs={{ offset: 3 }} style={{ textAlign: "left" }}>
-                  <div> --- OR ---</div>
+                <Col style={{ textAlign: "center" }}>
+                  <div style={{fontSize: "1.5rem"}}>
+                    Spiral Mints have finished. <Link to="/spirals/top10" style={{ color: "#ffd454" }}>Look at the winners!</Link>
+                  </div>
                   <div className="mt-3">
-                    Buy from{" "}
+                    Buy Spirals from the{" "} 
                     <a
                       style={{ color: "white" }}
                       target="_blank"
@@ -583,7 +357,6 @@ export function ImpishSpiral(props: SpiralProps) {
                   </div>
                 </Col>
               </Row>
-
               <div style={{ marginBottom: "50px" }}></div>
             </>
           )}

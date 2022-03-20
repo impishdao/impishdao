@@ -25,7 +25,7 @@ async function main() {
   // await spiralbits.addAllowedMinter(rps.address);
 
   // Resolve
-  await rps.resolve();
+  // await rps.resolve();
 
   // Reset for next round, which pays out the bounties
   await rps.resetForNextRound(false);

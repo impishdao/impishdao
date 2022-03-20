@@ -48,22 +48,22 @@ async function main() {
   const rwnftstaking = new ethers.Contract(contractAddresses.RWNFTStaking, RWNFTStaking.interface, signer);
   const crystal = new ethers.Contract(contractAddresses.Crystal, ImpishCrystal.interface, signer);
 
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
-  });
-  const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
+  // await network.provider.request({
+  //   method: "hardhat_impersonateAccount",
+  //   params: ["0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4"],
+  // });
+  // const prodSigner = await ethers.getSigner("0x21C853369eeB2CcCbd722d313Dcf727bEfBb02f4");
 
-  const StakingV2 = await ethers.getContractFactory("StakingV2", prodSigner);
-  const stakingv2 = await new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, prodSigner);
+  const StakingV2 = await ethers.getContractFactory("StakingV2");
+  const stakingv2 = new ethers.Contract(contractAddresses.StakingV2, StakingV2.interface, signer);
 
-  rwnft.setApprovalForAll(rwnftstaking.address, true);
-  impishspiral.setApprovalForAll(spiralstakign.address, true);
+  // rwnft.setApprovalForAll(rwnftstaking.address, true);
+  // impishspiral.setApprovalForAll(spiralstakign.address, true);
 
-  await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
-  await network.provider.send("evm_mine");
+  // await network.provider.send("evm_increaseTime", [3600 * 24 * 3]);
+  // await network.provider.send("evm_mine");
 
-  let startSpiral = 446;
+  let startSpiral = 482;
   for (let i = 0; i < 10; i++) {
     const spiralId = startSpiral - i;
     console.log(`Claiming ${spiralId}`);
@@ -76,9 +76,9 @@ async function main() {
     }
   }
 
-  console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
-  await impishspiral.connect(prodSigner).afterAllWinnings();
-  console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
+  console.log(ethers.utils.formatEther(await signer.getBalance()));
+  await impishspiral.afterAllWinnings();
+  console.log(ethers.utils.formatEther(await signer.getBalance()));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -69,8 +69,6 @@ export function Top10(props: Top10Props) {
 
       <div style={{ textAlign: "center", marginTop: "-50px", paddingTop: "100px" }}>
         <h1>Current Spiral Winners</h1>
-        <div>if no new Spirals are minted in</div>
-        <h3>{secondsToDhms(timeRemaining)}</h3>
 
         <Container className="mt-5 mb-5">
           {spirals.length === 0 && (

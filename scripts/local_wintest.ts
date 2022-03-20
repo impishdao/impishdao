@@ -48,7 +48,7 @@ async function main() {
   await network.provider.send("evm_increaseTime", [3600 * 24 * 4]);
   await network.provider.send("evm_mine");
 
-  const lastSpiral = 444;
+  const lastSpiral = 478;
   for (let i = lastSpiral; i > lastSpiral - 10; i--) {
     const owner = await impishspiral.ownerOf(i);
     if (owner === stakingv2.address) {
@@ -60,7 +60,7 @@ async function main() {
   }
 
   console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
-  await impishspiral.afterAllWinnings();
+  await impishspiral.connect(prodSigner).afterAllWinnings();
   console.log(ethers.utils.formatEther(await prodSigner.getBalance()));
 }
 
