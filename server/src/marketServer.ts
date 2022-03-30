@@ -87,10 +87,13 @@ export function setupSpiralMarket(app: express.Express, provider: ethers.provide
       [IMPISH, POOL_FEE, WETH9, POOL_FEE, SPIRALBITS]
     );
 
-    const quotedAmountSpiralBits = await quoterContract.callStatic.quoteExactOutput(
-      path,
-      ethers.utils.parseEther("100")
-    );
+    let quotedAmountSpiralBits = 0;
+
+    try {
+      quotedAmountSpiralBits = await quoterContract.callStatic.quoteExactOutput(path, ethers.utils.parseEther("100"));
+    } catch (e) {
+      console.log(e);
+    }
 
     const quotedAmountEthper10kMAGIC = await quoterContract.callStatic.quoteExactInputSingle(
       MAGIC,
